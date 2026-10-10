@@ -1,0 +1,125 @@
+{
+  "checkedAt": "2026-10-10T10:25:26.693Z",
+  "networkUsed": false,
+  "nativeApisMocked": true,
+  "checks": 29,
+  "failed": 0,
+  "results": [
+    {
+      "name": "invalid and out-of-range sections never crash or create false times",
+      "ok": true
+    },
+    {
+      "name": "comma, bracket and reversed section lists normalize and retain gaps",
+      "ok": true
+    },
+    {
+      "name": "course end boundary is exclusive",
+      "ok": true
+    },
+    {
+      "name": "single/double weeks and Chinese separators match actual week",
+      "ok": true
+    },
+    {
+      "name": "invalid week labels are excluded and giant ranges are bounded",
+      "ok": true
+    },
+    {
+      "name": "week rollover uses Monday and local calendar dates",
+      "ok": true
+    },
+    {
+      "name": "next week reminders obey odd/even week rules",
+      "ok": true
+    },
+    {
+      "name": "missing week metadata, missing course weeks and unknown times do not schedule",
+      "ok": true
+    },
+    {
+      "name": "duplicate API courses are deduplicated for reminders and rendering",
+      "ok": true
+    },
+    {
+      "name": "multi-section courses span rows and conflicting courses use separate lanes",
+      "ok": true
+    },
+    {
+      "name": "unrelated courses regain full width after overlapping cluster",
+      "ok": true
+    },
+    {
+      "name": "widget pause, logout and unknown weeks show no course information",
+      "ok": true
+    },
+    {
+      "name": "notification denial leaves switch off with no published reminders",
+      "ok": true
+    },
+    {
+      "name": "system calendar reminder is exactly ten minutes early and opens schedule",
+      "ok": true
+    },
+    {
+      "name": "turning reminders off cancels native reminders and persists switch",
+      "ok": true
+    },
+    {
+      "name": "switching off during native publication cancels the late reminder",
+      "ok": true
+    },
+    {
+      "name": "logout cancels reminders, clears widget snapshot and rejects stale schedule",
+      "ok": true
+    },
+    {
+      "name": "week calibration persists and the same cached response cannot reset it",
+      "ok": true
+    },
+    {
+      "name": "reminder registration is capped to leave system capacity",
+      "ok": true
+    },
+    {
+      "name": "real LiveView payload uses TIMER and millisecond duration",
+      "ok": true
+    },
+    {
+      "name": "enabled LiveView distinguishes waiting, empty day and active countdown from disabled state",
+      "ok": true
+    },
+    {
+      "name": "missing abilityInfo at emulator startup still resolves the launched bundle safely",
+      "ok": true
+    },
+    {
+      "name": "reminder taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "LiveView taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "LiveView permission denial is reported and never presented as success",
+      "ok": true
+    },
+    {
+      "name": "partial LiveView result is cleaned up and is not success",
+      "ok": true
+    },
+    {
+      "name": "minute-of-day values are rejected by real LiveView adapter",
+      "ok": true
+    },
+    {
+      "name": "course LiveView changes timer at class start and stops on switch off",
+      "ok": true
+    },
+    {
+      "name": "failed LiveView stop cannot prevent logout privacy and reminder cleanup",
+      "ok": true
+    }
+  ]
+}
