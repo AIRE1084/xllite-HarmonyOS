@@ -118,3 +118,10 @@
 - 默认构建目录 D:/XJITApp-api26-build 已被其他会话变成指向 D:/归档/XJITApp-build-snapshots 的 junction，脚本按设计拒绝；本轮使用真实 ASCII 目录 D:/XJITApp-riskfix-build。
 - 2026-10-10 全量 clean 构建成功（BUILD SUCCESSFUL 23s，74 项 ArkTS 警告 0 错误，未签名提示照旧）。共享输出恢复：entry/build/default/outputs/default/entry-default-unsigned.hap，2,005,050 bytes，SHA256 8BF0D5B532F6846464E3E762F904A6A5B8964482CF9E9F7EA8E2FA200357D40B；131 项输入漂移 0；HAP min/target=260000026、compile 26.0.0.105。证据 .wolf/risk-fix/。
 - signingConfigs 保持 []（艾哥既有决策未改）；正式包仍未签名。10 个业务 feature 原生协议、真实账号登录、LiveView 权益、真机视觉/FPS 仍未验证。
+
+## 2026-10-10 Git 基线建立
+
+- 艾哥要求初始化 Git 仓库并提交完整基线。仓库位于原工程根目录，分支 main，首个提交 acb5db5：191 文件 / 17,805 行 / 约 849 KB。
+- 提交前拦截了敏感与超大内容：volc-ai-proxy/.env（含 JWT_SECRET/DB_PASSWORD/ARK_API_KEY 实际密钥）已加入 .gitignore 排除；根目录签名材料（xjit-*.jks/p12/cer/csr/p7b、xjit-debug-profile.json）、tmpca 私钥目录、local.properties 一律不入库。
+- 同时排除：随包 SDK 工具链副本（llvm 2.4G、build-tools、common、sysroot 等全部根级 SDK 目录与 *.exe/*.dll）、构建产物（build/、dist/、*.hap）、.wolf 大体积证据（仅 memory.md 与顶层 *.json 记录入库）、docs/html 171M NDK 文档转储、.preview、.ui-backups、根目录截图 *.jpeg、material 缓存。
+- 提交树终检通过：git ls-tree 复核无任何凭据/SDK/产物文件。工作区干净。仓库纯本地，未配置远程、未推送。
