@@ -1,0 +1,211 @@
+import http from '@ohos.net.http'
+import { saveSchoolSession, clearAccessToken, getUsername } from './AuthManager'
+import { getCacheEpoch } from './MemoryCache'
+
+// XLLite / 新理Lite 统一网关协议（参照 GSQZ/xllite 仓库 docs/api.md 与 lib/api/xjit_api_client.dart）。
+// 基址、13 个 feature 的完整参数/返回结构、Bearer 认证均按仓库原文实现。
+export const XLLITE_GATEWAY_BASE: string = 'https://xllite.sayqz.com'
+
+export class GatewayResult {
+  ok: boolean = false
+  data: Record<string, Object> = {}
+  error: string = ''
+  statusCode: number = 0
+}
+
+function gwField(obj: Record<string, Object>, key: string): string {
+  const value: Object = obj[key]
+  if (value === null || value === undefined) return ''
+  return String(value)
+}
+
+function gwNum(obj: Record<string, Object>, key: string): number {
+  const value: Object = obj[key]
+  if (value === null || value === undefined) return 0
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function gwErrorMessage(body: Record<string, Object>, statusCode: number): string {
+  const raw = gwField(body, 'error')
+  const alt = raw.length === 0 ? gwField(body, 'message') : raw
+  const text = alt.length === 0 ? gwField(body, 'msg') : alt
+  if (text.length > 0) return text.trim()
+  if (statusCode >= 400) return '接口请求失败（HTTP ' + statusCode + '）'
+  return '请求失败'
+}
+
+async function gwRequest(method: http.RequestMethod, path: string, token: string,
+  payload: Record<string, Object> | null): Promise<GatewayResult> {
+  const result = new GatewayResult()
+  const session = http.createHttp()
+  try {
+    const headers: Record<string, Object> = { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    if (token.length > 0) headers['Authorization'] = 'Bearer ' + token
+    let url = XLLITE_GATEWAY_BASE + path
+    let extra = ''
+    if (method === http.RequestMethod.GET) {
+      const keys: string[] = payload === null ? [] : Object.keys(payload).sort()
+      const queryParts: string[] = []
+      keys.forEach((k: string): void => {
+        if (payload !== null) queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(gwField(payload, k)))
+      })
+      if (queryParts.length > 0) url += '?' + queryParts.join('&')
+    } else {
+      extra = payload === null ? '{}' : JSON.stringify(payload)
+    }
+    const res = await session.request(url, {
+      method: method,
+      header: headers,
+      extraData: extra,
+      usingCache: false,
+      connectTimeout: 12000,
+      readTimeout: 45000,
+      maxLimit: 2 * 1024 * 1024,
+    } as http.HttpRequestOptions)
+    result.statusCode = res.responseCode
+    if (res.responseCode >= 400) {
+      result.error = '接口请求失败（HTTP ' + res.responseCode + '）'
+      return result
+    }
+    let parsed: Object
+    try {
+      parsed = JSON.parse(String(res.result))
+    } catch (_e) {
+      result.error = '接口没有返回数据'
+      return result
+    }
+    let body: Record<string, Object>
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      result.error = '接口没有返回数据'
+      return result
+    }
+    body = parsed as Record<string, Object>
+    if (body['ok'] !== true) {
+      result.error = gwErrorMessage(body, res.responseCode)
+      return result
+    }
+    let data: Object = body['data']
+    if (data === null || data === undefined) {
+      const empty: Record<string, Object> = {}
+      data = empty
+    }
+    if (typeof data !== 'object' || Array.isArray(data)) { result.error = '接口返回数据格式异常'; return result }
+    result.data = data as Record<string, Object>
+    result.ok = true
+  } catch (_e) {
+    result.error = '网关连接或响应校验未完成，请稍后重试'
+  } finally {
+    session.destroy()
+  }
+  return result
+}
+
+// /api/v1/auth/login —— username+password(+captcha/rememberMe)，返回 data{username, accessToken, tokenType, source, expiresAt/expiresInSeconds}
+export async function gatewayLogin(username: string, password: string,
+  captcha: string = '', rememberMe: boolean = false): Promise<GatewayResult> {
+  const payload: Record<string, Object> = { 'username': username, 'password': password }
+  if (captcha.length > 0) payload['captcha'] = captcha
+  payload['rememberMe'] = rememberMe
+  return await gwRequest(http.RequestMethod.POST, '/api/v1/auth/login', '', payload)
+}
+
+// /api/v1/auth/refresh —— 用旧 accessToken 换新
+export async function gatewayRefresh(accessToken: string): Promise<GatewayResult> {
+  const payload: Record<string, Object> = { 'accessToken': accessToken }
+  return await gwRequest(http.RequestMethod.POST, '/api/v1/auth/refresh', accessToken, payload)
+}
+
+export async function gatewaySession(accessToken: string): Promise<GatewayResult> {
+  return await gwRequest(http.RequestMethod.GET, '/api/v1/auth/session', accessToken, null)
+}
+
+export async function gatewayLogout(accessToken: string): Promise<void> {
+  await gwRequest(http.RequestMethod.POST, '/api/v1/auth/logout', accessToken, {})
+}
+
+// /api/v1/run —— 所有 13 个 feature 的统一业务入口（见 GATEWAY_FEATURE_NAMES）
+export async function gatewayRun(feature: string, accessToken: string,
+  params: Record<string, Object>): Promise<GatewayResult> {
+  const payload: Record<string, Object> = { 'feature': feature, 'params': params }
+  return await gwRequest(http.RequestMethod.POST, '/api/v1/run', accessToken, payload)
+}
+
+function gwExpiry(data: Record<string, Object>): number {
+  const rawExp: Object = data['expiresAt']
+  if (rawExp !== null && rawExp !== undefined) {
+    const value = Number(rawExp)
+    if (Number.isFinite(value)) return value > 100000000000 ? value : value * 1000
+  }
+  const sec: Object = data['expiresInSeconds']
+  if (sec !== null && sec !== undefined) {
+    const value = Number(sec)
+    if (Number.isFinite(value) && value > 0) return Date.now() + value * 1000
+  }
+  return 0
+}
+
+// 把网关登录返回的 data 保存为应用会话（auth_source=xllite-gateway），
+// 之后业务请求一律走 gatewayRun；学校原生适配器保留直连，网关不可达时不影响已有能力。
+export async function acceptGatewayLogin(username: string, data: Record<string, Object>,
+  epoch: number = getCacheEpoch()): Promise<GatewayResult> {
+  const result = new GatewayResult()
+  const token = gwField(data, 'accessToken').trim()
+  const name = gwField(data, 'username').trim()
+  if (token.length === 0 || epoch !== getCacheEpoch()) {
+    result.error = '登录成功但没有返回 accessToken'
+    return result
+  }
+  let expiresAt: number = gwExpiry(data)
+  if (expiresAt <= 0) {
+    // 网关未给过期时间时保留会话但不限制本地有效期：用 24h 兜底，避免立即失效。
+    expiresAt = Date.now() + 24 * 60 * 60 * 1000
+  }
+  const finalName = name.length > 0 ? name : username
+  try {
+    await saveSchoolSession(finalName, token, expiresAt, epoch, 'xllite-gateway')
+  } catch (_e) {
+    result.error = '登录状态保存失败，请重试'
+    return result
+  }
+  if (epoch !== getCacheEpoch()) { result.error = '登录状态已变化，请重试'; return result }
+  result.ok = true
+  result.data = { 'username': finalName, 'accessToken': token }
+  return result
+}
+
+// 网关刷新成功后的会话续期：由页面层先调 gatewayRefresh(旧token)，
+// 用返回的 data 调这里落盘；失败时保持旧会话不变。
+export async function acceptGatewaySessionRefresh(data: Record<string, Object>,
+  epoch: number = getCacheEpoch()): Promise<GatewayResult> {
+  const result = new GatewayResult()
+  const token = gwField(data, 'accessToken').trim()
+  const name = getUsername()
+  const expiresAt = gwExpiry(data)
+  if (token.length === 0 || expiresAt <= 0 || epoch !== getCacheEpoch()) {
+    result.error = '会话刷新返回不完整'
+    return result
+  }
+  try {
+    await saveSchoolSession(name.length > 0 ? name : 'gateway', token, expiresAt, epoch, 'xllite-gateway')
+  } catch (_e) { result.error = '会话刷新保存失败'; return result }
+  result.ok = true
+  return result
+}
+
+export function clearGatewaySession(): Promise<void> {
+  return clearAccessToken()
+}
+
+// 网关支持的 13 个 feature（与 xllite 仓库 XjitFeature 枚举一致）
+export const GATEWAY_FEATURE_NAMES: string[] = [
+  'jw.profile', 'jw.schedule', 'jw.grades', 'jw.exams', 'jw.training',
+  'newcard.balance', 'newcard.transactions', 'newcard.campus_code.qrcode',
+  'newcard.recharge.config', 'newcard.recharge.create_order',
+  'newcard.electricity.account', 'newcard.electricity.recharge.config',
+  'newcard.electricity.recharge.pay',
+]
+
+export function isGatewayFeature(feature: string): boolean {
+  return GATEWAY_FEATURE_NAMES.indexOf(feature) >= 0
+}
