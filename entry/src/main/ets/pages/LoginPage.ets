@@ -86,6 +86,8 @@ struct LoginPage {
                 Text('连接你的校园').fontSize(22).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface).width('100%')
                 Text('使用统一身份认证账号登录，一次连接教务与校园卡。')
                   .fontSize(14).fontColor(this.palette.onSurfaceVariant).lineHeight(24).width('100%')
+                Text('登录数据将通过 HTTPS 提交至 https://xllite.sayqz.com 网关，由网关连接学校服务。服务器可能为续登保留凭据；保存期限与删除方式尚待服务运营方确认。密码不保存在本机，不代表服务器不处理或保留密码。')
+                  .fontSize(12).fontColor(this.palette.onSurfaceVariant).lineHeight(20).width('100%')
                 TextInput({ placeholder: '学号 / 校园账号', text: this.username })
                   .height(52).fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
                   .backgroundColor(this.palette.surfaceVariant).borderRadius(16).enabled(!this.loading)
