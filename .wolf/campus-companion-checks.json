@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T17:28:37.824Z",
+  "checkedAt": "2026-10-16T17:40:04.658Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 46,
+  "checks": 47,
   "failed": 0,
   "results": [
     {
@@ -59,6 +59,10 @@
     },
     {
       "name": "widget distinguishes no courses today from all courses ended",
+      "ok": true
+    },
+    {
+      "name": "widget lesson state observes inclusive start and exclusive end boundaries",
       "ok": true
     },
     {
