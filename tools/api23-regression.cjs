@@ -4,7 +4,7 @@ const root = path.resolve(__dirname, '..');
 const ts = require(process.env.XJIT_TYPESCRIPT_PATH || 'D:/data/devecostudionext/DevEco Studio/sdk/default/openharmony/ets/build-tools/ets-loader/node_modules/typescript/lib/typescript.js');
 let count = 0, failed = 0;
 function test(name, run) { count++; try { run(); console.log('PASS ' + name); } catch (e) { failed++; console.error('FAIL ' + name + ': ' + e.message); } }
-function materials(api, supported = true) {
+function materials(api, supported = true, materialState = 0, queryThrows = false) {
   let calls = 0;
   const module = { exports: {} };
   const source = fs.readFileSync(path.join(root, 'entry/src/main/ets/theme/Materials.ets'), 'utf8');
@@ -13,7 +13,7 @@ function materials(api, supported = true) {
       if (spec === '@ohos.deviceInfo') return { default: { sdkApiVersion: api } };
       if (spec === '@ohos.arkui.uiMaterial') return { default: {
         isImmersiveMaterialSupported() { calls++; if (api < 26) throw new Error('API26 invoked on old OS'); return supported; },
-        getMaterialInfo() { return { state: 0 }; }, MaterialState: { DISABLE: 1 },
+        getMaterialInfo() { if (queryThrows) throw new Error('system material query failed'); return { state: materialState }; }, MaterialState: { DISABLE: 1 },
       } };
       throw new Error(spec);
     },
@@ -25,6 +25,8 @@ test('encoded API23 version does not call API26 material methods', () => { const
 test('API26 material checks hardware support', () => { const f = materials(26); assert.equal(f.api.supportsImmersiveMaterial(), true); assert.equal(f.calls(), 1); });
 test('encoded API26 version enables native checks', () => { const f = materials(260000026); assert.equal(f.api.supportsImmersiveMaterial(), true); assert.equal(f.calls(), 1); });
 test('unsupported hardware uses compatibility material', () => { assert.equal(materials(26, false).api.supportsImmersiveMaterial(), false); });
+test('system-disabled API26 material falls back',()=>{assert.equal(materials(26,true,1).api.supportsImmersiveMaterial(),false)});
+test('throwing API26 material query falls back',()=>{assert.equal(materials(26,true,0,true).api.supportsImmersiveMaterial(),false)});
 test('minimum SDK is API23 while target and compile remain API26', () => { const p = JSON.parse(fs.readFileSync(path.join(root, 'build-profile.json5'), 'utf8')).app.products[0]; assert.equal(p.compatibleSdkVersion, '6.1.0(23)'); assert.equal(p.targetSdkVersion, '26.0.0'); });
 test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundBlurStyle\(BlurStyle\./); });
 function mainTabs(reduceMotion) {
