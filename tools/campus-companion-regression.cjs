@@ -71,6 +71,11 @@ async function readyCourse(f, courses=[course()], data={}) {
   await core.acceptCampusSchedule('test-student',{term:'2026-2027-1',currentWeek:6,totalWeeks:20,courses,scheduleFetchedAt:f.state.now,...data},0); return core;
 }
 
+test('verified XJIT section clock matches confirmed 2026 autumn calendar',()=>{
+ const f=fixture(); assert.deepEqual(plain(f.time.parseSections('1-2节')),[600,700]);
+ assert.deepEqual(plain(f.time.parseSections('9-10节')),[1230,1330]);
+ assert.equal(f.time.ALL_TIMES[4].label,'16:00 - 16:45');
+});
 test('invalid and out-of-range sections never crash or create false times',()=>{
  const f=fixture(); for(const text of ['12-13节','0-2节','1-a节','', '99999999-1']) assert.deepEqual(plain(f.time.parseSections(text)),[0,0]);
 });
@@ -124,7 +129,7 @@ test('notification denial leaves switch off with no published reminders',async()
 });
 test('system calendar reminder is exactly ten minutes early and opens schedule',async()=>{
  const f=fixture(), core=await readyCourse(f); await core.setCampusOption('reminders',true);
- assert.equal(f.state.reminders.size,1); const request=f.state.requests[0]; assert.deepEqual(plain(request.dateTime),{year:2026,month:10,day:12,hour:7,minute:50});
+ assert.equal(f.state.reminders.size,1); const request=f.state.requests[0]; assert.deepEqual(plain(request.dateTime),{year:2026,month:10,day:12,hour:9,minute:50});
  assert.equal(request.wantAgent.parameters.campusRoute,'schedule'); assert.equal(f.stores.get('xjit_campus_companion').get('reminders'),true);
 });
 test('turning reminders off cancels native reminders and persists switch',async()=>{
@@ -154,14 +159,14 @@ test('reminder registration is capped to leave system capacity',async()=>{
  assert.match(f.values.get('courseReminderStatus'),/已登记最近 24 条/);assert.match(f.values.get('courseReminderStatus'),/打开 APP 自动续订/);
 });
 test('real LiveView payload uses TIMER and millisecond duration',async()=>{
- const f=fixture();f.state.now=new Date(2026,9,12,7,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const view=f.state.liveStarts[0];assert.equal(view.event,'TIMER');assert.equal(view.timer.time,9*60000);
  assert.equal(view.liveViewData.capsule.type,2);assert.equal(view.liveViewData.primary.clickAction.options.wants[0].parameters.campusRoute,'schedule');
 });
 test('enabled LiveView distinguishes waiting, empty day and active countdown from disabled state',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,0);assert.equal(f.values.get('liveViewStatus'),'已开启，等待进入课前 10 分钟');
- f.state.now=new Date(2026,9,12,7,51).getTime();await core.activateCampusCompanion('test-student');
+ f.state.now=new Date(2026,9,12,9,51).getTime();await core.activateCampusCompanion('test-student');
  assert.equal(f.state.liveStarts.length,1);assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  f.state.now=new Date(2026,9,12,12,0).getTime();await core.activateCampusCompanion('test-student');
  assert.equal(f.state.liveStops.length,1);assert.equal(f.values.get('liveViewStatus'),'已开启，今天暂无后续课程');
@@ -179,7 +184,7 @@ test('reminder taps return to the running app bundle and course schedule',async(
  assert.ok(f.state.requests.length>0);for(const request of f.state.requests){assert.equal(request.wantAgent.pkgName,f.state.bundleName);assert.equal(request.wantAgent.abilityName,'EntryAbility');assert.equal(request.wantAgent.parameters.campusRoute,'schedule');}
 });
 test('LiveView taps return to the running app bundle and course schedule',async()=>{
- const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,7,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
 test('LiveView permission denial is reported and never presented as success',async()=>{
@@ -196,8 +201,8 @@ test('minute-of-day values are rejected by real LiveView adapter',async()=>{
  assert.equal(result.ok,false);assert.equal(f.state.liveStarts.length,0);
 });
 test('course LiveView changes timer at class start and stops on switch off',async()=>{
- const f=fixture();f.state.now=new Date(2026,9,12,7,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
- f.state.now=new Date(2026,9,12,8,1).getTime();await core.activateCampusCompanion('test-student');assert.equal(f.state.liveUpdates.length,1);
+ const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
+ f.state.now=new Date(2026,9,12,10,1).getTime();await core.activateCampusCompanion('test-student');assert.equal(f.state.liveUpdates.length,1);
  assert.equal(f.state.liveUpdates[0].liveViewData.capsule.content,'上课中');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.activateCampusCompanion('test-student');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.setCampusOption('live',false);assert.equal(f.state.liveStops.length,1);
