@@ -18,6 +18,8 @@ function materials(api, supported = true, materialState = 0, queryThrows = false
       }
       if (spec === '@ohos.deviceInfo') return { default: { sdkApiVersion: api } };
       if (spec === '@ohos.arkui.uiMaterial') return { default: {
+        ImmersiveMaterial: class { constructor(options) { this.options=options; } },
+        ImmersiveStyle: { REGULAR: 'regular', THIN: 'thin' },
         isImmersiveMaterialSupported() { calls++; if (api < 26) throw new Error('API26 invoked on old OS'); return supported; },
         getMaterialInfo() { if (queryThrows) throw new Error('system material query failed'); return { state: materialState }; }, MaterialState: { DISABLE: 1 },
       } };
@@ -33,6 +35,15 @@ test('encoded API26 version enables native checks', async () => { const f = mate
 test('unsupported hardware uses compatibility material', async () => { assert.equal(await materials(26, false).api.loadImmersiveMaterial(), false); });
 test('system-disabled API26 material falls back',async()=>{assert.equal(await materials(26,true,1).api.loadImmersiveMaterial(),false)});
 test('throwing API26 material query falls back',async()=>{assert.equal(await materials(26,true,0,true).api.loadImmersiveMaterial(),false)});
+test('native material caches all eight appearance combinations independently',async()=>{
+ const f=materials(26);await f.api.loadImmersiveMaterial();const instances=new Set();
+ for(const dark of [false,true])for(const interactive of [false,true])for(const prominent of [false,true]){
+  const material=f.api.glassMaterial(dark,interactive,prominent);assert.equal(f.api.glassMaterial(dark,interactive,prominent),material);instances.add(material);
+  const o=material.options;assert.equal(o.style,prominent?'regular':'thin');assert.equal(o.interactive,interactive);assert.equal(o.applyShadow,false);
+  assert.equal(o.materialColor,dark?'#18203450':'#18FFFFFF');assert.equal(o.lightEffect?.color,interactive?(dark?'#A9C4FF':'#FFFFFF'):undefined);
+ }
+ assert.equal(instances.size,8);
+});
 test('minimum SDK is API23 while target and compile remain API26', () => { const p = JSON.parse(fs.readFileSync(path.join(root, 'build-profile.json5'), 'utf8')).app.products[0]; assert.equal(p.compatibleSdkVersion, '6.1.0(23)'); assert.equal(p.targetSdkVersion, '26.0.0'); });
 test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundBlurStyle\(BlurStyle\./); });
 function mainTabs(reduceMotion) {
