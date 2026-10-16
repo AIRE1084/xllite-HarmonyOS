@@ -36,6 +36,18 @@ W C01203/Ans: ReminderControl com.xjit.app.acceptance, notification not allowed.
 
 隔离重试：临时关闭课程实况窗，关闭再开启课前提醒，设备date为22:45:25 CST，警告于22:45:25.945/.946再次出现。随后截图确认实况窗关闭、课前提醒开启，仍为本轮0条/系统0条及容量触顶。因而警告不依赖实况窗开启，可将调查重点收窄至提醒/通知系统控制；这仍不证明解析失败直接映射1700002。测试结束已点击恢复原先实况窗开启偏好，未变更系统配置。
 
+## 目标系统零配额路径已观察
+
+随后使用limit和ReminderControl分别筛选，得到同秒、同进程903、同线程1165的三条记录：
+
+```text
+10-16 23:34:23.905 E C05301/LIVE_VIEW: ReminderControl Invaild json param
+10-16 23:34:23.905 W C01203/Ans: ReminderControl com.xjit.app.acceptance, notification not allowed.
+10-16 23:34:23.905 W C01203/ANS_REMINDER: The number of reminders exceeds the limit[0].
+```
+
+目标设备确实出现了与公开AllowUseReminder失败分支完全相同的limit[0]日志，与同包系统控制警告同毫秒同线程关联。当前证据支持“系统提醒使用控制未放行/零配额路径”，而非本应用已登记记录过多；客户端降低24条上限或清理本应用0条记录不解决此路径。系统控制配置为何无效、是否与镜像或包资格有关仍未查明，不修改系统配置绕过控制，不推断普通通知授权足以解决。
+
 ## 仍需取得的证据
 
 1. 目标系统对应版本、分支或厂商文档中的实际容量与模拟器限制。
