@@ -6,7 +6,7 @@ let count = 0, failed = 0;
 const tests = [];
 function test(name, run) { tests.push({name,run}); }
 function materials(api, supported = true, materialState = 0, queryThrows = false) {
-  let calls = 0;
+  let calls = 0; const logs=[];
   const module = { exports: {} };
   const source = fs.readFileSync(path.join(root, 'entry/src/main/ets/theme/Materials.ets'), 'utf8');
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
@@ -16,6 +16,7 @@ function materials(api, supported = true, materialState = 0, queryThrows = false
         vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root,'entry/src/main/ets/theme/NativeMaterials.ets'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module:native,exports:native.exports,require:requireMock});
         return native.exports;
       }
+      if (spec === '@ohos.hilog') return {default:{info:(...args)=>logs.push(args)}};
       if (spec === '@ohos.deviceInfo') return { default: { sdkApiVersion: api } };
       if (spec === '@ohos.arkui.uiMaterial') return { default: {
         ImmersiveMaterial: class { constructor(options) { this.options=options; } },
@@ -26,7 +27,7 @@ function materials(api, supported = true, materialState = 0, queryThrows = false
       throw new Error(spec);
     },
   });
-  return { api: module.exports, calls: () => calls };
+  return { api: module.exports, calls: () => calls, logs };
 }
 test('API23 does not call API26 native material methods', () => { const f = materials(23); assert.equal(f.api.supportsImmersiveMaterial(), false); assert.equal(f.calls(), 0); });
 test('encoded API23 version does not call API26 material methods', () => { const f = materials(230000023); assert.equal(f.api.supportsImmersiveMaterial(), false); assert.equal(f.calls(), 0); });
@@ -42,7 +43,8 @@ test('native material caches all eight appearance combinations independently',as
   const o=material.options;assert.equal(o.style,prominent?'regular':'thin');assert.equal(o.interactive,interactive);assert.equal(o.applyShadow,false);
   assert.equal(o.materialColor,dark?'#18203450':'#18FFFFFF');assert.equal(o.lightEffect?.color,interactive?(dark?'#A9C4FF':'#FFFFFF'):undefined);
  }
- assert.equal(instances.size,8);
+ assert.equal(instances.size,8);assert.equal(f.logs.length,8);
+ assert.ok(f.logs.every(log=>log[1]==='XJITMaterial' && log[2]==='Native material created'));
 });
 test('minimum SDK is API23 while target and compile remain API26', () => { const p = JSON.parse(fs.readFileSync(path.join(root, 'build-profile.json5'), 'utf8')).app.products[0]; assert.equal(p.compatibleSdkVersion, '6.1.0(23)'); assert.equal(p.targetSdkVersion, '26.0.0'); });
 test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundBlurStyle\(BlurStyle\./); });
