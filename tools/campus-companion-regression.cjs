@@ -161,6 +161,12 @@ test('fresh calendar cannot overwrite manual calibration but new term resets it'
  await core.acceptCampusSchedule('test-student',{term:'2026-2027-2',courses:[course()],scheduleFetchedAt:f.state.now+2},0);
  assert.equal(f.values.get('scheduleWeekKnown'),false);
 });
+test('companion ignores invalid semester totals consistently with schedule page',async()=>{
+ for(const totalWeeks of [Infinity,NaN,0,-1,1.5,61,999]){
+  const f=fixture();await readyCourse(f,[course()],{totalWeeks});
+  assert.equal(f.get('services/WidgetService').readWidgetSnapshot({filesDir:'/data'}).totalWeeks,20);
+ }
+});
 test('snapshot read boundary rejects invalid shape and week metadata',()=>{
  const f=fixture(),widgets=f.get('services/WidgetService'),ctx={filesDir:'/data'};
  for(const value of [{},snapshot({courses:[null]}),snapshot({courses:[course({weeks:12})]}),snapshot({totalWeeks:1.5}),snapshot({currentWeek:99}),snapshot({widgetEnabled:'yes'})]){
