@@ -15,6 +15,8 @@ Materials.ets 顶层静态导入 @ohos.arkui.uiMaterial；本机 SDK 将该模�
 ```powershell
 $env:HDC_SERVER_PORT = '8710'
 & 'D:\data\devecostudionext\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' list targets
+& .\tools\check-device-api.ps1 -Target 'TARGET' -ExpectedApi 23
+# Stop here if the API gate fails; do not continue installation as API23 acceptance.
 & .\tools\prepare-simulator.ps1 -BuildRoot 'D:\XJITApp-api23-device-check' -Target 'TARGET' -Install -NativeSchool -EvidenceName 'api23-real-device'
 & 'D:\data\devecostudionext\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' -t TARGET shell aa start -a EntryAbility -b com.xjit.app.acceptance
 ```
