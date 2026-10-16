@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T16:14:20.975Z",
+  "checkedAt": "2026-10-16T16:23:29.197Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 41,
+  "checks": 42,
   "failed": 0,
   "results": [
     {
@@ -83,6 +83,10 @@
     },
     {
       "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
+      "ok": true
+    },
+    {
+      "name": "companion ignores invalid semester totals consistently with schedule page",
       "ok": true
     },
     {

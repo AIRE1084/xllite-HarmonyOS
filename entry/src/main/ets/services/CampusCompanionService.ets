@@ -197,7 +197,10 @@ export function acceptCampusSchedule(account: string, data: Record<string, Objec
     const fetchedAt = Number(data['scheduleFetchedAt']) || Date.now()
     if (previous !== null && previous.updatedAt === fetchedAt) { publishWeek(); return }
     const sourceWeek = Number(data['currentWeek'] ?? data['week'])
-    const total = Math.max(1, Math.min(60, Math.floor(Number(data['totalWeeks'] ?? data['weeksTotal']) || previous?.totalWeeks || 20)))
+    const primaryTotal = Number(data['totalWeeks'])
+    const alternateTotal = Number(data['weeksTotal'])
+    const total = Number.isInteger(primaryTotal) && primaryTotal >= 1 && primaryTotal <= 60 ? primaryTotal :
+      Number.isInteger(alternateTotal) && alternateTotal >= 1 && alternateTotal <= 60 ? alternateTotal : previous?.totalWeeks ?? 20
     const weekKnown = Number.isInteger(sourceWeek) && sourceWeek >= 1 && sourceWeek <= total
     const start = parseLocalDate(String(data['termStartDate'] ?? ''))
     let week = weekKnown ? sourceWeek : previous?.currentWeek ?? 1
