@@ -44,6 +44,15 @@ function fixture(name) {
   const page = new module.exports[name](); page.getUIContext = () => ({});
   return { page, state };
 }
+test('schedule tab handles thrown request and permits retry',async()=>{
+ const f=fixture('ScheduleTab'); f.page.alive=true;
+ const task=f.page.loadSchedule(false); await until(()=>f.state.requests.length===1);
+ f.state.requests[0].reject(Error('transport')); await task;
+ assert.equal(f.page.requestBusy,false); assert.equal(f.page.loading,false); assert.ok(f.page.errorMsg);
+ const retry=f.page.loadSchedule(false); await until(()=>f.state.requests.length===2);
+ f.state.requests[1].resolve({ok:false,error:'fixture error'}); await retry;
+ assert.equal(f.page.errorMsg,'fixture error');
+});
 const queries = [
   ['TransactionsPage', 'transactions', 'items'], ['GradesPage', 'normalGrades', 'grades'], ['ExamsPage', 'exams', 'exams'],
   ['BalancePage', 'accounts', 'accounts'], ['TrainingPage', 'training', 'items'], ['SchedulePage', 'courses', 'courses'],

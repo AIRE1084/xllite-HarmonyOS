@@ -131,6 +131,10 @@ export struct ScheduleTab {
     
       } else if (!this.hasLoaded) { this.errorMsg = res.error }
       else if (forceRefresh) { safeToast(this.getUIContext(), '更新失败，保留已有课表') }
+    } catch (_error) {
+      if (!this.alive || epoch !== getCacheEpoch() || username !== getUsername()) return
+      if (!this.hasLoaded) this.errorMsg = '连接未完成，请稍后重试'
+      else if (forceRefresh) safeToast(this.getUIContext(), '更新失败，保留已有课表')
     } finally {
       this.requestBusy = false
       if (this.alive && epoch === getCacheEpoch()) { this.loading = false; this.refreshing = false }
