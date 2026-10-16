@@ -8,6 +8,10 @@ Materials.ets 顶层静态导入 @ohos.arkui.uiMaterial；本机 SDK 将该模�
 
 保留此风险，不在缺少证据时宣称静态导入必然崩溃或必然兼容。模块延迟加载与界面组件分拆应依官方可用机制和实际旧系统结果选择，不能仅用新版本接口检查替换旧版本判断。
 
+## 延迟导入资料核对
+
+已读取[OpenHarmony延迟加载官方文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/arkts-utils/arkts-lazy-import.md)：lazy import自API12支持，但其模块解析在冷启动仍会遍历，只将模块源码执行延至首次使用；动态import则在实际执行时触发模块解析及执行。因此把uiMaterial静态导入机械替换为lazy import，不足以证明旧系统缺少模块时可正常链接。本机编译工具确有process_lazy_import实现，但编译器接受语法不替代旧系统运行证据。当前未改生产导入方式，后续需验证动态导入的系统模块支持及ArkUI同步材质消费方式，或取得真实API23结果后再选方案。
+
 ## 接入设备后的操作
 
 以下命令在项目根目录执行，TARGET 用设备列表中确认的 API23 目标替换；不默认使用当前 API26 目标。
