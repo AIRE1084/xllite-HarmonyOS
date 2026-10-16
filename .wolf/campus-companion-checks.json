@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T16:07:02.334Z",
+  "checkedAt": "2026-10-16T16:12:05.585Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 40,
+  "checks": 41,
   "failed": 0,
   "results": [
     {
@@ -83,6 +83,10 @@
     },
     {
       "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
+      "ok": true
+    },
+    {
+      "name": "snapshot read boundary rejects invalid shape and week metadata",
       "ok": true
     },
     {
