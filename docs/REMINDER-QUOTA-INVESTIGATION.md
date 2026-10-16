@@ -15,6 +15,19 @@ API26验收模拟器，应用首条publishReminder返回1700002；getValidRemind
 
 这些是可变master分支的公开代码，不是当前HarmonyOS7模拟器的源码或配置证明。不能据此认定模拟器有12000条记录，也不能认定其普通应用上限一定是30。GitHub读取出现连接中断，随后Gitee公开镜像读取成功。
 
+## 系统日志新线索
+
+hilog以Reminder为关键词返回同一时刻两条记录（设备日志时间10-16 22:40:07.400；不把它当作主机时间）：
+
+```text
+E C05301/LIVE_VIEW: [ans_ctrl_config_manager.cpp(ReminderControl:134)]ReminderControl Invaild json param
+W C01203/Ans: ReminderControl com.xjit.app.acceptance, notification not allowed.
+```
+
+这证明该包在系统提醒控制检查中出现配置解析/通知控制警告，但标签为LIVE_VIEW，尚未与publishReminder返回1700002对应到同一次调用。不能直接推断课程提醒容量错误就是此配置引起，也不能用普通isNotificationEnabled返回值排除所有系统侧控制。按小写reminder、overload和upper筛选未返回记录。
+
+下一次重现应把单次开关操作与紧接的系统日志关联，保留时间和模块，不记录账户、token或课程内容；不修改系统控制配置。
+
 ## 仍需取得的证据
 
 1. 目标系统对应版本、分支或厂商文档中的实际容量与模拟器限制。
