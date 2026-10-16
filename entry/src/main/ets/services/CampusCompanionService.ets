@@ -206,7 +206,9 @@ export function acceptCampusSchedule(account: string, data: Record<string, Objec
     let week = weekKnown ? sourceWeek : previous?.currentWeek ?? 1
     let anchor = weekKnown ? localDateText(new Date(fetchedAt)) : previous?.anchorDate ?? localDateText(new Date(fetchedAt))
     let known = weekKnown || previous?.weekKnown === true
-    const manual = previous?.manuallyCalibrated === true
+    const inheritedWeekValid = previous !== null && Number.isInteger(previous.currentWeek) && previous.currentWeek >= 1 && previous.currentWeek <= total
+    if (!weekKnown && !inheritedWeekValid) { week = 1; known = false }
+    const manual = previous?.manuallyCalibrated === true && inheritedWeekValid
     if (manual && previous !== null) {
       week = previous.currentWeek; anchor = previous.anchorDate; known = previous.weekKnown
     } else if (!weekKnown && start !== null) { week = 1; anchor = localDateText(start); known = true }

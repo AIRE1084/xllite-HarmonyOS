@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T16:24:47.954Z",
+  "checkedAt": "2026-10-16T16:27:21.767Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 43,
+  "checks": 44,
   "failed": 0,
   "results": [
     {
@@ -83,6 +83,10 @@
     },
     {
       "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
+      "ok": true
+    },
+    {
+      "name": "shortened semester invalidates out-of-range inherited calibration without corrupting snapshot",
       "ok": true
     },
     {
