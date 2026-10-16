@@ -11,7 +11,7 @@ export function supportsImmersiveMaterial(): boolean {
 export function loadImmersiveMaterial(): Promise<boolean> {
   const rawApi = deviceInfo.sdkApiVersion
   const api = rawApi >= 100000000 ? rawApi % 1000 : rawApi
-  if (api < 26) return Promise.resolve(false)
+  if (!Number.isInteger(rawApi) || !Number.isInteger(api) || api < 26) return Promise.resolve(false)
   if (checkSupport !== null) return Promise.resolve(supportsImmersiveMaterial())
   if (loading !== null) return loading
   loading = import('./NativeMaterials').then((adapter) => {
