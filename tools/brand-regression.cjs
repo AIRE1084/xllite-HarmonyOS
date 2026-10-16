@@ -25,4 +25,12 @@ for (const [relative, size] of variants) {
   }
   console.log('PASS ' + relative + ': ' + size + 'px, ' + bytes.length + ' bytes');
 }
-console.log('4 brand artifacts verified; pixel opacity and mask appearance require separate inspection');
+const app = JSON.parse(fs.readFileSync(path.join(root, 'AppScope/app.json5'), 'utf8')).app;
+const moduleConfig = JSON.parse(fs.readFileSync(path.join(root, 'entry/src/main/module.json5'), 'utf8')).module;
+const entry = moduleConfig.abilities.find(ability => ability.name === moduleConfig.mainElement);
+assert.ok(entry, 'main ability must exist');
+assert.equal(app.icon, '$media:app_icon', 'application icon binding');
+assert.equal(entry.icon, '$media:icon', 'main ability icon binding');
+assert.equal(entry.startWindowIcon, '$media:icon', 'startup icon binding');
+console.log('PASS application, main ability and startup icon bindings');
+console.log('4 brand artifacts and 3 bindings verified; pixel opacity and mask appearance require separate inspection');
