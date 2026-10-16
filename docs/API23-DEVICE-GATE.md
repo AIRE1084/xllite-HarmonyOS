@@ -16,9 +16,7 @@ Materials.ets 顶层静态导入 @ohos.arkui.uiMaterial；本机 SDK 将该模�
 $env:HDC_SERVER_PORT = '8710'
 & 'D:\data\devecostudionext\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' list targets
 & .\tools\check-device-api.ps1 -Target 'TARGET' -ExpectedApi 23
-# Stop here if the API gate fails; do not continue installation as API23 acceptance.
-& .\tools\prepare-simulator.ps1 -BuildRoot 'D:\XJITApp-api23-device-check' -Target 'TARGET' -Install -NativeSchool -EvidenceName 'api23-real-device'
-& 'D:\data\devecostudionext\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe' -t TARGET shell aa start -a EntryAbility -b com.xjit.app.acceptance
+# Stop if the gate fails. Installation requires a separately verified API23 signing pipeline.
 ```
 
 1. 从系统设置确认系统/API版本，并记录目标标识和已安装验收包SHA256；连接地址本身不证明API版本。
@@ -26,6 +24,10 @@ $env:HDC_SERVER_PORT = '8710'
 3. 原生模糊及高光壳体可见，增强材质不执行；浅深色与减少动效切换正常。运行日志只收集模块错误和栈，过滤凭据及业务个人数据。
 4. 如需业务验证，由用户在应用内手动登录，再执行课表与个人摘要只读检查，避免支付、充值和付款码。
 5. 连续切换三个标签、切后台恢复、强制停止后启动，验证最终落点、偏好与会话恢复；文字放大和小屏单独留证。
+
+## 安装工具边界
+
+现有prepare-simulator.ps1仅支持API26模拟器：设备前置检查固定26，签名compatibleVersion参数为26，证据记录api为26。此前给出的API23调用该工具命令已移除；BuildRoot目录包含api23不改变这一事实。API23设备接入后，需先确认该设备接受的调试签名/描述文件及兼容签名参数，单独建立安装链，再执行上述模块链接和绘制验收。不得仅移除版本检查就宣称工具支持API23。
 
 ## 结果判定
 
