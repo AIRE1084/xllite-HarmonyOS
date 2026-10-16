@@ -51,4 +51,9 @@ test('enabling reduced motion retires a pending theme reveal and clears overlay'
  const page=new module.exports.ThemeWash(); page.getUIContext=()=>({animateTo:(_o,fn)=>fn()}); page.onFlip(); assert.equal(timers.size,1);
  values.set('reduceMotion',true); page.onFlip(); assert.equal(timers.size,0); assert.equal(page.washOpacity,0);
 });
+test('dock scrim fully isolates scrolling glyphs below the fade edge', () => {
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
+ assert.ok(source.includes("['#FF152039', 0.25]")); assert.ok(source.includes("['#FFEAF0FB', 0.25]"));
+ assert.ok(source.includes('BlurTabBar({')); assert.ok(source.includes('.hitTestBehavior(HitTestMode.None)'));
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;
