@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
   [string]$DevEcoRoot = 'D:\data\devecostudionext\DevEco Studio',
   [string]$BuildRoot = 'D:\XJITApp-api26-simulator',
@@ -36,8 +36,8 @@ foreach ($required in @($node, $java, $keytool, $hdc, $signer, $keystore, $hvigo
   if (-not (Test-Path -LiteralPath $required)) { throw "Existing tool missing: $required. No download attempted." }
 }
 if ((Get-Content -LiteralPath (Join-Path $modules '@ohos\hvigor-ohos-plugin\package.json') -Raw | ConvertFrom-Json).version -ne '6.26.8') { throw 'Existing API26 cache does not match 6.26.8.' }
-$api = (& $hdc -t $Target shell param get const.ohos.apiversion | Out-String).Trim()
-if ($api -ne '26') { throw "Expected API26 emulator, got $api" }
+# This signing and evidence pipeline supports API26 simulators only.
+& (Join-Path $PSScriptRoot 'check-device-api.ps1') -Target $Target -ExpectedApi 26 -HdcPath $hdc
 $udidText = & $hdc -t $Target shell bm get -u
 $udid = ($udidText | Where-Object { $_ -match '^[A-Fa-f0-9]{32,128}$' } | Select-Object -First 1).Trim()
 if (-not $udid) { throw 'Emulator UDID unavailable.' }
