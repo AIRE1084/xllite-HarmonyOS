@@ -30,8 +30,8 @@ function readNumber(data: Record<string, Object>, keys: string[], fallback: numb
     const value = data[key]
     if (value !== undefined && value !== null) {
       const n = Number(value)
-      if (!isNaN(n) && n > 0) {
-        return Math.floor(n)
+      if (Number.isInteger(n) && n >= 1 && n <= 60) {
+        return n
       }
     }
   }
