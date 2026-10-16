@@ -56,4 +56,10 @@ test('dock scrim fully isolates scrolling glyphs below the fade edge', () => {
  assert.ok(source.includes("['#FF152039', 0.25]")); assert.ok(source.includes("['#FFEAF0FB', 0.25]"));
  assert.ok(source.includes('BlurTabBar({')); assert.ok(source.includes('.hitTestBehavior(HitTestMode.None)'));
 });
+test('flowing dock has one shared noninteractive indicator and vertical labels',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
+ assert.match(source,/Column\(\{ space: 3 \}\)/); assert.match(source,/\.translate\(\{ x: this.currentIndex \* this.itemWidth \}\)/);
+ assert.match(source,/\.onAreaChange/); assert.match(source,/\.hitTestBehavior\(HitTestMode.None\)/);
+ assert.match(source,/this.reduceMotion \? 0 :/); assert.ok(!source.includes('setTimeout')); assert.ok(!source.includes("'#D9E5EDFF'"));
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;
