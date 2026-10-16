@@ -1,4 +1,6 @@
-import { safeReplace, safePush } from '../utils/RouterHelper'
+import { safeReplace } from '../utils/RouterHelper'
+import { gatewayLogin, acceptGatewayLogin } from '../services/XlliteGateway'
+import { getCacheEpoch } from '../services/MemoryCache'
 import { loadSession, clearSession } from '../services/AuthManager'
 import { getColors, ColorPalette } from '../theme/Colors'
 import { AmbientBackground } from '../components/AmbientBackground'
@@ -9,6 +11,9 @@ import { Motion, motionDuration } from '../theme/Motion'
 @Entry
 @Component
 struct LoginPage {
+  @State username: string = ''
+  @State password: string = ''
+  @State captcha: string = ''
   @State restoring: boolean = true
   @State loading: boolean = false
   @State forgotLoading: boolean = false
@@ -29,25 +34,35 @@ struct LoginPage {
       else this.restoring = false
     } catch (_e) { if (this.alive) { this.restoring = false; this.errorMsg = '登录状态读取失败，请重新认证' } }
   }
-  aboutToDisappear(): void { this.alive = false }
+  aboutToDisappear(): void { this.alive = false; this.password = ''; this.captcha = '' }
   onThemeChange(): void { this.palette = getColors(this.isDark) }
   async handleLogin(): Promise<void> {
     if (this.loading || this.restoring || this.showForgot) return
+    if (this.username.trim().length === 0 || this.password.length === 0) {
+      this.errorMsg = '请输入学号和统一身份认证密码'; return
+    }
     this.loading = true; this.errorMsg = ''
+    const username: string = this.username.trim()
+    const password: string = this.password
+    const captcha: string = this.captcha.trim()
     try {
       await clearSession()
-      if (this.alive) safePush(this.getUIContext(), { url: 'pages/SchoolServicePage', params: { 'mode': 'login' } })
-    } catch (_e) { if (this.alive) this.errorMsg = '认证页面准备失败，请重试' }
+      if (!this.alive) return
+      const epoch: number = getCacheEpoch()
+      const response = await gatewayLogin(username, password, captcha)
+      if (!this.alive || epoch !== getCacheEpoch()) return
+      if (!response.ok) { this.errorMsg = response.error; return }
+      const saved = await acceptGatewayLogin(username, response.data, epoch)
+      if (!this.alive || epoch !== getCacheEpoch()) return
+      if (!saved.ok) { this.errorMsg = saved.error; return }
+      this.password = ''; this.captcha = ''
+      safeReplace(this.getUIContext(), { url: 'pages/MainTabs' })
+    } catch (_e) { if (this.alive) this.errorMsg = '登录未完成，请稍后重试' }
     finally { if (this.alive) this.loading = false }
   }
   async handleForgot(): Promise<void> {
-    if (this.forgotLoading || this.showForgot) return
-    this.forgotLoading = true
-    try {
-      // School CAS password reset entry; opens the school service flow, returns to login.
-      if (this.alive) safePush(this.getUIContext(), { url: 'pages/SchoolServicePage', params: { 'mode': 'login', 'forgot': '1' } })
-    } catch (_e) { if (this.alive) this.errorMsg = '找回入口准备失败，请重试' }
-    finally { if (this.alive) this.forgotLoading = false }
+    if (this.loading) return
+    this.password = ''; this.captcha = ''; this.showForgot = true
   }
   build() {
     Stack() {
@@ -68,9 +83,23 @@ struct LoginPage {
             NativeGlass({ contentPadding: 24, radius: 28, prominent: true }) {
               Column({ space: 18 }) {
                 Text('连接你的校园').fontSize(22).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface).width('100%')
-                Text('使用新疆理工学院统一身份认证。账号、密码与验证码在学校登录页中填写。')
+                Text('使用统一身份认证账号登录，一次连接教务与校园卡。')
                   .fontSize(14).fontColor(this.palette.onSurfaceVariant).lineHeight(24).width('100%')
-                Text('cas.xjit.edu.cn').fontSize(13).fontColor(this.palette.primary).width('100%')
+                TextInput({ placeholder: '学号 / 校园账号', text: this.username })
+                  .height(52).fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
+                  .backgroundColor(this.palette.surfaceVariant).borderRadius(16).enabled(!this.loading)
+                  .onChange((value: string): void => { this.username = value })
+                  .accessibilityText('校园账号')
+                TextInput({ placeholder: '统一身份认证密码', text: this.password })
+                  .type(InputType.Password).height(52).fontColor(this.palette.onSurface)
+                  .placeholderColor(this.palette.onSurfaceVariant).backgroundColor(this.palette.surfaceVariant)
+                  .borderRadius(16).enabled(!this.loading)
+                  .onChange((value: string): void => { this.password = value })
+                  .accessibilityText('统一身份认证密码')
+                TextInput({ placeholder: '验证码（仅在学校要求时填写）', text: this.captcha })
+                  .height(48).fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
+                  .backgroundColor(this.palette.surfaceVariant).borderRadius(16).enabled(!this.loading)
+                  .onChange((value: string): void => { this.captcha = value })
                 if (this.errorMsg.length > 0) { Text(this.errorMsg).fontSize(12).fontColor(this.palette.error).width('100%') }
                 Button(this.loading ? '正在连接…' : '登录').width('100%').height(52)
                   .backgroundColor(this.palette.primary).fontColor(this.palette.onPrimary).fontSize(16)
@@ -82,19 +111,15 @@ struct LoginPage {
                   .enabled(!this.forgotLoading).onClick(() => this.handleForgot())
               }.width('100%')
             }
-            Text('登录后直接连接学校服务，无需重定向').fontSize(12).fontColor(this.palette.onSurfaceVariant)
+            Text('全程应用内登录 · 密码不保存在本机').fontSize(12).fontColor(this.palette.onSurfaceVariant)
           }.width('100%').padding({ left: 24, right: 24, top: this.safeAreaTop + 64, bottom: this.safeAreaBottom + 32 })
             .constraintSize({ maxWidth: 520 })
         }.width('100%').height('100%').scrollBar(BarState.Off)
       } else {
         Column({ space: 20 }) {
           Text('找回密码').fontSize(20).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface)
-          Text('请通过学校统一身份认证入口重置 CAS 密码，完成后返回本应用重新登录。')
+          Text('密码由学校统一身份认证平台管理。请联系学校信息服务部门重置密码，完成后在这里重新登录。')
             .fontSize(13).fontColor(this.palette.onSurfaceVariant).lineHeight(22)
-          Button(this.forgotLoading ? '正在打开…' : '前往学校找回').width('100%').height(52)
-            .backgroundColor(this.palette.primary).fontColor(this.palette.onPrimary).fontSize(15)
-            .fontWeight(FontWeight.Medium).borderRadius(16).enabled(!this.forgotLoading)
-            .onClick(() => this.handleForgot())
           Button('返回登录').width('100%').height(44).backgroundColor(Color.Transparent)
             .fontColor(this.palette.onSurfaceVariant).fontSize(14)
             .onClick((): void => { this.showForgot = false; this.forgotLoading = false })

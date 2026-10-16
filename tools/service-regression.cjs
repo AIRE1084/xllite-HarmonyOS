@@ -92,6 +92,18 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('gateway token alone authorizes all card business without school web authentication', async () => {
+  const f = fixture(); await f.auth.saveSchoolSession('student', 'gateway-fixture', Date.now()+3600000, f.cache.getCacheEpoch(), 'xllite-gateway');
+  f.state.respond = async () => ({responseCode:200,result:JSON.stringify({ok:true,data:{accounts:[]}})});
+  const r = await f.api.callFeature('newcard.balance','student','',{});
+  assert.equal(r.ok,true); assert.equal(f.state.requests.length,1); assert.equal(f.state.requests[0].options.header.Authorization,'Bearer gateway-fixture');
+});
+test('changing from school session to gateway cannot reuse school cache', async () => {
+  const f = fixture(); await f.seedToken(); await f.api.callFeature('jw.profile','student','',{});
+  await f.auth.saveSchoolSession('student','gateway-fixture',Date.now()+3600000,f.cache.getCacheEpoch(),'xllite-gateway');
+  f.state.respond = async () => ({responseCode:200,result:JSON.stringify({ok:true,data:{name:'gateway-name'}})});
+  const r = await f.api.callFeature('jw.profile','student','',{}); assert.equal(r.data.name,'gateway-name'); assert.equal(r.fromCache,false);
+});
 const CACHE = 'xjit_http_cache', AUTH = 'xjit_session', TODOS = 'xjit_todos';
 
 test('parallel cache writes reuse preferences and batch disk flush', async () => {

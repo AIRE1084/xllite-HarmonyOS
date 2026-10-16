@@ -43,7 +43,7 @@ function cleanParams(params: Record<string, Object>): Record<string, Object> {
 }
 
 function makeCacheKey(feature: string, username: string, params: Record<string, Object>): string {
-  return 'school-native-v1|' + feature + '|' + username + '|' + JSON.stringify(cleanParams(params)) + (feature.startsWith('newcard.') ? '|card-' + getCardCacheNamespace() + '-' + String(getCardSessionEpoch()) : '')
+  return (isGatewayAuth() ? 'xllite-gateway-v1|' : 'school-native-v1|') + feature + '|' + username + '|' + JSON.stringify(cleanParams(params)) + (feature.startsWith('newcard.') ? '|card-' + getCardCacheNamespace() + '-' + String(getCardSessionEpoch()) : '')
 }
 
 
@@ -75,12 +75,12 @@ export async function callFeature(
 ): Promise<CallResult> {
   const epoch = getCacheEpoch()
   if (username.length === 0 || username !== getUsername() || getAccessToken().length === 0) return expiredSessionResult()
-  if (feature.startsWith('newcard.') && getCardToken().length === 0) {
+  if (!isGatewayAuth() && feature.startsWith('newcard.') && getCardToken().length === 0) {
     const result = new CallResult(); result.error = '请先在学校一卡通页面完成认证'; result.statusCode = 401; result.officialUrl = schoolFeatureUrl(feature); return result
   }
   const cardEpoch = getCardSessionEpoch()
   const sessionValid = (): boolean => epoch === getCacheEpoch() && username === getUsername() && getAccessToken().length > 0 &&
-    (!feature.startsWith('newcard.') || (cardEpoch === getCardSessionEpoch() && getCardToken().length > 0))
+    (isGatewayAuth() || !feature.startsWith('newcard.') || (cardEpoch === getCardSessionEpoch() && getCardToken().length > 0))
   const forceRefresh = params['_forceRefresh'] === true
   const cacheable = shouldCacheFeature(feature)
   const cacheKey = makeCacheKey(feature, username, params)
@@ -133,7 +133,7 @@ async function refreshInBackground(feature: string, username: string, password: 
   const cardEpoch = getCardSessionEpoch()
   const sessionValid = (): boolean => epoch === getCacheEpoch() && username === getUsername() &&
     getAccessToken().length > 0 &&
-    (!feature.startsWith('newcard.') || (cardEpoch === getCardSessionEpoch() && getCardToken().length > 0))
+    (isGatewayAuth() || !feature.startsWith('newcard.') || (cardEpoch === getCardSessionEpoch() && getCardToken().length > 0))
   if (!sessionValid()) return
   const runKey = String(epoch) + '|' + cacheKey
   const existing = inflightRuns.get(runKey)
@@ -164,12 +164,12 @@ export async function prewarmCampusData(username: string, password: string): Pro
       // At most two warmup requests at once; respect valid cache and share in-flight reads.
       await Promise.all([
         callFeature('jw.profile', username, password, {}),
-        getCardToken().length > 0 ? callFeature('newcard.balance', username, password, {}) : Promise.resolve(new CallResult()),
+        (isGatewayAuth() || getCardToken().length > 0) ? callFeature('newcard.balance', username, password, {}) : Promise.resolve(new CallResult()),
       ])
       if (epoch !== getCacheEpoch() || AppStorage.get<boolean>('appActive') === false ||
         AppStorage.get<boolean>('mainPageActive') === false) return
       await Promise.all([
-        getCardToken().length > 0 ? callFeature('newcard.transactions', username, password, {}) : Promise.resolve(new CallResult()),
+        (isGatewayAuth() || getCardToken().length > 0) ? callFeature('newcard.transactions', username, password, {}) : Promise.resolve(new CallResult()),
       ])
     } finally { warmupTasks.delete(key) }
   })()
