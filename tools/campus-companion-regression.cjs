@@ -183,7 +183,7 @@ test('system reminder quota preserves already registered courses',async()=>{
  let attempts=0;f.state.publishHook=async()=>{if(++attempts>1)throw {code:1700002};};
  await core.setCampusOption('reminders',true);
  assert.equal(f.state.reminders.size,1);assert.equal(f.values.get('courseReminderEnabled'),true);
- assert.match(f.values.get('courseReminderStatus'),/系统提醒容量已满/);
+ assert.match(f.values.get('courseReminderStatus'),/系统提醒受限（1700002）：容量或系统提醒控制限制/);
  assert.ok(!f.values.get('courseReminderStatus').includes('检查通知权限'));
 });
 test('quota status uses native reminder count without assuming zero on query failure',async()=>{

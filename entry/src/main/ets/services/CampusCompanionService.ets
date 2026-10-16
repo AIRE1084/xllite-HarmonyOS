@@ -139,7 +139,7 @@ async function syncReminders(): Promise<void> {
     lastPlan = capacityFull ? '' : plan
     AppStorage.setOrCreate<string>('courseReminderStatus', !enabled ? '已关闭并取消课程提醒' :
       !valid ? '等待课表同步和当前周次校准' : capacityFull ?
-         '系统提醒容量已满，已登记最近 ' + ids.length + ' 条' + capacityDetail + '；其余未登记，打开 APP 后重试' : upcoming.length > REMINDER_LIMIT ?
+         '系统提醒受限（1700002）：容量或系统提醒控制限制；已登记最近 ' + ids.length + ' 条' + capacityDetail + '；其余未登记，请检查系统提醒设置后重试' : upcoming.length > REMINDER_LIMIT ?
         '未来 7 天共 ' + upcoming.length + ' 条，已登记最近 ' + ids.length + ' 条；打开 APP 自动续订' :
         '已登记未来 7 天 ' + ids.length + ' 条课前提醒')
     if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
