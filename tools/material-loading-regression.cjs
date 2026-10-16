@@ -20,6 +20,8 @@ function componentFixture(){
 }
 (async()=>{
  const old=fixture(23);assert.equal(await old.api.loadImmersiveMaterial(),false);assert.equal(old.loads(),0);
+ for(const version of [NaN,Infinity,26.5,undefined]){const invalid=fixture(version);assert.equal(await invalid.api.loadImmersiveMaterial(),false);assert.equal(invalid.loads(),0);}
+ console.log('PASS invalid API metadata never loads enhanced material');
  const modern=fixture(26);const a=modern.api.loadImmersiveMaterial(),b=modern.api.loadImmersiveMaterial();assert.equal(a,b);assert.equal(await a,true);assert.equal(modern.loads(),1);assert.equal(modern.api.supportsImmersiveMaterial(),true);
  const broken=fixture(26,true);assert.equal(await broken.api.loadImmersiveMaterial(),false);assert.equal(broken.api.supportsImmersiveMaterial(),false);
  console.log('PASS old API skips module; concurrent loads share promise; missing adapter falls back');
