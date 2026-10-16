@@ -3,13 +3,19 @@ const fs = require('node:fs'), path = require('node:path'), vm = require('node:v
 const root = path.resolve(__dirname, '..');
 const ts = require(process.env.XJIT_TYPESCRIPT_PATH || 'D:/data/devecostudionext/DevEco Studio/sdk/default/openharmony/ets/build-tools/ets-loader/node_modules/typescript/lib/typescript.js');
 let count = 0, failed = 0;
-function test(name, run) { count++; try { run(); console.log('PASS ' + name); } catch (e) { failed++; console.error('FAIL ' + name + ': ' + e.message); } }
+const tests = [];
+function test(name, run) { tests.push({name,run}); }
 function materials(api, supported = true, materialState = 0, queryThrows = false) {
   let calls = 0;
   const module = { exports: {} };
   const source = fs.readFileSync(path.join(root, 'entry/src/main/ets/theme/Materials.ets'), 'utf8');
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
-    module, exports: module.exports, require(spec) {
+    module, exports: module.exports, require: function requireMock(spec) {
+      if (spec === './NativeMaterials') {
+        const native = {exports:{}};
+        vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(root,'entry/src/main/ets/theme/NativeMaterials.ets'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module:native,exports:native.exports,require:requireMock});
+        return native.exports;
+      }
       if (spec === '@ohos.deviceInfo') return { default: { sdkApiVersion: api } };
       if (spec === '@ohos.arkui.uiMaterial') return { default: {
         isImmersiveMaterialSupported() { calls++; if (api < 26) throw new Error('API26 invoked on old OS'); return supported; },
@@ -22,11 +28,11 @@ function materials(api, supported = true, materialState = 0, queryThrows = false
 }
 test('API23 does not call API26 native material methods', () => { const f = materials(23); assert.equal(f.api.supportsImmersiveMaterial(), false); assert.equal(f.calls(), 0); });
 test('encoded API23 version does not call API26 material methods', () => { const f = materials(230000023); assert.equal(f.api.supportsImmersiveMaterial(), false); assert.equal(f.calls(), 0); });
-test('API26 material checks hardware support', () => { const f = materials(26); assert.equal(f.api.supportsImmersiveMaterial(), true); assert.equal(f.calls(), 1); });
-test('encoded API26 version enables native checks', () => { const f = materials(260000026); assert.equal(f.api.supportsImmersiveMaterial(), true); assert.equal(f.calls(), 1); });
-test('unsupported hardware uses compatibility material', () => { assert.equal(materials(26, false).api.supportsImmersiveMaterial(), false); });
-test('system-disabled API26 material falls back',()=>{assert.equal(materials(26,true,1).api.supportsImmersiveMaterial(),false)});
-test('throwing API26 material query falls back',()=>{assert.equal(materials(26,true,0,true).api.supportsImmersiveMaterial(),false)});
+test('API26 material checks hardware support', async () => { const f = materials(26); assert.equal(await f.api.loadImmersiveMaterial(), true); assert.equal(f.calls(), 1); });
+test('encoded API26 version enables native checks', async () => { const f = materials(260000026); assert.equal(await f.api.loadImmersiveMaterial(), true); assert.equal(f.calls(), 1); });
+test('unsupported hardware uses compatibility material', async () => { assert.equal(await materials(26, false).api.loadImmersiveMaterial(), false); });
+test('system-disabled API26 material falls back',async()=>{assert.equal(await materials(26,true,1).api.loadImmersiveMaterial(),false)});
+test('throwing API26 material query falls back',async()=>{assert.equal(await materials(26,true,0,true).api.loadImmersiveMaterial(),false)});
 test('minimum SDK is API23 while target and compile remain API26', () => { const p = JSON.parse(fs.readFileSync(path.join(root, 'build-profile.json5'), 'utf8')).app.products[0]; assert.equal(p.compatibleSdkVersion, '6.1.0(23)'); assert.equal(p.targetSdkVersion, '26.0.0'); });
 test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundBlurStyle\(BlurStyle\./); });
 function mainTabs(reduceMotion) {
@@ -93,4 +99,4 @@ test('dock sits lower while bottom inset never becomes negative',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
  assert.ok(source.includes('bottom: Math.max(0, this.safeAreaBottom - 8)'));
 });
-console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;
+(async()=>{for(const {name,run} of tests){count++;try{await run();console.log('PASS '+name)}catch(e){failed++;console.error('FAIL '+name+': '+e.message)}}console.log(`${count} API23 checks, ${failed} failed`);process.exitCode=failed?1:0;})();

@@ -1,30 +1,28 @@
-import uiMaterial from '@ohos.arkui.uiMaterial'
+import type uiMaterial from '@ohos.arkui.uiMaterial'
 import deviceInfo from '@ohos.deviceInfo'
 
-const materials: Map<string, uiMaterial.ImmersiveMaterial> = new Map<string, uiMaterial.ImmersiveMaterial>()
+let checkSupport: (() => boolean) | null = null
+let createMaterial: ((isDark: boolean, interactive: boolean, prominent: boolean) => uiMaterial.ImmersiveMaterial) | null = null
+let loading: Promise<boolean> | null = null
 
 export function supportsImmersiveMaterial(): boolean {
-  try {
-    const rawApi: number = deviceInfo.sdkApiVersion
-    const api: number = rawApi >= 100000000 ? rawApi % 1000 : rawApi
-    if (api < 26) return false
-    return uiMaterial.isImmersiveMaterialSupported() && uiMaterial.getMaterialInfo().state !== uiMaterial.MaterialState.DISABLE
-  } catch (_e) { return false }
+  try { return checkSupport !== null && checkSupport() } catch (_error) { return false }
 }
-
+export function loadImmersiveMaterial(): Promise<boolean> {
+  const rawApi = deviceInfo.sdkApiVersion
+  const api = rawApi >= 100000000 ? rawApi % 1000 : rawApi
+  if (api < 26) return Promise.resolve(false)
+  if (checkSupport !== null) return Promise.resolve(supportsImmersiveMaterial())
+  if (loading !== null) return loading
+  loading = import('./NativeMaterials').then((adapter) => {
+    checkSupport = adapter.supportsNativeMaterial
+    createMaterial = adapter.createNativeMaterial
+    return supportsImmersiveMaterial()
+  }).catch((): boolean => false).finally(() => { loading = null })
+  return loading
+}
 export function glassMaterial(isDark: boolean, interactive: boolean = false,
   prominent: boolean = false): uiMaterial.ImmersiveMaterial {
-  const key = String(isDark) + String(interactive) + String(prominent)
-  const cached = materials.get(key)
-  if (cached !== undefined) return cached
-  const material = new uiMaterial.ImmersiveMaterial({
-    style: prominent ? uiMaterial.ImmersiveStyle.REGULAR : uiMaterial.ImmersiveStyle.THIN,
-    materialColor: isDark ? '#18203450' : '#18FFFFFF',
-    applyShadow: false,
-    interactive: interactive,
-    lightEffect: interactive ? { color: isDark ? '#A9C4FF' : '#FFFFFF' } : null,
-  })
-  materials.set(key, material)
-  return material
+  if (createMaterial === null) throw new Error('Native material not loaded')
+  return createMaterial(isDark, interactive, prominent)
 }
-

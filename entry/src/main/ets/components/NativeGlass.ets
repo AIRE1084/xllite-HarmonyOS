@@ -1,4 +1,4 @@
-import { glassMaterial, supportsImmersiveMaterial } from '../theme/Materials'
+import { glassMaterial, supportsImmersiveMaterial, loadImmersiveMaterial } from '../theme/Materials'
 
 @Component
 export struct NativeGlass {
@@ -9,7 +9,15 @@ export struct NativeGlass {
   @BuilderParam content: () => void
   @StorageLink('isDark') isDark: boolean = false
   @State nativeSupported: boolean = supportsImmersiveMaterial()
-  aboutToAppear(): void { this.nativeSupported = supportsImmersiveMaterial() }
+  private appearance: number = 0
+  aboutToAppear(): void {
+    const revision = ++this.appearance
+    this.nativeSupported = supportsImmersiveMaterial()
+    loadImmersiveMaterial().then((supported: boolean) => {
+      if (revision === this.appearance) this.nativeSupported = supported
+    })
+  }
+  aboutToDisappear(): void { this.appearance++ }
   build() {
     Stack({ alignContent: Alignment.Top }) {
       if (this.nativeSupported) {
