@@ -128,7 +128,7 @@ export async function gatewayRun(feature: string, accessToken: string,
   const result = await gwRequest(http.RequestMethod.POST, '/api/v1/run', accessToken, payload)
   if (result.ok) {
     const collections: Record<string, string> = {
-      'jw.schedule': 'courses', 'jw.grades': 'grades', 'jw.exams': 'exams',
+      'jw.schedule': 'courses', 'jw.grades': 'normalGrades', 'jw.exams': 'exams',
       'jw.training': 'training', 'newcard.balance': 'accounts', 'newcard.transactions': 'transactions'
     }
     const key: string = collections[feature]
