@@ -63,3 +63,10 @@
 !/.wolf/memory.md
 !/.wolf/*.json
 /*.jpeg
+
+# ===== 通用依赖与本地日志 =====
+node_modules/
+oh_modules/
+*.log
+.env.*
+!.env.example

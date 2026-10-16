@@ -1,5 +1,14 @@
 {
   "name": "xjit-app",
   "version": "1.0.0",
-  "description": "XJIT 校园综合服务"
+  "description": "XJIT 校园综合服务",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:services && npm run test:pages && npm run test:campus && npm run test:ui-structure && npm run test:contrast",
+    "test:services": "node tools/service-regression.cjs",
+    "test:pages": "node tools/page-behavior-regression.cjs",
+    "test:campus": "node tools/campus-companion-regression.cjs",
+    "test:ui-structure": "node tools/ui-structure-regression.cjs",
+    "test:contrast": "node tools/theme-contrast.cjs"
+  }
 }
