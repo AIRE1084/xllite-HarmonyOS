@@ -53,6 +53,21 @@ test('schedule tab handles thrown request and permits retry',async()=>{
  f.state.requests[1].resolve({ok:false,error:'fixture error'}); await retry;
  assert.equal(f.page.errorMsg,'fixture error');
 });
+test('schedule tab preserves loaded courses when forced refresh throws',async()=>{
+ const f=fixture('ScheduleTab'); f.page.alive=true; f.page.hasLoaded=true;
+ f.page.allCourses=[{title:'fixture course'}];
+ const task=f.page.loadSchedule(true); await until(()=>f.state.requests.length===1);
+ f.state.requests[0].reject(Error('transport')); await task;
+ assert.equal(f.page.allCourses[0].title,'fixture course'); assert.equal(f.page.hasLoaded,true);
+ assert.equal(f.page.refreshing,false); assert.equal(f.state.toasts.length,1);
+});
+test('schedule tab ignores exceptions from a retired account',async()=>{
+ const f=fixture('ScheduleTab'); f.page.alive=true; f.page.errorMsg='new account state';
+ const task=f.page.loadSchedule(false); await until(()=>f.state.requests.length===1);
+ f.state.epoch++; f.state.username='another-account';
+ f.state.requests[0].reject(Error('transport')); await task;
+ assert.equal(f.page.errorMsg,'new account state'); assert.equal(f.state.toasts.length,0); assert.equal(f.page.requestBusy,false);
+});
 const queries = [
   ['TransactionsPage', 'transactions', 'items'], ['GradesPage', 'normalGrades', 'grades'], ['ExamsPage', 'exams', 'exams'],
   ['BalancePage', 'accounts', 'accounts'], ['TrainingPage', 'training', 'items'], ['SchedulePage', 'courses', 'courses'],
