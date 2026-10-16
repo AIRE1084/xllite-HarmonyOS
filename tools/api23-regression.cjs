@@ -66,4 +66,9 @@ test('dock spring is bypassed rather than merely zero-duration under reduced mot
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
  assert.match(source,/this.reduceMotion \? Curve.Linear : curves.springMotion\(0.32, 0.86, 0.12\)/);
 });
+test('native login uses packaged mountain brand without monochrome tint',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/LoginPage.ets'),'utf8');
+ assert.match(source,/Image\(\$r\('app.media.icon'\)\)\.width\(72\)\.height\(72\)\.borderRadius\(20\)/);
+ assert.ok(!source.includes("Image($r('app.media.campus_schedule'))"));
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;

@@ -76,7 +76,8 @@ struct LoginPage {
         Scroll() {
           Column({ space: 32 }) {
             Column({ space: 12 }) {
-              Image($r('app.media.campus_schedule')).width(44).height(44).fillColor(this.palette.primary)
+              Image($r('app.media.icon')).width(72).height(72).borderRadius(20)
+                .accessibilityText('新理之山，山脊与书页')
               Text('掌上新理工').fontSize(30).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface)
               Text('课程、校园卡与每日安排，一处掌握').fontSize(13).fontColor(this.palette.onSurfaceVariant)
             }.width('100%').alignItems(HorizontalAlign.Start)
