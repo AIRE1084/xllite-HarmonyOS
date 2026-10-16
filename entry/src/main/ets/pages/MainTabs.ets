@@ -115,7 +115,7 @@ struct MainTabs {
           onTabChange: (index: number) => { this.selectTab(index) } })
       }
       .width('100%')
-      .padding({ left: 24, right: 24, bottom: this.safeAreaBottom + 10 })
+      .padding({ left: 24, right: 24, bottom: Math.max(0, this.safeAreaBottom - 8) })
       ThemeWash()
     }
     .width('100%').height('100%')
