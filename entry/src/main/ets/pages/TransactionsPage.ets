@@ -55,13 +55,17 @@ struct TransactionsPage {
     const cardEpoch = getCardSessionEpoch()
     const username = getUsername()
     try {
-      const res = await callFeature('newcard.transactions', username, getPassword(), { '_forceRefresh': force, 'pageNo': append ? this.nextPage : 1 })
+      const res = await callFeature('newcard.transactions', username, getPassword(), { '_forceRefresh': force, 'pageNo': append ? this.nextPage : 1, 'pageSize': 20 })
       if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || cardEpoch !== getCardSessionEpoch() || username !== getUsername()) return
       if (res.ok) {
         const data = res.data['transactions'] as Transaction[]
         this.items = append ? this.items.concat(Array.isArray(data) ? data : []) : Array.isArray(data) ? data : []
-        this.totalPages = Number(res.data['totalPages']) || 1
-        this.nextPage = (Number(res.data['pageNo']) || 1) + 1
+        const currentPage: number = Number(res.data['pageNo']) || (append ? this.nextPage : 1)
+        const reportedPages: number = Number(res.data['totalPages'])
+        // The gateway documents page size, not total pages; one full page permits the next read.
+        this.totalPages = Number.isFinite(reportedPages) && reportedPages >= 1 ? reportedPages :
+          currentPage + (Array.isArray(data) && data.length >= 20 ? 1 : 0)
+        this.nextPage = currentPage + 1
         this.rows.replace(this.items)
         this.loaded = true
         saveUiState('transactions', getCardSessionEpoch(), {

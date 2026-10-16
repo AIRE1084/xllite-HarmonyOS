@@ -80,6 +80,13 @@ for (const [name, key, field] of queries) {
     assert.equal(page.loading, false); assert.ok(page.errorMsg.length > 0);
   });
 }
+test('transactions without totalPages continue after full page and stop after short page', async () => {
+  const {page,state}=fixture('TransactionsPage'); page.alive=true;
+  const first=page.load(); state.requests[0].resolve({ok:true,data:{transactions:Array.from({length:20},(_,i)=>({journo:String(i)})),pageNo:1,pageSize:20}}); await first;
+  assert.ok(page.nextPage<=page.totalPages); assert.equal(state.requests[0].params.pageSize,20);
+  const second=page.load(false,true); assert.equal(state.requests[1].params.pageNo,2); state.requests[1].resolve({ok:true,data:{transactions:[{journo:'last'}],pageNo:2,pageSize:20}}); await second;
+  assert.equal(page.items.length,21); assert.ok(page.nextPage>page.totalPages);
+});
 test('grade summary does not present missing or nonfinite values as zero', async () => {
   const { page, state } = fixture('GradesPage'); page.alive = true; const pending = page.load();
   state.requests[0].resolve({ ok: true, data: { normalGrades: [], summary: { weightedGradePoint: NaN, totalCredits: Infinity } } }); await pending;
