@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T15:31:40.368Z",
+  "checkedAt": "2026-10-16T16:07:02.334Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 39,
+  "checks": 40,
   "failed": 0,
   "results": [
     {
@@ -83,6 +83,10 @@
     },
     {
       "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
+      "ok": true
+    },
+    {
+      "name": "malformed persisted snapshot renders pending widget instead of crashing",
       "ok": true
     },
     {
