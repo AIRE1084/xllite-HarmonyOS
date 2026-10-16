@@ -4,7 +4,7 @@
 
 ## 首要风险
 
-Materials.ets 顶层静态导入 @ohos.arkui.uiMaterial；本机 SDK 将该模块整体标为 since 26.0.0。supportsImmersiveMaterial 内的版本判断与异常捕获发生在导入之后。当前转译回归始终提供模块替身，因此只证明 API23 不调用增强方法，未覆盖真实系统缺少模块时的链接行为。NativeGlass 中的 systemMaterial 属性也需真实旧系统执行兼容分支确认。
+原先Materials.ets顶层静态导入API26的@ohos.arkui.uiMaterial。现已改为类型导入，并在版本检查之后动态导入应用侧NativeMaterials适配模块；后者封装系统模块。NativeGlass等待加载完成后刷新增强状态，出现序号过滤离开后的迟到结果。新专项验证API23不加载适配模块、并发共享Promise、模块缺失回退；旧22项已改为等待真实适配模块检查，覆盖硬件不支持、系统禁用和查询异常。NativeGlass中的systemMaterial属性仍需真实旧系统执行兼容分支确认。
 
 保留此风险，不在缺少证据时宣称静态导入必然崩溃或必然兼容。模块延迟加载与界面组件分拆应依官方可用机制和实际旧系统结果选择，不能仅用新版本接口检查替换旧版本判断。
 
@@ -21,6 +21,10 @@ Materials.ets 顶层静态导入 @ohos.arkui.uiMaterial；本机 SDK 将该模�
 ### 实际编译试验
 
 曾以缺失系统模块回归先复现静态导入初始化失败，再试验类型导入加动态import、共享Promise和组件出现序号保护。转译23项通过，但实际ArkTS构建明确报10605060（typeof仅可用于表达式，arkts-no-type-query）及10605114（命名空间不可当对象，arkts-no-ns-as-obj）。该试验的模块对象缓存方式不受支持，已仅撤回本轮试验改动，生产仍为原实现；原22项兼容回归复验通过，未生成或安装失败版本。后续应使用可编译的应用侧适配模块导出函数，避免把系统命名空间存作对象，并重新验证产物依赖。
+
+### 实际ABC产物检查
+
+使用本机SDK ark_disasm反汇编已构建modules.abc：Materials的MODULE_REQUEST_ARRAY仅含@ohos:deviceInfo，类型导入未成为静态uiMaterial依赖；loadImmersiveMaterial体内保留指向NativeMaterials的dynamicimport指令；uiMaterial静态依赖仅在NativeMaterials导入表出现。对应未签名HAP SHA256 4214631F451E3BA1885C300D10F7816A27F26D0EF6AFE534CEF995051DE08932。中间Materials.ts仍含import type属于类型信息，不能仅凭文本含uiMaterial认定存在运行时静态依赖。全量回归通过；这些证明产物依赖已按预期隔离，不替代API23实际加载/绘制。
 
 ## 接入设备后的操作
 
