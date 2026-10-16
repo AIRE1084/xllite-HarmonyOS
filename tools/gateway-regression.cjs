@@ -11,7 +11,7 @@ function fixture() {
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
     module, exports: module.exports, Date, require(spec) {
       if (spec === '@ohos.net.http') return { default: { RequestMethod: { POST: 'POST', GET: 'GET' }, createHttp() { return {
-        async request(url, options) { state.requests.push({ url, ...options }); if (state.networkError) throw new Error('offline'); return state.response; }, destroy() { state.destroyed++; },
+        async request(url, options) { state.requests.push({ url, ...options }); if (state.requestHook) await state.requestHook(); if (state.networkError) throw new Error('offline'); return state.response; }, destroy() { state.destroyed++; },
       }; } } };
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/AuthManager')) return { async saveSchoolSession(...args) { state.saved.push(args); }, getUsername: () => 'sample', getAccessToken: () => 'opaque-token', isGatewayAuth: () => true, async clearSession() { state.cleared = true; state.epoch++; }, async clearAccessToken() {} };
@@ -49,4 +49,10 @@ test('schedule calendar enrichment keeps courses and adds only validated semeste
  const data={term:'2026-2027-1',courses:[]}; await f.api.enrichGatewaySchedule(data); assert.equal(data.termStartDate,'2026-08-31'); assert.equal(data.totalWeeks,19); assert.ok(data.scheduleFetchedAt>0); assert.equal(data.currentWeek,undefined);
 });
 test('failed calendar enrichment preserves schedule and leaves week unconfirmed',async()=>{const f=fixture(); const data={term:'2026-2027-1',courses:[]}; await f.api.enrichGatewaySchedule(data); assert.equal(data.termStartDate,undefined); assert.equal(data.totalWeeks,undefined); assert.ok(data.scheduleFetchedAt>0);});
+test('local logout resolves while remote revocation is still pending',async()=>{
+ const f=fixture(); let release; const pending=new Promise(r=>release=r); f.state.requestHook=()=>pending;
+ let finished=false; const logout=f.api.logoutGatewayAccount().then(()=>finished=true);
+ for(let i=0;i<20;i++) await Promise.resolve(); const wasFinished=finished; release(); await logout;
+ assert.equal(wasFinished,true); assert.equal(f.state.cleared,true); assert.equal(f.state.requests[0].header.Authorization,'Bearer opaque-token');
+});
 (async () => { let failed = 0; for (const t of tests) { try { await t.run(); console.log('PASS ' + t.name); } catch (e) { failed++; console.error('FAIL ' + t.name + ': ' + e.message); } } console.log(`${tests.length} gateway checks, ${failed} failed`); process.exitCode = failed ? 1 : 0; })();
