@@ -128,10 +128,18 @@ async function syncReminders(): Promise<void> {
         if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
       }
     }
+    let capacityDetail: string = ''
+    if (capacityFull) {
+      try {
+        const registered = await reminderAgentManager.getValidReminders()
+        capacityDetail = '；系统登记数量 ' + registered.length + ' 条'
+      } catch (_error) { capacityDetail = '；系统登记数量读取失败' }
+      if (version !== revision) return
+    }
     lastPlan = capacityFull ? '' : plan
     AppStorage.setOrCreate<string>('courseReminderStatus', !enabled ? '已关闭并取消课程提醒' :
       !valid ? '等待课表同步和当前周次校准' : capacityFull ?
-         '系统提醒容量已满，已登记最近 ' + ids.length + ' 条；其余未登记，打开 APP 后重试' : upcoming.length > REMINDER_LIMIT ?
+         '系统提醒容量已满，已登记最近 ' + ids.length + ' 条' + capacityDetail + '；其余未登记，打开 APP 后重试' : upcoming.length > REMINDER_LIMIT ?
         '未来 7 天共 ' + upcoming.length + ' 条，已登记最近 ' + ids.length + ' 条；打开 APP 自动续订' :
         '已登记未来 7 天 ' + ids.length + ' 条课前提醒')
     if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }

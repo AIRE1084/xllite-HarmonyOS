@@ -28,7 +28,8 @@ function fixture() {
     renameSync(a,b) {disks.set(b,disks.get(a)); disks.delete(a);} };
   const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){}, async isNotificationEnabled(){return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
-    async cancelReminder(id){state.reminders.delete(id);}, async publishReminder(request){
+    async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
+     async cancelReminder(id){state.reminders.delete(id);}, async publishReminder(request){
       state.requests.push(request); if (state.publishHook) await state.publishHook(request);
       const id = nextReminder++; state.reminders.set(id,request); return id;
     }};
@@ -184,6 +185,14 @@ test('system reminder quota preserves already registered courses',async()=>{
  assert.equal(f.state.reminders.size,1);assert.equal(f.values.get('courseReminderEnabled'),true);
  assert.match(f.values.get('courseReminderStatus'),/系统提醒容量已满/);
  assert.ok(!f.values.get('courseReminderStatus').includes('检查通知权限'));
+});
+test('quota status uses native reminder count without assuming zero on query failure',async()=>{
+ for(const fails of [false,true]){
+  const f=fixture(),core=await readyCourse(f);f.state.validQueryFails=fails;
+  f.state.publishHook=async()=>{throw {code:1700002};};
+  await core.setCampusOption('reminders',true);
+  assert.ok(f.values.get('courseReminderStatus').includes(fails?'系统登记数量读取失败':'系统登记数量 0 条'));
+ }
 });
 test('real LiveView payload uses TIMER and millisecond duration',async()=>{
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
