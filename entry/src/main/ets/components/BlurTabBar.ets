@@ -2,6 +2,7 @@ import { getColors, ColorPalette } from '../theme/Colors'
 import { NativeGlass } from './NativeGlass'
 import { Typography } from '../theme/Typography'
 import { Motion } from '../theme/Motion'
+import curves from '@ohos.curves'
 
 @Component
 export struct BlurTabBar {
@@ -53,7 +54,8 @@ export struct BlurTabBar {
           .border({ width: 1, color: this.isDark ? '#90BDD9FF' : '#F0FFFFFF' })
           .shadow({ radius: 10, color: this.isDark ? '#302D78E8' : '#254779BE', offsetY: 3 })
           .translate({ x: this.currentIndex * this.itemWidth })
-          .animation({ duration: this.reduceMotion ? 0 : 320, curve: Curve.Friction })
+          .animation({ duration: this.reduceMotion ? 0 : 320,
+            curve: this.reduceMotion ? Curve.Linear : curves.springMotion(0.32, 0.86, 0.12) })
           .hitTestBehavior(HitTestMode.None).accessibilityLevel('no')
         Row() { this.TabItem(0); this.TabItem(1); this.TabItem(2) }
           .width('100%')
