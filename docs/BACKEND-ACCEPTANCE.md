@@ -6,6 +6,8 @@
 
 现有公开契约仅证实auth/login接收captcha字符串。正常账号登录成功不等于验证挑战已验收。
 
+再次只读核对[线上OpenAPI](https://xllite.sayqz.com/api/v1/openapi.json)：info.version仍为0.1.0，LoginRequest必填username/password，可选captcha/rememberMe；未出现名称含captcha/challenge/verify的挑战模型或路径。auth下还存在prewarm和wechat系列接口，这些不构成CAS验证码图片与关联契约。此检查只读取公开描述，没有发送登录请求、验证码或会话token；版本号相同本身不代表文档内容从未变化。
+
 后端需明确：触发挑战的状态码和错误码、挑战类型、挑战标识、图片或原生可渲染内容的获取方式、有效期、刷新与旧挑战作废规则，以及登录提交时如何关联该次挑战。若涉及第三方验证，需提供其官方支持的应用内集成方式。
 
 验收覆盖：首次挑战显示、刷新替换、错误答案、超时重试、重复点击去重、离开页面取消结果、切换账号不复用挑战。测试账号和验证输入由用户在应用内操作；测试日志只记录状态码与错误分类，不记录密码、token或验证码答案。
