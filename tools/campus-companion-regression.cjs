@@ -167,6 +167,15 @@ test('companion ignores invalid semester totals consistently with schedule page'
   assert.equal(f.get('services/WidgetService').readWidgetSnapshot({filesDir:'/data'}).totalWeeks,20);
  }
 });
+test('companion semester total accepts bounds alternate field and retains valid prior term total',async()=>{
+ for(const [data,total] of [[{totalWeeks:1,currentWeek:1},1],[{totalWeeks:60},60],[{totalWeeks:Infinity,weeksTotal:19},19]]){
+  const f=fixture();await readyCourse(f,[course()],data);
+  assert.equal(f.get('services/WidgetService').readWidgetSnapshot({filesDir:'/data'}).totalWeeks,total);
+ }
+ const f=fixture(),core=await readyCourse(f,[course()],{totalWeeks:18});f.state.now+=1000;
+ await core.acceptCampusSchedule('test-student',{term:'2026-2027-1',courses:[course()],totalWeeks:Infinity,scheduleFetchedAt:f.state.now},0);
+ assert.equal(f.get('services/WidgetService').readWidgetSnapshot({filesDir:'/data'}).totalWeeks,18);
+});
 test('snapshot read boundary rejects invalid shape and week metadata',()=>{
  const f=fixture(),widgets=f.get('services/WidgetService'),ctx={filesDir:'/data'};
  for(const value of [{},snapshot({courses:[null]}),snapshot({courses:[course({weeks:12})]}),snapshot({totalWeeks:1.5}),snapshot({currentWeek:99}),snapshot({widgetEnabled:'yes'})]){

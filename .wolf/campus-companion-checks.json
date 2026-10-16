@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T16:23:29.197Z",
+  "checkedAt": "2026-10-16T16:24:47.954Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 42,
+  "checks": 43,
   "failed": 0,
   "results": [
     {
@@ -87,6 +87,10 @@
     },
     {
       "name": "companion ignores invalid semester totals consistently with schedule page",
+      "ok": true
+    },
+    {
+      "name": "companion semester total accepts bounds alternate field and retains valid prior term total",
       "ok": true
     },
     {
