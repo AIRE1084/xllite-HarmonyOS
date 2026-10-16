@@ -23,5 +23,9 @@ export async function updateCampusWidgets(data: CampusWidgetData): Promise<void>
   }
 }
 export function buildWidgetBinding(context: common.Context): formBindingData.FormBindingData {
-  return formBindingData.createFormBindingData(widgetData(readWidgetSnapshot(context)))
+  try {
+    return formBindingData.createFormBindingData(widgetData(readWidgetSnapshot(context)))
+  } catch (_error) {
+    return formBindingData.createFormBindingData(widgetData(null))
+  }
 }

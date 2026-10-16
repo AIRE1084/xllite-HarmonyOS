@@ -161,6 +161,13 @@ test('fresh calendar cannot overwrite manual calibration but new term resets it'
  await core.acceptCampusSchedule('test-student',{term:'2026-2027-2',courses:[course()],scheduleFetchedAt:f.state.now+2},0);
  assert.equal(f.values.get('scheduleWeekKnown'),false);
 });
+test('malformed persisted snapshot renders pending widget instead of crashing',()=>{
+ const f=fixture(),widgets=f.get('services/WidgetService'),ctx={filesDir:'/data'};
+ for(const value of [{}, {account:null}, snapshot({courses:null}),snapshot({courses:[null]})]){
+  f.disks.set('/data/campus_widget.json',JSON.stringify(value));
+  assert.equal(widgets.buildWidgetBinding(ctx).data.status,'待同步');
+ }
+});
 test('snapshot write and rename failures preserve last complete disk snapshot',async()=>{
  for(const failure of ['writeFail','renameFail']){
   const f=fixture();await readyCourse(f);const widgets=f.get('services/WidgetService'),ctx={filesDir:'/data'};
