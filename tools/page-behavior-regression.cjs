@@ -80,6 +80,10 @@ for (const [name, key, field] of queries) {
     assert.equal(page.loading, false); assert.ok(page.errorMsg.length > 0);
   });
 }
+test('transaction labels describe the documented rolling 30-day range', () => {
+  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/TransactionsPage.ets'),'utf8');
+  assert.ok(!source.includes('本月')); assert.ok(source.includes('最近30天'));
+});
 test('transactions without totalPages continue after full page and stop after short page', async () => {
   const {page,state}=fixture('TransactionsPage'); page.alive=true;
   const first=page.load(); state.requests[0].resolve({ok:true,data:{transactions:Array.from({length:20},(_,i)=>({journo:String(i)})),pageNo:1,pageSize:20}}); await first;

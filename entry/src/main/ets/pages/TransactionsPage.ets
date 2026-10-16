@@ -87,7 +87,7 @@ struct TransactionsPage {
 
   build() {
     Stack() {
-    DetailScaffold({ title: '交易流水', subtitle: this.cardAccount.length > 0 ? '校园卡账户 · ' + this.cardAccount : '本月校园收支，清楚可查', busy: this.loading,
+    DetailScaffold({ title: '交易流水', subtitle: this.cardAccount.length > 0 ? '校园卡账户 · ' + this.cardAccount : '最近30天校园收支，清楚可查', busy: this.loading,
       onBack: () => safeBack(this.getUIContext()), onAction: () => this.load(true) }) {
       if (!this.loaded && this.loading) {
         PageState({ kind: 'loading', title: '正在获取交易记录', message: '马上就好，请稍候' })
@@ -121,7 +121,7 @@ struct TransactionsPage {
               }
             }, (t: Transaction, index: number): string => t.journo + '|' + t.date + '|' + index)
             ListItem() {
-              Text(this.loading ? '正在更新记录…' : '已显示 ' + this.items.length + ' 笔本月交易').fontSize(Typography.caption.fontSize)
+              Text(this.loading ? '正在更新记录…' : '已显示 ' + this.items.length + ' 笔最近30天交易').fontSize(Typography.caption.fontSize)
                 .fontColor(getColors(this.isDark).onSurfaceVariant).width('100%').textAlign(TextAlign.Center).padding(12)
             }
           }.layoutWeight(1).width('100%').padding({ left: 20, right: 20, bottom: 24 }).scrollBar(BarState.Off)
