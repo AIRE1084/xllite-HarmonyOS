@@ -124,6 +124,12 @@ test('widget pause, logout and unknown weeks show no course information',()=>{
  assert.equal(f.calendar.widgetData(null).courseTitle,'打开 APP 同步课表');
  assert.equal(f.calendar.widgetData(snapshot({weekKnown:false})).status,'待校准');
 });
+test('widget distinguishes no courses today from all courses ended',()=>{
+ const f=fixture();
+ assert.equal(f.calendar.widgetData(snapshot(),new Date(2026,9,17,12)).status,'今天没有课');
+ assert.equal(f.calendar.widgetData(snapshot(),new Date(2026,9,12,23)).status,'今日课程已结束');
+ assert.equal(f.calendar.widgetData(snapshot(),new Date(2026,9,12,9)).status,'下一节课');
+});
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;
  await assert.rejects(core.setCampusOption('reminders',true)); assert.equal(f.values.get('courseReminderEnabled'),false); assert.equal(f.state.reminders.size,0);

@@ -79,9 +79,10 @@ export function widgetData(snapshot: ScheduleSnapshot | null, now: Date = new Da
   if (week < 1 || week > snapshot.totalWeeks) {
     empty.status = '待更新'; empty.courseTitle = '请同步新学期课表'; return empty
   }
-  const items = buildOccurrences(snapshot, now, 1).filter((item: CourseOccurrence): boolean => item.endTime > now.getTime())
+  const today = buildOccurrences(snapshot, now, 1)
+  const items = today.filter((item: CourseOccurrence): boolean => item.endTime > now.getTime())
   empty.heading = '新理工 · 第 ' + week + ' 周'
-  empty.status = items.length > 0 ? (items[0].startTime > now.getTime() ? '下一节课' : '上课中') : '今日课程已结束'
+  empty.status = items.length > 0 ? (items[0].startTime > now.getTime() ? '下一节课' : '上课中') : today.length === 0 ? '今天没有课' : '今日课程已结束'
   empty.courseTitle = items.length > 0 ? items[0].course.title : '今天没有待上课程'
   if (items.length > 0) {
     const start = new Date(items[0].startTime); const end = new Date(items[0].endTime)
