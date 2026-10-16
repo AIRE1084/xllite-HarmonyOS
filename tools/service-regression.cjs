@@ -104,6 +104,11 @@ test('changing from school session to gateway cannot reuse school cache', async 
   f.state.respond = async () => ({responseCode:200,result:JSON.stringify({ok:true,data:{name:'gateway-name'}})});
   const r = await f.api.callFeature('jw.profile','student','',{}); assert.equal(r.data.name,'gateway-name'); assert.equal(r.fromCache,false);
 });
+test('gateway schedule merges public confirmed calendar before returning business data',async()=>{
+ const f=fixture(); await f.auth.saveSchoolSession('student','gateway-fixture',Date.now()+3600000,f.cache.getCacheEpoch(),'xllite-gateway');
+ f.state.respond=async q=>({responseCode:200,result:JSON.stringify({ok:true,data:q.url.includes('academic-calendar')?{schemaVersion:1,timezone:'Asia/Shanghai',term:'2026-2027-1',status:'confirmed',calendar:{term:'2026-2027-1',status:'confirmed',firstMonday:'2026-08-31',weekCount:19,sectionTimes:[],dateOverrides:[]}}:{term:'2026-2027-1',courses:[]}})});
+ const r=await f.api.callFeature('jw.schedule','student','',{}); assert.equal(r.ok,true); assert.equal(r.data.termStartDate,'2026-08-31'); assert.equal(r.data.totalWeeks,19);
+});
 test('near-expiry gateway rotates once before business without replaying payments', async () => {
   const f=fixture(); await f.auth.saveSchoolSession('student','old-token',Date.now()+60000,f.cache.getCacheEpoch(),'xllite-gateway');
   f.state.respond=async q=>({responseCode:200,result:JSON.stringify({ok:true,data:q.url.endsWith('/auth/refresh')?{accessToken:'new-token',expiresInSeconds:3600}:{name:'fresh'}})});

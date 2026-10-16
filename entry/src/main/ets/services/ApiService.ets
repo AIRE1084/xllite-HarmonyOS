@@ -2,7 +2,7 @@ import { acceptCampusSchedule } from './CampusCompanionService'
 import { getCachedValue, setCachedValue, getCacheEpoch, isCacheFresh } from './MemoryCache'
 import { getUsername, getAccessToken, getCardToken, getCardSessionEpoch, getCardCacheNamespace, isGatewayAuth, getTokenExpiresAt } from './AuthManager'
 import { callSchoolNative } from './SchoolNativeApi'
-import { gatewayRun, refreshGatewayAccount } from './XlliteGateway'
+import { gatewayRun, refreshGatewayAccount, enrichGatewaySchedule } from './XlliteGateway'
 import { schoolFeatureUrl } from '../utils/SchoolRoutes'
 
 export class CallResult {
@@ -64,6 +64,7 @@ async function callViaHttp(feature: string, username: string, _password: string,
       }
       // Refresh precedes the request; never replay a payment after a server error.
       const response = await gatewayRun(feature, getAccessToken(), cleanParams(params))
+      if (response.ok && feature === 'jw.schedule') await enrichGatewaySchedule(response.data)
       result.ok = response.ok; result.data = response.data; result.error = response.error; result.statusCode = response.statusCode
     } catch (_e) { result.error = '网关数据校验未完成，请打开学校服务查看' }
     return result
