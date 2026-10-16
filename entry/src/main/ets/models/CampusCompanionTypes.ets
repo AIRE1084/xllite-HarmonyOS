@@ -8,6 +8,7 @@ export interface ScheduleSnapshot {
   totalWeeks: number
   weekKnown: boolean
   anchorDate: string
+  manuallyCalibrated?: boolean
   updatedAt: number
   widgetEnabled: boolean
 }

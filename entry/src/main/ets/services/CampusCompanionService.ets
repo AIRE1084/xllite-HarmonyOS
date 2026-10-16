@@ -184,9 +184,12 @@ export function acceptCampusSchedule(account: string, data: Record<string, Objec
     let week = weekKnown ? sourceWeek : previous?.currentWeek ?? 1
     let anchor = weekKnown ? localDateText(new Date(fetchedAt)) : previous?.anchorDate ?? localDateText(new Date(fetchedAt))
     let known = weekKnown || previous?.weekKnown === true
-    if (!weekKnown && start !== null) { week = 1; anchor = localDateText(start); known = true }
+    const manual = previous?.manuallyCalibrated === true
+    if (manual && previous !== null) {
+      week = previous.currentWeek; anchor = previous.anchorDate; known = previous.weekKnown
+    } else if (!weekKnown && start !== null) { week = 1; anchor = localDateText(start); known = true }
     snapshot = { account: account, term: String(data['term'] ?? ''), courses: (data['courses'] ?? []) as Course[],
-      currentWeek: week, totalWeeks: total, weekKnown: known, anchorDate: anchor, updatedAt: fetchedAt,
+      currentWeek: week, totalWeeks: total, weekKnown: known, anchorDate: anchor, manuallyCalibrated: manual, updatedAt: fetchedAt,
       widgetEnabled: AppStorage.get<boolean>('campusWidgetEnabled') === true }
     activeAccount = account; revision++
     await reconcile()
@@ -197,7 +200,7 @@ export function calibrateCampusWeek(week: number): Promise<void> {
   return enqueue(async () => {
     if (snapshot === null) throw new Error('请先同步真实课表')
     if (week < 1 || week > snapshot.totalWeeks) throw new Error('请选择有效教学周')
-    revision++; snapshot.currentWeek = week; snapshot.anchorDate = localDateText(new Date()); snapshot.weekKnown = true
+    revision++; snapshot.currentWeek = week; snapshot.anchorDate = localDateText(new Date()); snapshot.weekKnown = true; snapshot.manuallyCalibrated = true
     await reconcile()
   })
 }

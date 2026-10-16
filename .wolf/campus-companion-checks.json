@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T10:43:22.732Z",
+  "checkedAt": "2026-10-16T10:59:35.460Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 30,
+  "checks": 31,
   "failed": 0,
   "results": [
     {
@@ -79,6 +79,10 @@
     },
     {
       "name": "week calibration persists and the same cached response cannot reset it",
+      "ok": true
+    },
+    {
+      "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
       "ok": true
     },
     {
