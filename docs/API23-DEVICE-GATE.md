@@ -12,6 +12,12 @@ Materials.ets 顶层静态导入 @ohos.arkui.uiMaterial；本机 SDK 将该模�
 
 已读取[OpenHarmony延迟加载官方文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/arkts-utils/arkts-lazy-import.md)：lazy import自API12支持，但其模块解析在冷启动仍会遍历，只将模块源码执行延至首次使用；动态import则在实际执行时触发模块解析及执行。因此把uiMaterial静态导入机械替换为lazy import，不足以证明旧系统缺少模块时可正常链接。本机编译工具确有process_lazy_import实现，但编译器接受语法不替代旧系统运行证据。当前未改生产导入方式，后续需验证动态导入的系统模块支持及ArkUI同步材质消费方式，或取得真实API23结果后再选方案。
 
+## 动态导入方案的已核实边界
+
+[官方动态import文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/arkts-utils/arkts-dynamic-import.md)在规格表明确列出@ohos.*系统API，示例使用import('@ohos.curves').then(...)，因此常量动态导入系统模块有公开依据，而非仅支持HAR/HSP。
+
+当前调用链仅NativeGlass使用Materials导出，但nativeSupported在字段初始化和aboutToAppear同步查询，build同步消费glassMaterial。可验证的改造路径应为：类型专用导入与运行时模块分离；API版本先判断，API23不执行动态导入；API26用共享Promise去重加载，失败保留原生模糊；组件出现时异步检查并刷新状态，离开后忽略迟到结果；实际创建材质前确保模块存在。还需检查编译产物是否残留静态系统模块依赖，不能只靠转译测试。此次仅完成契约和调用链核对，未改生产加载逻辑；真实API23链接和systemMaterial兼容分支执行仍是门槛。
+
 ## 接入设备后的操作
 
 以下命令在项目根目录执行，TARGET 用设备列表中确认的 API23 目标替换；不默认使用当前 API26 目标。
