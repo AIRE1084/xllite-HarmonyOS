@@ -89,4 +89,8 @@ test('tab content switches without crossfading two readable text surfaces',()=>{
  const body=source.slice(source.indexOf('  build()'),source.indexOf('  pageTransition()'));
  assert.equal((body.match(/\.animation\(/g)||[]).length,0);
 });
+test('dock sits lower while bottom inset never becomes negative',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
+ assert.ok(source.includes('bottom: Math.max(0, this.safeAreaBottom - 8)'));
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;
