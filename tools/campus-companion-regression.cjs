@@ -153,6 +153,13 @@ test('week calibration persists and the same cached response cannot reset it',as
  await core.calibrateCampusWeek(8);await core.acceptCampusSchedule('test-student',{term:'2026-2027-1',courses:[course()],scheduleFetchedAt:f.state.now},0);
  assert.equal(f.values.get('currentWeek'),8); assert.equal(JSON.parse(f.disks.get('/data/campus_widget.json')).weekKnown,true);
 });
+test('fresh calendar cannot overwrite manual calibration but new term resets it',async()=>{
+ const f=fixture(),core=await readyCourse(f); await core.calibrateCampusWeek(8);
+ await core.acceptCampusSchedule('test-student',{term:'2026-2027-1',courses:[course()],termStartDate:'2026-08-31',totalWeeks:19,scheduleFetchedAt:f.state.now+1},0);
+ assert.equal(f.values.get('currentWeek'),8);
+ await core.acceptCampusSchedule('test-student',{term:'2026-2027-2',courses:[course()],scheduleFetchedAt:f.state.now+2},0);
+ assert.equal(f.values.get('scheduleWeekKnown'),false);
+});
 test('reminder registration is capped to leave system capacity',async()=>{
  const f=fixture(), courses=[];for(let day=1;day<=7;day++)for(let n=1;n<=10;n++)courses.push(course({day:String(day),sections:String(n),title:'课程'+day+'-'+n}));
  const core=await readyCourse(f,courses);await core.setCampusOption('reminders',true);assert.equal(f.state.reminders.size,24);
