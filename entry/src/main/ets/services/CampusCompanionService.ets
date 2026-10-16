@@ -199,7 +199,7 @@ export function getCampusWidgetData(): CampusWidgetData { return widgetData(snap
 export function calibrateCampusWeek(week: number): Promise<void> {
   return enqueue(async () => {
     if (snapshot === null) throw new Error('请先同步真实课表')
-    if (week < 1 || week > snapshot.totalWeeks) throw new Error('请选择有效教学周')
+    if (!Number.isInteger(week) || week < 1 || week > snapshot.totalWeeks) throw new Error('请选择有效教学周')
     revision++; snapshot.currentWeek = week; snapshot.anchorDate = localDateText(new Date()); snapshot.weekKnown = true; snapshot.manuallyCalibrated = true
     await reconcile()
   })

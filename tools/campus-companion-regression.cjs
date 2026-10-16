@@ -160,6 +160,18 @@ test('fresh calendar cannot overwrite manual calibration but new term resets it'
  await core.acceptCampusSchedule('test-student',{term:'2026-2027-2',courses:[course()],scheduleFetchedAt:f.state.now+2},0);
  assert.equal(f.values.get('scheduleWeekKnown'),false);
 });
+test('manual week marker and anchor survive snapshot disk roundtrip',async()=>{
+ const f=fixture(),core=await readyCourse(f); await core.calibrateCampusWeek(8);
+ const restored=f.get('services/WidgetService').readWidgetSnapshot({filesDir:'/data'});
+ assert.equal(restored.manuallyCalibrated,true); assert.equal(restored.currentWeek,8); assert.equal(restored.anchorDate,'2026-10-12');
+ await core.acceptCampusSchedule('test-student',{term:'2026-2027-1',courses:[course()],currentWeek:7,totalWeeks:19,scheduleFetchedAt:f.state.now+1},0);
+ assert.equal(f.values.get('currentWeek'),8);
+});
+test('manual calibration rejects fractional and nonfinite weeks without mutation',async()=>{
+ const f=fixture(),core=await readyCourse(f);
+ for(const week of [NaN,Infinity,1.5]) await assert.rejects(core.calibrateCampusWeek(week));
+ assert.equal(f.values.get('currentWeek'),6);
+});
 test('reminder registration is capped to leave system capacity',async()=>{
  const f=fixture(), courses=[];for(let day=1;day<=7;day++)for(let n=1;n<=10;n++)courses.push(course({day:String(day),sections:String(n),title:'课程'+day+'-'+n}));
  const core=await readyCourse(f,courses);await core.setCampusOption('reminders',true);assert.equal(f.state.reminders.size,24);
