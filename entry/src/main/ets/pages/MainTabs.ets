@@ -106,8 +106,8 @@ struct MainTabs {
         .width('100%').height(this.safeAreaBottom + 88)
         .linearGradient({ angle: 180,
           colors: this.isDark
-            ? [['#00152039', 0], ['#40152039', 0.45], ['#B8152039', 1]]
-            : [['#00EAF0FB', 0], ['#40EAF0FB', 0.45], ['#B8EAF0FB', 1]],
+            ? [['#00152039', 0], ['#FF152039', 0.25], ['#FF152039', 1]]
+            : [['#00EAF0FB', 0], ['#FFEAF0FB', 0.25], ['#FFEAF0FB', 1]],
         })
         .hitTestBehavior(HitTestMode.None)
       Column() {
