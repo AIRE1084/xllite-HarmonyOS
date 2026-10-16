@@ -44,4 +44,9 @@ test('calendar rejects wrong term, impossible date, draft or unsupported overrid
     assert.equal((await f.api.gatewayAcademicCalendar('2026-2027-1')).ok,false,JSON.stringify(patch));
   }
 });
+test('schedule calendar enrichment keeps courses and adds only validated semester anchor', async () => {
+ const f=fixture(); f.state.response.result=JSON.stringify({ok:true,data:{schemaVersion:1,timezone:'Asia/Shanghai',term:'2026-2027-1',status:'confirmed',calendar:{term:'2026-2027-1',status:'confirmed',firstMonday:'2026-08-31',weekCount:19,sectionTimes:[],dateOverrides:[]}}});
+ const data={term:'2026-2027-1',courses:[]}; await f.api.enrichGatewaySchedule(data); assert.equal(data.termStartDate,'2026-08-31'); assert.equal(data.totalWeeks,19); assert.ok(data.scheduleFetchedAt>0); assert.equal(data.currentWeek,undefined);
+});
+test('failed calendar enrichment preserves schedule and leaves week unconfirmed',async()=>{const f=fixture(); const data={term:'2026-2027-1',courses:[]}; await f.api.enrichGatewaySchedule(data); assert.equal(data.termStartDate,undefined); assert.equal(data.totalWeeks,undefined); assert.ok(data.scheduleFetchedAt>0);});
 (async () => { let failed = 0; for (const t of tests) { try { await t.run(); console.log('PASS ' + t.name); } catch (e) { failed++; console.error('FAIL ' + t.name + ': ' + e.message); } } console.log(`${tests.length} gateway checks, ${failed} failed`); process.exitCode = failed ? 1 : 0; })();

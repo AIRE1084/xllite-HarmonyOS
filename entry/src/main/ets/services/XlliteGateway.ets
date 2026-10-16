@@ -122,6 +122,17 @@ export async function gatewayAcademicCalendar(term: string): Promise<GatewayResu
   return result
 }
 
+export async function enrichGatewaySchedule(data: Record<string, Object>): Promise<void> {
+  data['scheduleFetchedAt'] = Date.now()
+  const term: string = gwField(data, 'term')
+  if (term.length === 0) return
+  const response = await gatewayAcademicCalendar(term)
+  if (!response.ok) return
+  const calendar = response.data['calendar'] as Record<string, Object>
+  data['termStartDate'] = calendar['firstMonday']
+  data['totalWeeks'] = calendar['weekCount']
+}
+
 // /api/v1/auth/login —— username+password(+captcha/rememberMe)，返回 data{username, accessToken, tokenType, source, expiresAt/expiresInSeconds}
 export async function gatewayLogin(username: string, password: string,
   captcha: string = '', rememberMe: boolean = false): Promise<GatewayResult> {
