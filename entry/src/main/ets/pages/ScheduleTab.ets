@@ -75,7 +75,7 @@ export struct ScheduleTab {
     const saved: Record<string, Object> | null = loadUiState('schedule-tab', 0)
     if (saved !== null) {
       const week: number = Number(saved['selectedWeek'])
-      if (Number.isFinite(week) && week >= 1) { this.selectedWeek = week; this.restoredWeek = week }
+      if (Number.isInteger(week) && week >= 1 && week <= this.totalWeeks) { this.selectedWeek = week; this.restoredWeek = week }
       const mode: number = Number(saved['viewMode'])
       if (Number.isFinite(mode) && (mode === 0 || mode === 1)) this.viewMode = mode
       this.detailedWeek = saved['detailedWeek'] === true

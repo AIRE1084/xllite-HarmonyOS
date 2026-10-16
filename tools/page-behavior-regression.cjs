@@ -31,7 +31,8 @@ function fixture(name) {
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
-      if (spec.endsWith('/UiStateCache')) return { loadUiState() { return null; }, saveUiState() {}, clearUiState() {} };
+      if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
+      if (spec.endsWith('/UiStateCache')) return { loadUiState() { return state.savedUi || null; }, saveUiState() {}, clearUiState() {} };
       if (spec.endsWith('/ListDataSource')) return rowsModule.exports;
       if (spec.endsWith('/RouterHelper')) return { safeBack() {} };
       if (spec.endsWith('/ToastHelper')) return { safeToast(_ctx, text) { state.toasts.push(text); } };
@@ -44,6 +45,15 @@ function fixture(name) {
   const page = new module.exports[name](); page.getUIContext = () => ({});
   return { page, state };
 }
+test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
+ for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
+  const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;
+  f.state.savedUi={selectedWeek:week};f.page.onActivityChange=()=>{};
+  f.page.aboutToAppear();assert.equal(f.page.selectedWeek,7);assert.equal(f.page.restoredWeek,0);
+ }
+ const f=fixture('ScheduleTab');f.state.savedUi={selectedWeek:12};f.page.onActivityChange=()=>{};
+ f.page.aboutToAppear();assert.equal(f.page.selectedWeek,12);assert.equal(f.page.restoredWeek,12);
+});
 test('schedule tab handles thrown request and permits retry',async()=>{
  const f=fixture('ScheduleTab'); f.page.alive=true;
  const task=f.page.loadSchedule(false); await until(()=>f.state.requests.length===1);
