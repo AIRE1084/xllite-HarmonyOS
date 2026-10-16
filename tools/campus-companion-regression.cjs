@@ -194,6 +194,14 @@ test('quota status uses native reminder count without assuming zero on query fai
   assert.ok(f.values.get('courseReminderStatus').includes(fails?'系统登记数量读取失败':'系统登记数量 0 条'));
  }
 });
+test('returning to app retries a quota-limited plan after capacity recovers',async()=>{
+ const f=fixture(),core=await readyCourse(f,[course(),course({sections:'3-4节',title:'second'})]);
+ f.state.publishHook=async()=>{throw {code:1700002};};
+ await core.setCampusOption('reminders',true); assert.equal(f.state.reminders.size,0);
+ f.state.publishHook=null; await core.activateCampusCompanion('test-student');
+ assert.equal(f.state.reminders.size,2); assert.match(f.values.get('courseReminderStatus'),/已登记未来 7 天 2 条/);
+ await core.setCampusOption('reminders',false); assert.equal(f.state.reminders.size,0);
+});
 test('real LiveView payload uses TIMER and millisecond duration',async()=>{
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const view=f.state.liveStarts[0];assert.equal(view.event,'TIMER');assert.equal(view.timer.time,9*60000);

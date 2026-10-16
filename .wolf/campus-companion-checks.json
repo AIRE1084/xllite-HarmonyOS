@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T14:05:33.891Z",
+  "checkedAt": "2026-10-16T14:19:06.436Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 35,
+  "checks": 36,
   "failed": 0,
   "results": [
     {
@@ -103,6 +103,10 @@
     },
     {
       "name": "quota status uses native reminder count without assuming zero on query failure",
+      "ok": true
+    },
+    {
+      "name": "returning to app retries a quota-limited plan after capacity recovers",
       "ok": true
     },
     {
