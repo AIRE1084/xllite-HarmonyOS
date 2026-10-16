@@ -2,8 +2,8 @@ import http from '@ohos.net.http'
 import { saveSchoolSession, clearAccessToken, clearSession, getUsername, getAccessToken, isGatewayAuth } from './AuthManager'
 import { getCacheEpoch } from './MemoryCache'
 
-// XLLite / 新理Lite 统一网关协议（参照 GSQZ/xllite 仓库 docs/api.md 与 lib/api/xjit_api_client.dart）。
-// 基址、13 个 feature 的完整参数/返回结构、Bearer 认证均按仓库原文实现。
+// Unified gateway contract follows the live HTTPS OpenAPI and feature-detail responses.
+// Public calendar requests deliberately omit the account bearer token.
 export const XLLITE_GATEWAY_BASE: string = 'https://xllite.sayqz.com'
 
 export class GatewayResult {
@@ -95,6 +95,29 @@ async function gwRequest(method: http.RequestMethod, path: string, token: string
     result.error = result.networkError ? '连接失败，请检查网络后重试' : '接口响应校验未完成，请稍后重试'
   } finally {
     session.destroy()
+  }
+  return result
+}
+
+export async function gatewayAcademicCalendar(term: string): Promise<GatewayResult> {
+  const result = await gwRequest(http.RequestMethod.GET, '/api/v1/academic-calendar', '', { 'term': term })
+  if (!result.ok) return result
+  const raw: Object = result.data['calendar']
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    result.ok = false; result.error = '校历数据格式异常'; return result
+  }
+  const calendar = raw as Record<string, Object>
+  const first: string = gwField(calendar, 'firstMonday')
+  const date: Date = new Date(first + 'T00:00:00+08:00')
+  const validDate: boolean = /^\d{4}-\d{2}-\d{2}$/.test(first) && Number.isFinite(date.getTime()) &&
+    new Date(date.getTime() + 8 * 3600000).toISOString().slice(0, 10) === first && date.getUTCDay() === 0
+  const weeks: number = gwNum(calendar, 'weekCount')
+  const overrides: Object = calendar['dateOverrides']
+  if (result.data['schemaVersion'] !== 1 || result.data['timezone'] !== 'Asia/Shanghai' ||
+    result.data['term'] !== term || result.data['status'] !== 'confirmed' || calendar['term'] !== term ||
+    calendar['status'] !== 'confirmed' || !validDate || !Number.isInteger(weeks) || weeks < 1 || weeks > 60 ||
+    !Array.isArray(calendar['sectionTimes']) || !Array.isArray(overrides) || (overrides as Object[]).length > 0) {
+    result.ok = false; result.data = {}; result.error = '校历尚未满足自动校准条件，请手动确认教学周'
   }
   return result
 }
