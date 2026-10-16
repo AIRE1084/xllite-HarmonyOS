@@ -97,6 +97,7 @@ async function syncReminders(): Promise<void> {
     await reminderAgentManager.cancelAllReminders()
     if (version !== revision) return
     const ids: number[] = []
+    let capacityFull: boolean = false
     if (enabled && valid) {
       if (!await notificationManager.isNotificationEnabled()) throw new Error('请允许通知后再开启课程提醒')
       for (const item of items) {
@@ -114,15 +115,23 @@ async function syncReminders(): Promise<void> {
           slotType: notificationManager.SlotType.SERVICE_INFORMATION, tapDismissed: true,
           ringDuration: 0, snoozeTimes: 0,
         }
-        const id = await reminderAgentManager.publishReminder(request)
+        let id: number
+        try {
+          id = await reminderAgentManager.publishReminder(request)
+        } catch (error) {
+          if ((error as BusinessError).code !== 1700002) throw error as Error
+          capacityFull = true
+          break
+        }
         if (version !== revision) { await reminderAgentManager.cancelReminder(id); return }
         ids.push(id)
         if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
       }
     }
-    lastPlan = plan
+    lastPlan = capacityFull ? '' : plan
     AppStorage.setOrCreate<string>('courseReminderStatus', !enabled ? '已关闭并取消课程提醒' :
-      !valid ? '等待课表同步和当前周次校准' : upcoming.length > REMINDER_LIMIT ?
+      !valid ? '等待课表同步和当前周次校准' : capacityFull ?
+         '系统提醒容量已满，已登记最近 ' + ids.length + ' 条；其余未登记，打开 APP 后重试' : upcoming.length > REMINDER_LIMIT ?
         '未来 7 天共 ' + upcoming.length + ' 条，已登记最近 ' + ids.length + ' 条；打开 APP 自动续订' :
         '已登记未来 7 天 ' + ids.length + ' 条课前提醒')
     if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
