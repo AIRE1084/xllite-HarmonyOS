@@ -9,6 +9,7 @@ export struct BlurTabBar {
   onTabChange: (index: number) => void = () => {}
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
+  @State itemWidth: number = 0
   @StorageLink('reduceMotion') reduceMotion: boolean = false
   aboutToAppear(): void { this.onThemeChange() }
   onThemeChange(): void { this.palette = getColors(this.isDark) }
@@ -22,8 +23,10 @@ export struct BlurTabBar {
   @Builder
   TabItem(index: number) {
     Button({ type: ButtonType.Normal }) {
-      Row({ space: 7 }) {
-        Image(this.icon(index)).width(21).height(21)
+      Column({ space: 3 }) {
+        Image(this.icon(index)).width(24).height(24)
+          .scale({ x: this.reduceMotion || this.currentIndex !== index ? 1 : 1.08,
+            y: this.reduceMotion || this.currentIndex !== index ? 1 : 1.08 })
           .fillColor(this.currentIndex === index ? this.palette.primary : this.palette.onSurfaceVariant)
         Text(this.label(index)).fontSize(Typography.caption.fontSize)
           .fontWeight(this.currentIndex === index ? FontWeight.Bold : FontWeight.Medium)
@@ -31,8 +34,8 @@ export struct BlurTabBar {
       }
       .width('100%').justifyContent(FlexAlign.Center)
     }
-    .layoutWeight(1).height(48).borderRadius(24)
-    .backgroundColor(this.currentIndex === index ? (this.isDark ? '#D92A4168' : '#D9E5EDFF') : Color.Transparent)
+    .layoutWeight(1).height(58).borderRadius(29)
+    .backgroundColor(Color.Transparent)
     .animation({ duration: this.reduceMotion ? 0 : Motion.duration.fast, curve: Motion.curve.standard })
     .accessibilityText(this.label(index))
     .accessibilityDescription(this.currentIndex === index ? '已选中' : '切换到' + this.label(index))
@@ -40,9 +43,25 @@ export struct BlurTabBar {
   }
 
   build() {
-    NativeGlass({ contentPadding: 6, radius: 32, interactive: true, prominent: true }) {
-      Row({ space: 4 }) { this.TabItem(0); this.TabItem(1); this.TabItem(2) }
-        .width('100%')
+    NativeGlass({ contentPadding: 5, radius: 36, interactive: true, prominent: true }) {
+      Stack({ alignContent: Alignment.Start }) {
+        Column()
+          .width(this.itemWidth).height(58).borderRadius(29)
+          .linearGradient({ angle: 145, colors: this.isDark
+            ? [['#754F78B9', 0], ['#403B5689', 0.5], ['#6546719B', 1]]
+            : [['#EFFFFFFF', 0], ['#804D83EF', 0.55], ['#B0D8F4FF', 1]] })
+          .border({ width: 1, color: this.isDark ? '#90BDD9FF' : '#F0FFFFFF' })
+          .shadow({ radius: 10, color: this.isDark ? '#302D78E8' : '#254779BE', offsetY: 3 })
+          .translate({ x: this.currentIndex * this.itemWidth })
+          .animation({ duration: this.reduceMotion ? 0 : 320, curve: Curve.Friction })
+          .hitTestBehavior(HitTestMode.None).accessibilityLevel('no')
+        Row() { this.TabItem(0); this.TabItem(1); this.TabItem(2) }
+          .width('100%')
+      }.width('100%').height(58)
+        .onAreaChange((_oldArea: Area, area: Area) => {
+          const width = Number(area.width)
+          if (Number.isFinite(width) && width > 0) this.itemWidth = width / 3
+        })
     }
   }
 }
