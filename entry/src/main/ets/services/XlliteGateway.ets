@@ -268,7 +268,8 @@ export function refreshGatewayAccount(): Promise<GatewayResult> {
 export async function logoutGatewayAccount(): Promise<void> {
   const token: string = isGatewayAuth() ? getAccessToken() : ''
   await clearSession()
-  if (token.length > 0) await gatewayLogout(token)
+  // Local cleanup is authoritative for navigation; remote revocation is best effort.
+  if (token.length > 0) gatewayLogout(token).catch((_error: Error) => {})
 }
 
 // 网关支持的 13 个 feature（与 xllite 仓库 XjitFeature 枚举一致）
