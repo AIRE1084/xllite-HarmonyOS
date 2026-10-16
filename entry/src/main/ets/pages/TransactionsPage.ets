@@ -4,12 +4,14 @@ import { safeBack } from '../utils/RouterHelper'
 import { callFeature } from '../services/ApiService'
 import { getUsername, getPassword, getCardSessionEpoch, getCardAccountLabel } from '../services/AuthManager'
 import { getCacheEpoch } from '../services/MemoryCache'
+import { loadUiState, saveUiState } from '../services/UiStateCache'
 import { DetailScaffold } from '../components/common/DetailScaffold'
 import { PageState } from '../components/common/PageState'
 import { RefreshNotice } from '../components/common/RefreshNotice'
 import { CampusCard } from '../components/common/CampusCard'
 import { Transaction } from '../models/CardTypes'
 import { ListDataSource } from '../utils/ListDataSource'
+import { Motion, motionDuration } from '../theme/Motion'
 
 @Entry
 @Component
@@ -28,7 +30,19 @@ struct TransactionsPage {
   @State errorMsg: string = ''
   private alive: boolean = false
   private requestVersion: number = 0
-  aboutToAppear(): void { this.alive = true; this.load() }
+  aboutToAppear(): void {
+    this.alive = true
+    // 会话内恢复上次浏览的列表与分页位置（带卡片会话隔离，换卡/登出后自动失效）。
+    const saved: Record<string, Object> | null = loadUiState('transactions', getCardSessionEpoch())
+    if (saved !== null && Array.isArray(saved['items'])) {
+      this.items = saved['items'] as Transaction[]
+      this.rows.replace(this.items)
+      this.nextPage = Number(saved['nextPage']) || 1
+      this.totalPages = Number(saved['totalPages']) || 1
+      this.loaded = true
+    }
+    this.load()
+  }
   aboutToDisappear(): void { this.alive = false; this.requestVersion++; this.loading = false }
   async load(force: boolean = false, append: boolean = false): Promise<void> {
     if (this.loading || !this.alive) return
@@ -50,6 +64,9 @@ struct TransactionsPage {
         this.nextPage = (Number(res.data['pageNo']) || 1) + 1
         this.rows.replace(this.items)
         this.loaded = true
+        saveUiState('transactions', getCardSessionEpoch(), {
+          'items': this.items, 'nextPage': this.nextPage, 'totalPages': this.totalPages,
+        } as Record<string, Object>)
       } else { this.errorMsg = res.error || '暂时无法更新，请稍后重试' }
     } catch (_error) {
       if (this.alive && version === this.requestVersion && epoch === getCacheEpoch() && cardEpoch === getCardSessionEpoch() && username === getUsername()) this.errorMsg = '连接未完成，请稍后重试'
@@ -110,4 +127,16 @@ struct TransactionsPage {
     }
     }.width('100%').height('100%')
   }
+
+  // 统一页面过渡：前进时新页右侧 30% 淡入、底层静止；返回时镜像右出淡出。
+  // 减少动效偏好下时长为 0（同时禁用设备默认页面动画，保持瞬时切换）。
+  pageTransition(): void {
+    PageTransitionEnter({ type: RouteType.Push, duration: motionDuration(Motion.duration.base), curve: Motion.curve.decelerate })
+      .translate({ x: motionDuration(Motion.duration.base) > 0 ? '30%' : '0%' }).opacity(motionDuration(Motion.duration.base) > 0 ? 0 : 1)
+    PageTransitionExit({ type: RouteType.Push, duration: motionDuration(Motion.duration.base) })
+    PageTransitionEnter({ type: RouteType.Pop, duration: motionDuration(Motion.duration.base) })
+    PageTransitionExit({ type: RouteType.Pop, duration: motionDuration(Motion.duration.base), curve: Motion.curve.accelerate })
+      .translate({ x: motionDuration(Motion.duration.base) > 0 ? '30%' : '0%' }).opacity(motionDuration(Motion.duration.base) > 0 ? 0 : 1)
+  }
+
 }

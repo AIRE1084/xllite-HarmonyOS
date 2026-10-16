@@ -1,6 +1,7 @@
 import { getColors, ColorPalette } from '../theme/Colors'
 import { Course } from '../models/JwTypes'
 import { getCacheEpoch } from '../services/MemoryCache'
+import { loadUiState, saveUiState } from '../services/UiStateCache'
 import { callFeature, CallResult } from '../services/ApiService'
 import { getUsername, getPassword } from '../services/AuthManager'
 import { getTerm } from '../utils/SemesterService'
@@ -55,8 +56,9 @@ export struct ScheduleTab {
   @State refreshing: boolean = false
   @State errorMsg: string = ''
   @State @Watch('updateDerived') selectedWeek: number = 1
-  @State viewMode: number = 1
-  @State detailedWeek: boolean = false
+  @State @Watch('saveUi') viewMode: number = 1
+  @State @Watch('saveUi') detailedWeek: boolean = false
+  private restoredWeek: number = 0
   @StorageLink('scheduleWeekKnown') weekKnown: boolean = false
   @StorageLink('liveViewEnabled') liveEnabled: boolean = false
   @StorageLink('currentWeek') currentWeek: number = 1
@@ -69,6 +71,15 @@ export struct ScheduleTab {
     this.palette = getColors(this.isDark)
     this.term = getTerm()
     this.selectedWeek = this.currentWeek
+    // 会话内恢复上次浏览的周次/视图（登出后缓存已清空，不会跨账号泄露）。
+    const saved: Record<string, Object> | null = loadUiState('schedule-tab', 0)
+    if (saved !== null) {
+      const week: number = Number(saved['selectedWeek'])
+      if (Number.isFinite(week) && week >= 1) { this.selectedWeek = week; this.restoredWeek = week }
+      const mode: number = Number(saved['viewMode'])
+      if (Number.isFinite(mode) && (mode === 0 || mode === 1)) this.viewMode = mode
+      this.detailedWeek = saved['detailedWeek'] === true
+    }
     this.onActivityChange()
   }
   aboutToDisappear(): void { this.alive = false }
@@ -87,6 +98,13 @@ export struct ScheduleTab {
         const range = getCourseMinutes(c.sections)
         return { course: c, startMinutes: range[0], endMinutes: range[1] }
       }).sort((a: TodayCourseItem, b: TodayCourseItem): number => a.startMinutes - b.startMinutes)
+    this.saveUi()
+  }
+  saveUi(): void {
+    if (!this.alive) return
+    saveUiState('schedule-tab', 0, {
+      'selectedWeek': this.selectedWeek, 'viewMode': this.viewMode, 'detailedWeek': this.detailedWeek,
+    } as Record<string, Object>)
   }
   private async loadSchedule(forceRefresh: boolean): Promise<void> {
     if (this.requestBusy || !this.alive) return
@@ -104,7 +122,8 @@ export struct ScheduleTab {
         this.term = String(res.data['term'] ?? this.term)
         this.totalWeeks = readNumber(res.data, ['totalWeeks', 'weeksTotal'], this.totalWeeks)
         this.currentWeek = AppStorage.get<number>('currentWeek') ?? this.currentWeek
-        this.selectedWeek = this.hasLoaded ? Math.min(this.selectedWeek, this.totalWeeks) : this.currentWeek
+        // 首次加载时若已恢复用户上次浏览的周次，则保留并做范围收敛，不回退到当前周。
+        this.selectedWeek = (this.hasLoaded || this.restoredWeek > 0) ? Math.min(this.selectedWeek, this.totalWeeks) : this.currentWeek
         this.hasLoaded = true
         AppStorage.setOrCreate<string>('term', this.term)
         this.allCourses = (res.data['courses'] ?? []) as Course[]

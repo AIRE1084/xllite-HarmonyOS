@@ -1,6 +1,7 @@
 import { safePush } from '../../utils/RouterHelper'
 import { getColors } from '../../theme/Colors'
 import { Typography } from '../../theme/Typography'
+import { Motion, motionDuration } from '../../theme/Motion'
 import { CampusCard } from './CampusCard'
 
 @Component
@@ -48,5 +49,8 @@ export struct PageState {
         }
       }.width('100%').padding({ left: 20, right: 20, top: 32, bottom: 24 })
     }.width('100%').layoutWeight(1).scrollBar(BarState.Off)
+      // 加载/空/错误状态入场上浮淡出旧态；减少动效时瞬时。
+      .transition(TransitionEffect.OPACITY.combine(TransitionEffect.translate({ y: 12 }))
+        .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate }))
   }
 }
