@@ -71,4 +71,9 @@ test('native login uses packaged mountain brand without monochrome tint',()=>{
  assert.match(source,/Image\(\$r\('app.media.icon'\)\)\.width\(72\)\.height\(72\)\.borderRadius\(20\)/);
  assert.ok(!source.includes("Image($r('app.media.campus_schedule'))"));
 });
+test('login discloses gateway credential processing separately from local storage',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/LoginPage.ets'),'utf8');
+ assert.ok(source.includes('https://xllite.sayqz.com')); assert.ok(source.includes('服务器可能为续登保留凭据'));
+ assert.ok(source.includes('保存期限与删除方式尚待服务运营方确认')); assert.ok(source.includes('密码不保存在本机'));
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;
