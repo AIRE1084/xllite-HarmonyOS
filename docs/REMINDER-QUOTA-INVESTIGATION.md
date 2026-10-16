@@ -15,6 +15,12 @@ API26验收模拟器，应用首条publishReminder返回1700002；getValidRemind
 
 这些是可变master分支的公开代码，不是当前HarmonyOS7模拟器的源码或配置证明。不能据此认定模拟器有12000条记录，也不能认定其普通应用上限一定是30。GitHub读取出现连接中断，随后Gitee公开镜像读取成功。
 
+## 零配额控制路径
+
+进一步读取[ReminderAgentService::PublishReminder](https://gitee.com/openharmony/notification_distributed_notification_service/blob/master/services/reminder/src/reminder_agent_service.cpp)发现：调用NotificationHelper::AllowUseReminder(bundleName, isAllowUseReminder)后，若结果为false，直接记录“The number of reminders exceeds the limit[0].”并返回ERR_REMINDER_NUMBER_OVERLOAD。该判断先于普通通知开关和ReminderDataManager数量检查。因此同一个超限错误还可能表示系统不允许该应用使用提醒，而非实际登记数过多。
+
+这为当前0条且伴随ReminderControl警告提供更强的解释路径，但公开master不等同于目标系统构建；尚需目标日志或对应版本实现证明。产品提示应保留原错误码，并同时提示容量或系统提醒限制，避免只承诺等待容量释放即可恢复。
+
 ## 系统日志新线索
 
 hilog以Reminder为关键词返回同一时刻两条记录（设备日志时间10-16 22:40:07.400；不把它当作主机时间）：
