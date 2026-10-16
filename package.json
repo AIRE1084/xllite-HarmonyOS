@@ -10,7 +10,7 @@
     "test:campus": "node tools/campus-companion-regression.cjs",
     "test:ui-structure": "node tools/ui-structure-regression.cjs",
     "test:contrast": "node tools/theme-contrast.cjs",
-    "test:api23": "node tools/api23-regression.cjs",
+    "test:api23": "node tools/api23-regression.cjs && node tools/material-loading-regression.cjs",
     "test:gateway": "node tools/gateway-regression.cjs",
     "test:login": "node tools/login-regression.cjs",
     "test:brand": "node tools/brand-regression.cjs"
