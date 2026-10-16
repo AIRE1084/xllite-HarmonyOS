@@ -168,6 +168,14 @@ test('shortened semester invalidates out-of-range inherited calibration without 
  assert.ok(saved);assert.equal(saved.totalWeeks,16);assert.equal(saved.weekKnown,false);
  assert.equal(saved.manuallyCalibrated,false);assert.equal(saved.currentWeek,1);
 });
+test('shorter semester retains valid manual week and adopts source week after invalid calibration',async()=>{
+ for(const [oldWeek,expected,manual] of [[8,8,true],[18,7,false]]){
+  const f=fixture(),core=await readyCourse(f);await core.calibrateCampusWeek(oldWeek);
+  await core.acceptCampusSchedule('test-student',{term:'2026-2027-1',courses:[course()],totalWeeks:16,currentWeek:7,scheduleFetchedAt:f.state.now+1},0);
+  const saved=f.get('services/WidgetService').readWidgetSnapshot({filesDir:'/data'});
+  assert.ok(saved);assert.equal(saved.currentWeek,expected);assert.equal(saved.weekKnown,true);assert.equal(saved.manuallyCalibrated,manual);
+ }
+});
 test('companion ignores invalid semester totals consistently with schedule page',async()=>{
  for(const totalWeeks of [Infinity,NaN,0,-1,1.5,61,999]){
   const f=fixture();await readyCourse(f,[course()],{totalWeeks});
