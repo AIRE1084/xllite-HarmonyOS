@@ -65,6 +65,7 @@ export async function loadSession(): Promise<boolean> {
   })
   return valid && epoch === getCacheEpoch()
 }
+export function getTokenExpiresAt(): number { return savedTokenExpiresAt }
 export function getUsername(): string { return savedUsername }
 // Compatibility for existing page signatures; no password is retained or submitted.
 export function getPassword(): string { return '' }

@@ -104,6 +104,11 @@ test('changing from school session to gateway cannot reuse school cache', async 
   f.state.respond = async () => ({responseCode:200,result:JSON.stringify({ok:true,data:{name:'gateway-name'}})});
   const r = await f.api.callFeature('jw.profile','student','',{}); assert.equal(r.data.name,'gateway-name'); assert.equal(r.fromCache,false);
 });
+test('near-expiry gateway rotates once before business without replaying payments', async () => {
+  const f=fixture(); await f.auth.saveSchoolSession('student','old-token',Date.now()+60000,f.cache.getCacheEpoch(),'xllite-gateway');
+  f.state.respond=async q=>({responseCode:200,result:JSON.stringify({ok:true,data:q.url.endsWith('/auth/refresh')?{accessToken:'new-token',expiresInSeconds:3600}:{name:'fresh'}})});
+  const r=await f.api.callFeature('jw.profile','student','',{}); assert.equal(r.ok,true); assert.equal(f.state.requests.length,2); assert.equal(f.state.requests[0].url.endsWith('/auth/refresh'),true); assert.equal(f.state.requests[1].options.header.Authorization,'Bearer new-token');
+});
 const CACHE = 'xjit_http_cache', AUTH = 'xjit_session', TODOS = 'xjit_todos';
 
 test('parallel cache writes reuse preferences and batch disk flush', async () => {

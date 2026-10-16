@@ -1,8 +1,8 @@
 import { acceptCampusSchedule } from './CampusCompanionService'
 import { getCachedValue, setCachedValue, getCacheEpoch, isCacheFresh } from './MemoryCache'
-import { getUsername, getAccessToken, getCardToken, getCardSessionEpoch, getCardCacheNamespace, isGatewayAuth } from './AuthManager'
+import { getUsername, getAccessToken, getCardToken, getCardSessionEpoch, getCardCacheNamespace, isGatewayAuth, getTokenExpiresAt } from './AuthManager'
 import { callSchoolNative } from './SchoolNativeApi'
-import { gatewayRun } from './XlliteGateway'
+import { gatewayRun, refreshGatewayAccount } from './XlliteGateway'
 import { schoolFeatureUrl } from '../utils/SchoolRoutes'
 
 export class CallResult {
@@ -56,6 +56,13 @@ async function callViaHttp(feature: string, username: string, _password: string,
   // 学校原生适配器（余额/流水/个人信息）保留直连，网关不可达时不影响已有能力。
   if (isGatewayAuth()) {
     try {
+      const epoch: number = getCacheEpoch()
+      if (getTokenExpiresAt() - Date.now() < 5 * 60 * 1000) {
+        const renewed = await refreshGatewayAccount()
+        if (epoch !== getCacheEpoch() || username !== getUsername()) return expiredSessionResult()
+        if (!renewed.ok) { result.error = renewed.error; result.statusCode = renewed.statusCode; return result }
+      }
+      // Refresh precedes the request; never replay a payment after a server error.
       const response = await gatewayRun(feature, getAccessToken(), cleanParams(params))
       result.ok = response.ok; result.data = response.data; result.error = response.error; result.statusCode = response.statusCode
     } catch (_e) { result.error = '网关数据校验未完成，请打开学校服务查看' }

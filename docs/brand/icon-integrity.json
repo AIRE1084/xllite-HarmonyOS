@@ -1,0 +1,17 @@
+[
+  {
+    "path": "docs/brand/mountain-book-1024.png",
+    "sha256": "479e602224869f093d74478ab6f45d297b8e751ab6f67e8935f925db873819eb",
+    "bytes": 527776
+  },
+  {
+    "path": "AppScope/resources/base/media/app_icon.png",
+    "sha256": "479e602224869f093d74478ab6f45d297b8e751ab6f67e8935f925db873819eb",
+    "bytes": 527776
+  },
+  {
+    "path": "entry/src/main/resources/base/media/icon.png",
+    "sha256": "479e602224869f093d74478ab6f45d297b8e751ab6f67e8935f925db873819eb",
+    "bytes": 527776
+  }
+]
