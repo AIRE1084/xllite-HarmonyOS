@@ -43,4 +43,12 @@ test('reduced motion switches tabs without retaining an invisible outgoing page'
 test('invalid tab index cannot hide every page', () => { const f = mainTabs(false); f.page.selectTab(99); assert.equal(f.page.currentIndex, 0); });
 test('rapid tab changes retire stale animation timers', () => { const f = mainTabs(false); f.page.selectTab(1); f.page.selectTab(2); assert.equal(f.timers.size, 1); [...f.timers.values()][0](); assert.equal(f.page.leavingTab, -1); });
 test('outgoing tab cannot intercept incoming tab gestures', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/pages/MainTabs.ets'), 'utf8'); assert.equal((s.match(/\.hitTestBehavior\(this.currentIndex === [012] \? HitTestMode.Default : HitTestMode.None\)/g) || []).length, 3); });
+test('enabling reduced motion retires a pending theme reveal and clears overlay', () => {
+ const timers=new Map(), values=new Map(); const module={exports:{}};
+ let source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/common/ThemeWash.ets'),'utf8');
+ source=source.slice(0,source.indexOf('  build()'))+'\n}'; source=source.replace(/@Component\s*/g,'').replace(/@(?:StorageLink|Watch)\([^)]*\)\s*/g,'').replace(/@State\s*/g,'').replace('export struct ThemeWash','export class ThemeWash');
+ vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module,exports:module.exports,require(s){return s.endsWith('/Colors')?{getColors:()=>({background:'#fff'})}:{Motion:{duration:{base:320},curve:{decelerate:0}}};},AppStorage:{get:k=>values.get(k)},setTimeout:fn=>{timers.set(1,fn);return 1;},clearTimeout:id=>timers.delete(id)});
+ const page=new module.exports.ThemeWash(); page.getUIContext=()=>({animateTo:(_o,fn)=>fn()}); page.onFlip(); assert.equal(timers.size,1);
+ values.set('reduceMotion',true); page.onFlip(); assert.equal(timers.size,0); assert.equal(page.washOpacity,0);
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;

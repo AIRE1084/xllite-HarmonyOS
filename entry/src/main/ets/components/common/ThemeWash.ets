@@ -12,10 +12,14 @@ export struct ThemeWash {
   @State washOpacity: number = 0
   private revealTimer: number = -1
   onFlip(): void {
-    if (AppStorage.get<boolean>('reduceMotion') === true) return
+    if (this.revealTimer >= 0) clearTimeout(this.revealTimer)
+    this.revealTimer = -1
+    if (AppStorage.get<boolean>('reduceMotion') === true) {
+      this.washOpacity = 0
+      return
+    }
     this.washColor = getColors(!this.isDark).background
     this.washOpacity = 1
-    if (this.revealTimer >= 0) clearTimeout(this.revealTimer)
     // 等一帧让不透明覆盖层完成渲染，再开始淡出，保证旧色先盖住再揭示新主题。
     this.revealTimer = setTimeout(() => {
       this.revealTimer = -1
