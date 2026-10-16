@@ -63,8 +63,18 @@ export struct ProfileTab {
     this.loading = true
     this.errorMsg = ''
     const empty: Record<string, Object> = {}
-    const res: CallResult = await callFeature('jw.profile', getUsername(), getPassword(), empty)
-    this.requestBusy = false
+    let res: CallResult
+    try {
+      res = await callFeature('jw.profile', username, getPassword(), empty)
+    } catch (_error) {
+      if (this.alive && epoch === getCacheEpoch() && username === getUsername()) {
+        this.loading = false
+        this.errorMsg = '连接未完成，请稍后重试'
+      }
+      return
+    } finally {
+      this.requestBusy = false
+    }
     if (!this.alive || epoch !== getCacheEpoch() || username !== getUsername()) return
     this.loading = false
     if (res.ok) {

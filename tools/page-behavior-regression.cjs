@@ -18,8 +18,8 @@ function fixture(name) {
   const bodyEnd = source.search(/  (?:@Builder|build\(\))/);
   if (bodyEnd < 0) throw new Error('Page logic boundary missing: ' + name);
   source = source.slice(0, bodyEnd) + '\n}\n';
-  source = source.replace(/@(?:Entry|Component)\s*/g, '').replace(/@(?:StorageLink|Watch)\([^)]*\)\s*/g, '').replace(/@State\s*/g, '')
-    .replace('struct ' + name, 'export class ' + name);
+  source = source.replace(/@(?:Entry|Component)\s*/g, '').replace(/@(?:StorageLink|Watch)\([^)]*\)\s*/g, '').replace(/@State\s*/g, '').replace(/@Prop\s*/g, '')
+    .replace('export struct ' + name, 'struct ' + name).replace('struct ' + name, 'export class ' + name);
   const module = { exports: {} };
   const context = {
     exports: module.exports, module, console, Date: class extends Date { static now() { return state.now; } },
@@ -29,6 +29,7 @@ function fixture(name) {
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
+      if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/UiStateCache')) return { loadUiState() { return null; }, saveUiState() {}, clearUiState() {} };
       if (spec.endsWith('/ListDataSource')) return rowsModule.exports;
@@ -80,6 +81,12 @@ for (const [name, key, field] of queries) {
     assert.equal(page.loading, false); assert.ok(page.errorMsg.length > 0);
   });
 }
+test('profile request exception releases busy state and permits retry',async()=>{
+ const {page,state}=fixture('ProfileTab'); page.alive=true;
+ const first=page.loadProfile(); state.requests[0].reject(new Error('offline')); await first;
+ assert.equal(page.requestBusy,false); assert.equal(page.loading,false); assert.ok(page.errorMsg.length>0);
+ const second=page.loadProfile(); assert.equal(state.requests.length,2); state.requests[1].resolve({ok:true,data:{name:'fixture'}});await second; assert.equal(page.name,'fixture');
+});
 test('transaction labels describe the documented rolling 30-day range', () => {
   const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/TransactionsPage.ets'),'utf8');
   assert.ok(!source.includes('本月')); assert.ok(source.includes('最近30天'));
