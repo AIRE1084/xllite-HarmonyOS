@@ -43,6 +43,12 @@ function mainTabs(reduceMotion) {
 }
 test('reduced motion switches tabs without retaining an invisible outgoing page', () => { const f = mainTabs(true); f.page.selectTab(1); assert.equal(f.page.currentIndex, 1); assert.equal(f.page.leavingTab, -1); assert.equal(f.timers.size, 0); });
 test('invalid tab index cannot hide every page', () => { const f = mainTabs(false); f.page.selectTab(99); assert.equal(f.page.currentIndex, 0); });
+test('noninteger tab indices preserve the current page and create no timers',()=>{
+ for(const index of [NaN,Infinity,-Infinity,0.5,1.5]) {
+  const f=mainTabs(false); f.page.selectTab(index);
+  assert.equal(f.page.currentIndex,0); assert.equal(f.page.leavingTab,-1); assert.equal(f.timers.size,0);
+ }
+});
 test('rapid tab changes retire stale animation timers', () => { const f = mainTabs(false); f.page.selectTab(1); f.page.selectTab(2); assert.equal(f.timers.size, 1); [...f.timers.values()][0](); assert.equal(f.page.leavingTab, -1); });
 test('outgoing tab cannot intercept incoming tab gestures', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/pages/MainTabs.ets'), 'utf8'); assert.equal((s.match(/\.hitTestBehavior\(this.currentIndex === [012] \? HitTestMode.Default : HitTestMode.None\)/g) || []).length, 3); });
 test('enabling reduced motion retires a pending theme reveal and clears overlay', () => {
