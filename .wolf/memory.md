@@ -125,3 +125,12 @@
 - 提交前拦截了敏感与超大内容：volc-ai-proxy/.env（含 JWT_SECRET/DB_PASSWORD/ARK_API_KEY 实际密钥）已加入 .gitignore 排除；根目录签名材料（xjit-*.jks/p12/cer/csr/p7b、xjit-debug-profile.json）、tmpca 私钥目录、local.properties 一律不入库。
 - 同时排除：随包 SDK 工具链副本（llvm 2.4G、build-tools、common、sysroot 等全部根级 SDK 目录与 *.exe/*.dll）、构建产物（build/、dist/、*.hap）、.wolf 大体积证据（仅 memory.md 与顶层 *.json 记录入库）、docs/html 171M NDK 文档转储、.preview、.ui-backups、根目录截图 *.jpeg、material 缓存。
 - 提交树终检通过：git ls-tree 复核无任何凭据/SDK/产物文件。工作区干净。仓库纯本地，未配置远程、未推送。
+
+## 2026-10-16 项目整理与当前进度入口
+
+- 当前结论集中在 docs/PROJECT-STATUS.md，根 README.md 为入口，目录职责见 docs/PROJECT-MAP.md；旧验收文档保留快照身份。
+- 接收原有未提交 UI 动效与内存界面状态缓存，完整构建复现 ArkUI 过渡内局部声明及 LoginPage 多根节点错误后做最小修复。新增16项结构检查先红后绿。
+- npm test 统一运行39服务+43页面+29校园能力+16结构=127项及38组配色，全部通过；mock不等同真实业务/设备。UiStateCache仍缺完整真实模块回归，不应宣称重启恢复。
+- API26 clean构建成功，75项ArkTS警告、0错误、正式未签名；133输入0漂移。HAP 2089333bytes，SHA256 160A294DE6F265F0D25D7AD511B50F7B2A8D4EDE51A5A82FE841824A2C213AF7；证据.wolf/project-audit-20261016，stage D:/XJITApp-organize-20261016-build。
+- 实际ApiService按会话来源整条分流，非逐功能直连优先自动兜底；网关专属回归/卡token门禁链路与在线验证待做。原生仅3项适配，另10项未完成；真实登录业务、签名发布、真机视觉性能待验收。
+- 补充Git行尾与通用依赖/环境忽略规则，不搬动源码、SDK或证据，不操作附属服务数据库，不配置远端或推送。
