@@ -24,8 +24,8 @@ function fixture() {
   const nativeFs = { OpenMode: {CREATE:1, WRITE_ONLY:2, TRUNC:4},
     readTextSync(p) { if (!disks.has(p)) throw Error('not found'); return disks.get(p); },
     openSync(p) { const fd = nextFile++; openFiles.set(fd,p); return {fd}; },
-    writeSync(fd,s) {disks.set(openFiles.get(fd),s);}, closeSync() {},
-    renameSync(a,b) {disks.set(b,disks.get(a)); disks.delete(a);} };
+    writeSync(fd,s) {if(state.writeFail)throw Error('write failed');disks.set(openFiles.get(fd),s);}, closeSync() {state.closedFiles=(state.closedFiles||0)+1;},
+    renameSync(a,b) {if(state.renameFail)throw Error('rename failed');disks.set(b,disks.get(a)); disks.delete(a);} };
   const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){}, async isNotificationEnabled(){return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
@@ -160,6 +160,15 @@ test('fresh calendar cannot overwrite manual calibration but new term resets it'
  assert.equal(f.values.get('currentWeek'),8);
  await core.acceptCampusSchedule('test-student',{term:'2026-2027-2',courses:[course()],scheduleFetchedAt:f.state.now+2},0);
  assert.equal(f.values.get('scheduleWeekKnown'),false);
+});
+test('snapshot write and rename failures preserve last complete disk snapshot',async()=>{
+ for(const failure of ['writeFail','renameFail']){
+  const f=fixture();await readyCourse(f);const widgets=f.get('services/WidgetService'),ctx={filesDir:'/data'};
+  const before=JSON.stringify(widgets.readWidgetSnapshot(ctx));const closed=f.state.closedFiles||0;
+  f.state[failure]=true;assert.throws(()=>widgets.saveWidgetSnapshot(ctx,null));
+  assert.equal(JSON.stringify(widgets.readWidgetSnapshot(ctx)),before);assert.equal(f.state.closedFiles,closed+1);
+  f.state[failure]=false;widgets.saveWidgetSnapshot(ctx,null);assert.equal(widgets.readWidgetSnapshot(ctx),null);
+ }
 });
 test('manual week marker and anchor survive snapshot disk roundtrip',async()=>{
  const f=fixture(),core=await readyCourse(f); await core.calibrateCampusWeek(8);
