@@ -63,6 +63,15 @@ test('schedule ignores invalid total weeks instead of truncating or accepting in
   assert.equal(f.page.totalWeeks,20);assert.equal(f.page.hasLoaded,true);assert.equal(f.page.errorMsg,'');
  }
 });
+test('valid semester bounds and alternate field keep selected week inside semester',async()=>{
+ for(const [data,expected] of [[{totalWeeks:1},1],[{totalWeeks:60},60],[{totalWeeks:Infinity,weeksTotal:19},19]]){
+  const f=fixture('ScheduleTab');f.page.alive=true;f.page.updateDerived=()=>{};
+  const task=f.page.loadSchedule(false);await until(()=>f.state.requests.length===1);
+  f.state.requests[0].resolve({ok:true,data:{courses:[],...data}});await task;
+  assert.equal(f.page.totalWeeks,expected);assert.equal(f.page.hasLoaded,true);
+  assert.ok(f.page.selectedWeek>=1&&f.page.selectedWeek<=expected);
+ }
+});
 test('schedule tab handles thrown request and permits retry',async()=>{
  const f=fixture('ScheduleTab'); f.page.alive=true;
  const task=f.page.loadSchedule(false); await until(()=>f.state.requests.length===1);
