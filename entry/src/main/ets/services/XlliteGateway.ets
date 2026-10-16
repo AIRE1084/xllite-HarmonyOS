@@ -1,5 +1,5 @@
 import http from '@ohos.net.http'
-import { saveSchoolSession, clearAccessToken, getUsername } from './AuthManager'
+import { saveSchoolSession, clearAccessToken, clearSession, getUsername, getAccessToken, isGatewayAuth } from './AuthManager'
 import { getCacheEpoch } from './MemoryCache'
 
 // XLLite / 新理Lite 统一网关协议（参照 GSQZ/xllite 仓库 docs/api.md 与 lib/api/xjit_api_client.dart）。
@@ -11,6 +11,7 @@ export class GatewayResult {
   data: Record<string, Object> = {}
   error: string = ''
   statusCode: number = 0
+  networkError: boolean = false
 }
 
 function gwField(obj: Record<string, Object>, key: string): string {
@@ -64,10 +65,6 @@ async function gwRequest(method: http.RequestMethod, path: string, token: string
       maxLimit: 2 * 1024 * 1024,
     } as http.HttpRequestOptions)
     result.statusCode = res.responseCode
-    if (res.responseCode >= 400) {
-      result.error = '接口请求失败（HTTP ' + res.responseCode + '）'
-      return result
-    }
     let parsed: Object
     try {
       parsed = JSON.parse(String(res.result))
@@ -81,7 +78,7 @@ async function gwRequest(method: http.RequestMethod, path: string, token: string
       return result
     }
     body = parsed as Record<string, Object>
-    if (body['ok'] !== true) {
+    if (res.responseCode >= 400 || body['ok'] !== true) {
       result.error = gwErrorMessage(body, res.responseCode)
       return result
     }
@@ -94,7 +91,8 @@ async function gwRequest(method: http.RequestMethod, path: string, token: string
     result.data = data as Record<string, Object>
     result.ok = true
   } catch (_e) {
-    result.error = '网关连接或响应校验未完成，请稍后重试'
+    result.networkError = result.statusCode === 0
+    result.error = result.networkError ? '连接失败，请检查网络后重试' : '接口响应校验未完成，请稍后重试'
   } finally {
     session.destroy()
   }
@@ -112,8 +110,7 @@ export async function gatewayLogin(username: string, password: string,
 
 // /api/v1/auth/refresh —— 用旧 accessToken 换新
 export async function gatewayRefresh(accessToken: string): Promise<GatewayResult> {
-  const payload: Record<string, Object> = { 'accessToken': accessToken }
-  return await gwRequest(http.RequestMethod.POST, '/api/v1/auth/refresh', accessToken, payload)
+  return await gwRequest(http.RequestMethod.POST, '/api/v1/auth/refresh', accessToken, {})
 }
 
 export async function gatewaySession(accessToken: string): Promise<GatewayResult> {
@@ -156,10 +153,10 @@ export async function acceptGatewayLogin(username: string, data: Record<string, 
     result.error = '登录成功但没有返回 accessToken'
     return result
   }
-  let expiresAt: number = gwExpiry(data)
-  if (expiresAt <= 0) {
-    // 网关未给过期时间时保留会话但不限制本地有效期：用 24h 兜底，避免立即失效。
-    expiresAt = Date.now() + 24 * 60 * 60 * 1000
+  const expiresAt: number = gwExpiry(data)
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    result.error = '登录会话有效期无效，请重试'
+    return result
   }
   const finalName = name.length > 0 ? name : username
   try {
@@ -195,6 +192,38 @@ export async function acceptGatewaySessionRefresh(data: Record<string, Object>,
 
 export function clearGatewaySession(): Promise<void> {
   return clearAccessToken()
+}
+
+let refreshTask: Promise<GatewayResult> | undefined = undefined
+let refreshEpoch: number = -1
+
+export function refreshGatewayAccount(): Promise<GatewayResult> {
+  const epoch: number = getCacheEpoch()
+  if (refreshTask !== undefined && refreshEpoch === epoch) return refreshTask
+  const token: string = getAccessToken()
+  if (!isGatewayAuth() || token.length === 0) {
+    const result = new GatewayResult(); result.error = '登录已过期，请重新登录'
+    return Promise.resolve(result)
+  }
+  refreshEpoch = epoch
+  const task: Promise<GatewayResult> = (async (): Promise<GatewayResult> => {
+    try {
+      const response = await gatewayRefresh(token)
+      if (epoch !== getCacheEpoch() || token !== getAccessToken()) {
+        const retired = new GatewayResult(); retired.error = '登录状态已变化'; return retired
+      }
+      if (!response.ok) return response
+      return await acceptGatewayLogin(getUsername(), response.data, epoch)
+    } finally { if (refreshEpoch === epoch) refreshTask = undefined }
+  })()
+  refreshTask = task
+  return task
+}
+
+export async function logoutGatewayAccount(): Promise<void> {
+  const token: string = isGatewayAuth() ? getAccessToken() : ''
+  await clearSession()
+  if (token.length > 0) await gatewayLogout(token)
 }
 
 // 网关支持的 13 个 feature（与 xllite 仓库 XjitFeature 枚举一致）

@@ -12,7 +12,7 @@ import { CampusIcon } from '../components/common/CampusIcon'
 import { CampusHeader } from '../components/common/CampusHeader'
 import { getColors, ColorPalette } from '../theme/Colors'
 import { Typography } from '../theme/Typography'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername, getPassword, isGatewayAuth } from '../services/AuthManager'
 import { callFeature, CallResult } from '../services/ApiService'
 import { loadTodos } from '../services/TodoService'
 import { getCourseMinutes, formatMinutes, nextClassIndex } from '../utils/ClassTime'
@@ -181,7 +181,7 @@ export struct HomeTab {
   openFeature(f: FeatureDef): void {
     if (f.page === 'SchedulePage') { AppStorage.setOrCreate<string>('campusRoute', 'schedule'); return }
     safePush(this.getUIContext(), {
-      url: hasNativeAdapter(f.name) || f.system === 'local' ? 'pages/' + f.page : 'pages/SchoolServicePage',
+      url: isGatewayAuth() || hasNativeAdapter(f.name) || f.system === 'local' ? 'pages/' + f.page : 'pages/SchoolServicePage',
       params: { 'feature': f.name, 'title': f.title } as Record<string, Object>,
     })
   }

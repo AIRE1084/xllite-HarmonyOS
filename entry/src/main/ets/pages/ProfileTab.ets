@@ -4,7 +4,8 @@ import { getColors, ColorPalette } from '../theme/Colors'
 import { CampusCard } from '../components/common/CampusCard'
 import { CampusIcon } from '../components/common/CampusIcon'
 import { CampusHeader } from '../components/common/CampusHeader'
-import { getUsername, getPassword, clearSession } from '../services/AuthManager'
+import { getUsername, getPassword } from '../services/AuthManager'
+import { logoutGatewayAccount } from '../services/XlliteGateway'
 import { callFeature, CallResult } from '../services/ApiService'
 import { getCacheEpoch } from '../services/MemoryCache'
 import { setThemeMode, setReduceMotion } from '../services/ThemeService'
@@ -83,7 +84,7 @@ export struct ProfileTab {
   async handleLogout(): Promise<void> {
     if (this.loggingOut) return
     this.loggingOut = true
-    await clearSession()
+    await logoutGatewayAccount()
     if (this.alive) {
       safeToast(this.getUIContext(), '已退出登录')
       this.getUIContext().getRouter().clear()
