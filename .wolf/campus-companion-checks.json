@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-16T15:22:40.744Z",
+  "checkedAt": "2026-10-16T15:31:40.368Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 38,
+  "checks": 39,
   "failed": 0,
   "results": [
     {
@@ -83,6 +83,10 @@
     },
     {
       "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
+      "ok": true
+    },
+    {
+      "name": "snapshot write and rename failures preserve last complete disk snapshot",
       "ok": true
     },
     {
