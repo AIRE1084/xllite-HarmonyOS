@@ -60,14 +60,16 @@ struct MainTabs {
     else if (route === 'todo') { this.campusRoute = ''; safePush(this.getUIContext(), { url: 'pages/TodoPage' }) }
   }
   private selectTab(index: number): void {
-    if (index === this.currentIndex) return
+    if (index < 0 || index > 2 || index === this.currentIndex) return
     const previous: number = this.currentIndex
     if (index === 1) this.scheduleVisited = true
     if (index === 2) this.profileVisited = true
     // 离场标签多保留一帧时长，与入场标签交叉淡入淡出，避免透出背景闪白。
     this.clearLeaveTimer()
-    this.leavingTab = previous
+    const duration: number = motionDuration(Motion.duration.fast)
+    this.leavingTab = duration > 0 ? previous : -1
     this.currentIndex = index
+    if (duration === 0) return
     this.leaveTimer = setTimeout(() => {
       this.leaveTimer = -1
       if (this.leavingTab === previous && this.currentIndex !== previous) this.leavingTab = -1
@@ -82,17 +84,20 @@ struct MainTabs {
       HomeTab({ active: this.currentIndex === 0 })
         .visibility(this.tabVisible(0) ? Visibility.Visible : Visibility.Hidden)
         .opacity(this.currentIndex === 0 ? 1 : 0)
+          .hitTestBehavior(this.currentIndex === 0 ? HitTestMode.Default : HitTestMode.None)
         .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
       if (this.scheduleVisited) {
         ScheduleTab({ active: this.currentIndex === 1 })
           .visibility(this.tabVisible(1) ? Visibility.Visible : Visibility.Hidden)
           .opacity(this.currentIndex === 1 ? 1 : 0)
+          .hitTestBehavior(this.currentIndex === 1 ? HitTestMode.Default : HitTestMode.None)
           .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
       }
       if (this.profileVisited) {
         ProfileTab({ active: this.currentIndex === 2 })
           .visibility(this.tabVisible(2) ? Visibility.Visible : Visibility.Hidden)
           .opacity(this.currentIndex === 2 ? 1 : 0)
+          .hitTestBehavior(this.currentIndex === 2 ? HitTestMode.Default : HitTestMode.None)
           .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
       }
       // A separate passive scrim protects dock labels when scrolling text moves underneath.

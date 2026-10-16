@@ -296,7 +296,7 @@ export struct HomeTab {
       Column({ space: 14 }) {
         Row() {
           Row({ space: 7 }) {
-            Circle({ width: 6, height: 6 }).fill(this.palette.accent)
+            Row().width(6).height(6).borderRadius(3).backgroundColor(this.palette.accent)
             Text(this.courseLabel()).fontSize(Typography.label.fontSize).fontWeight(FontWeight.Medium).fontColor(this.palette.onSurface)
           }
           Blank()
@@ -356,8 +356,8 @@ export struct HomeTab {
   @Builder
   TodoPreview(item: TodoItem) {
     Row({ space: 12 }) {
-      Circle({ width: 16, height: 16 }).fill(Color.Transparent)
-        .stroke(this.palette.outline).strokeWidth(1.5)
+      Row().width(16).height(16).borderRadius(8)
+        .border({ width: 1.5, color: this.palette.outline })
       Column({ space: 5 }) {
         Text(item.title).fontSize(14).fontColor(this.palette.onSurface)
           .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })

@@ -268,8 +268,8 @@ export struct ScheduleTab {
             .alignItems(HorizontalAlign.Start)
 
             Column() {
-              Circle({ width: 9, height: 9 })
-                .fill(this.statusColor(this.timelineStatus(item)))
+              Row().width(9).height(9).borderRadius(4.5)
+                .backgroundColor(this.statusColor(this.timelineStatus(item)))
               if (index < this.todayItems().length - 1) {
                 Divider()
                   .vertical(true)

@@ -19,7 +19,7 @@ export struct ThemeWash {
     // 等一帧让不透明覆盖层完成渲染，再开始淡出，保证旧色先盖住再揭示新主题。
     this.revealTimer = setTimeout(() => {
       this.revealTimer = -1
-      animateTo({ duration: Motion.duration.base, curve: Motion.curve.decelerate }, (): void => {
+      this.getUIContext().animateTo({ duration: Motion.duration.base, curve: Motion.curve.decelerate }, (): void => {
         this.washOpacity = 0
       })
     }, 16)

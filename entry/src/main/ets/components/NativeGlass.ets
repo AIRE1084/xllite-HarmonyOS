@@ -19,7 +19,11 @@ export struct NativeGlass {
       } else {
         Column() { this.content() }
           .width('100%').padding(this.contentPadding).borderRadius(this.radius)
-          .backgroundColor(this.isDark ? '#EC19283D' : '#F2F7FAFF')
+          .backgroundColor(this.isDark ? '#8019283D' : '#B3F7FAFF')
+          .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
+            colorMode: this.isDark ? ThemeColorMode.DARK : ThemeColorMode.LIGHT,
+            adaptiveColor: AdaptiveColor.DEFAULT,
+          })
       }
       Row().width('78%').height(1)
         .linearGradient({ angle: 90, colors: this.isDark
