@@ -125,7 +125,18 @@ export async function gatewayLogout(accessToken: string): Promise<void> {
 export async function gatewayRun(feature: string, accessToken: string,
   params: Record<string, Object>): Promise<GatewayResult> {
   const payload: Record<string, Object> = { 'feature': feature, 'params': params }
-  return await gwRequest(http.RequestMethod.POST, '/api/v1/run', accessToken, payload)
+  const result = await gwRequest(http.RequestMethod.POST, '/api/v1/run', accessToken, payload)
+  if (result.ok) {
+    const collections: Record<string, string> = {
+      'jw.schedule': 'courses', 'jw.grades': 'grades', 'jw.exams': 'exams',
+      'jw.training': 'training', 'newcard.balance': 'accounts', 'newcard.transactions': 'transactions'
+    }
+    const key: string = collections[feature]
+    if (key !== undefined && !Array.isArray(result.data[key])) {
+      result.ok = false; result.data = {}; result.error = '业务响应缺少有效的' + key + '集合'
+    }
+  }
+  return result
 }
 
 function gwExpiry(data: Record<string, Object>): number {
