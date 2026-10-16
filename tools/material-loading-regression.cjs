@@ -8,7 +8,7 @@ function fixture(api,fail=false){
  if(s==='@ohos.deviceInfo')return {default:{sdkApiVersion:api}};
  if(s.endsWith('/NativeMaterials')){loads++;if(fail)throw Error('missing');return {supportsNativeMaterial:()=>true,createNativeMaterial:()=>({})};}
  throw Error('Unexpected static dependency: '+s);
- }});return {api:module.exports,loads:()=>loads};
+ }});return {api:module.exports,loads:()=>loads,setFailure:value=>{fail=value}};
 }
 function componentFixture(){
  let source=fs.readFileSync('entry/src/main/ets/components/NativeGlass.ets','utf8');
@@ -23,6 +23,10 @@ function componentFixture(){
  const modern=fixture(26);const a=modern.api.loadImmersiveMaterial(),b=modern.api.loadImmersiveMaterial();assert.equal(a,b);assert.equal(await a,true);assert.equal(modern.loads(),1);assert.equal(modern.api.supportsImmersiveMaterial(),true);
  const broken=fixture(26,true);assert.equal(await broken.api.loadImmersiveMaterial(),false);assert.equal(broken.api.supportsImmersiveMaterial(),false);
  console.log('PASS old API skips module; concurrent loads share promise; missing adapter falls back');
+ broken.setFailure(false);assert.equal(await broken.api.loadImmersiveMaterial(),true);assert.equal(broken.loads(),2);
+ assert.equal(await broken.api.loadImmersiveMaterial(),true);assert.equal(broken.loads(),2);
+ assert.ok(broken.api.glassMaterial(false));
+ console.log('PASS failed adapter load can retry and successful load is reused');
  const f=componentFixture();f.page.aboutToAppear();f.page.aboutToDisappear();f.pending[0](true);await Promise.resolve();assert.equal(f.page.nativeSupported,false);
  f.page.aboutToAppear();f.pending[1](true);await Promise.resolve();assert.equal(f.page.nativeSupported,true);
  console.log('PASS retired glass ignores late load and reappearing glass accepts current result');
