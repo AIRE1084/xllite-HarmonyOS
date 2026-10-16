@@ -76,4 +76,9 @@ test('login discloses gateway credential processing separately from local storag
  assert.ok(source.includes('https://xllite.sayqz.com')); assert.ok(source.includes('服务器可能为续登保留凭据'));
  assert.ok(source.includes('保存期限与删除方式尚待服务运营方确认')); assert.ok(source.includes('密码不保存在本机'));
 });
+test('tab content switches without crossfading two readable text surfaces',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
+ const body=source.slice(source.indexOf('  build()'),source.indexOf('  pageTransition()'));
+ assert.equal((body.match(/\.animation\(/g)||[]).length,0);
+});
 console.log(`${count} API23 checks, ${failed} failed`); process.exitCode = failed ? 1 : 0;

@@ -85,20 +85,20 @@ struct MainTabs {
         .visibility(this.tabVisible(0) ? Visibility.Visible : Visibility.Hidden)
         .opacity(this.currentIndex === 0 ? 1 : 0)
           .hitTestBehavior(this.currentIndex === 0 ? HitTestMode.Default : HitTestMode.None)
-        .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
+
       if (this.scheduleVisited) {
         ScheduleTab({ active: this.currentIndex === 1 })
           .visibility(this.tabVisible(1) ? Visibility.Visible : Visibility.Hidden)
           .opacity(this.currentIndex === 1 ? 1 : 0)
           .hitTestBehavior(this.currentIndex === 1 ? HitTestMode.Default : HitTestMode.None)
-          .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
+
       }
       if (this.profileVisited) {
         ProfileTab({ active: this.currentIndex === 2 })
           .visibility(this.tabVisible(2) ? Visibility.Visible : Visibility.Hidden)
           .opacity(this.currentIndex === 2 ? 1 : 0)
           .hitTestBehavior(this.currentIndex === 2 ? HitTestMode.Default : HitTestMode.None)
-          .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
+
       }
       // A separate passive scrim protects dock labels when scrolling text moves underneath.
       // Keep custom backgrounds off the node that owns the native material.
