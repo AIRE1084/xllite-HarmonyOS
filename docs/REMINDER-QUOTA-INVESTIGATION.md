@@ -26,7 +26,7 @@ W C01203/Ans: ReminderControl com.xjit.app.acceptance, notification not allowed.
 
 这证明该包在系统提醒控制检查中出现配置解析/通知控制警告，但标签为LIVE_VIEW，尚未与publishReminder返回1700002对应到同一次调用。不能直接推断课程提醒容量错误就是此配置引起，也不能用普通isNotificationEnabled返回值排除所有系统侧控制。按小写reminder、overload和upper筛选未返回记录。
 
-下一次重现应把单次开关操作与紧接的系统日志关联，保留时间和模块，不记录账户、token或课程内容；不修改系统控制配置。
+随后在已确认的提醒设置页关闭再开启课前提醒，关闭后设备date返回2026-10-16 22:43:42 CST；重新开启后立即读取日志，同包两条ReminderControl警告于22:43:43.262和22:43:43.264再次出现。单次操作与警告已建立秒级时间关联，但同一reconcile也会执行syncLive，因此尚不具备隔离因果证据；后续可关闭实况窗后仅重试课前提醒，将两个系统调用链分开。未修改系统控制配置或读取业务凭据。
 
 ## 仍需取得的证据
 
