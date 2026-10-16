@@ -10,21 +10,25 @@
 
 ## 延迟导入资料核对
 
-已读取[OpenHarmony延迟加载官方文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/arkts-utils/arkts-lazy-import.md)：lazy import自API12支持，但其模块解析在冷启动仍会遍历，只将模块源码执行延至首次使用；动态import则在实际执行时触发模块解析及执行。因此把uiMaterial静态导入机械替换为lazy import，不足以证明旧系统缺少模块时可正常链接。本机编译工具确有process_lazy_import实现，但编译器接受语法不替代旧系统运行证据。当前未改生产导入方式，后续需验证动态导入的系统模块支持及ArkUI同步材质消费方式，或取得真实API23结果后再选方案。
+已读取[OpenHarmony延迟加载官方文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/arkts-utils/arkts-lazy-import.md)：lazy import自API12支持，但其模块解析在冷启动仍会遍历，只将模块源码执行延至首次使用；动态import则在实际执行时触发模块解析及执行。因此把uiMaterial静态导入机械替换为lazy import，不足以证明旧系统缺少模块时可正常链接。本机编译工具确有process_lazy_import实现，但编译器接受语法不替代旧系统运行证据。该结论用于排除机械替换lazy import的方案；当前已采用下述应用侧适配模块的动态导入实现。
 
 ## 动态导入方案的已核实边界
 
 [官方动态import文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/arkts-utils/arkts-dynamic-import.md)在规格表明确列出@ohos.*系统API，示例使用import('@ohos.curves').then(...)，因此常量动态导入系统模块有公开依据，而非仅支持HAR/HSP。
 
-当前调用链仅NativeGlass使用Materials导出，但nativeSupported在字段初始化和aboutToAppear同步查询，build同步消费glassMaterial。可验证的改造路径应为：类型专用导入与运行时模块分离；API版本先判断，API23不执行动态导入；API26用共享Promise去重加载，失败保留原生模糊；组件出现时异步检查并刷新状态，离开后忽略迟到结果；实际创建材质前确保模块存在。还需检查编译产物是否残留静态系统模块依赖，不能只靠转译测试。此次仅完成契约和调用链核对，未改生产加载逻辑；真实API23链接和systemMaterial兼容分支执行仍是门槛。
+当前调用链仅NativeGlass使用Materials导出。已实现类型专用导入与运行时模块分离：API23不执行动态导入；API26共享Promise去重加载应用侧适配函数，失败保留原生模糊；组件出现时异步检查并刷新状态，离开后忽略迟到结果；实际创建材质前确保适配函数存在。专项已验证失败后可重试、成功后复用、离开后迟到结果不修改组件、重新出现的新结果可生效。产物级证据见下节；真实API23链接和systemMaterial兼容分支执行仍是门槛。
 
 ### 实际编译试验
 
-曾以缺失系统模块回归先复现静态导入初始化失败，再试验类型导入加动态import、共享Promise和组件出现序号保护。转译23项通过，但实际ArkTS构建明确报10605060（typeof仅可用于表达式，arkts-no-type-query）及10605114（命名空间不可当对象，arkts-no-ns-as-obj）。该试验的模块对象缓存方式不受支持，已仅撤回本轮试验改动，生产仍为原实现；原22项兼容回归复验通过，未生成或安装失败版本。后续应使用可编译的应用侧适配模块导出函数，避免把系统命名空间存作对象，并重新验证产物依赖。
+曾以缺失系统模块回归先复现静态导入初始化失败，再试验类型导入加动态import、共享Promise和组件出现序号保护。转译23项通过，但实际ArkTS构建明确报10605060（typeof仅可用于表达式，arkts-no-type-query）及10605114（命名空间不可当对象，arkts-no-ns-as-obj）。该历史试验的模块对象缓存方式不受支持，已撤回，未安装失败版本。随后使用应用侧适配模块导出函数，避免把系统命名空间存作对象；实际ArkTS完整构建已通过，且完成下述ABC产物检查。
 
 ### 实际ABC产物检查
 
 使用本机SDK ark_disasm反汇编已构建modules.abc：Materials的MODULE_REQUEST_ARRAY仅含@ohos:deviceInfo，类型导入未成为静态uiMaterial依赖；loadImmersiveMaterial体内保留指向NativeMaterials的dynamicimport指令；uiMaterial静态依赖仅在NativeMaterials导入表出现。对应未签名HAP SHA256 4214631F451E3BA1885C300D10F7816A27F26D0EF6AFE534CEF995051DE08932。中间Materials.ts仍含import type属于类型信息，不能仅凭文本含uiMaterial认定存在运行时静态依赖。全量回归通过；这些证明产物依赖已按预期隔离，不替代API23实际加载/绘制。
+
+## 当前设备验收状态
+
+动态适配版尚未安装验证：最近安装尝试在设备API门禁中止，HDC返回Device not found，随后list targets返回空列表；构建及安装阶段均未执行。先恢复原验收设备连接并核对原bundle及会话，不新建替代模拟器、不清除数据。API26运行验收应确认增强分支确实执行、切换标签后材质正常、应用无新增模块加载异常；API23验收另按以下门槛执行。单纯截图看见玻璃不足以区分系统增强与兼容模糊。
 
 ## 接入设备后的操作
 
