@@ -1,5 +1,5 @@
 /**
- * 节次 → 时段映射(草案见计划书 4.5)
+ * 节次 → 时段映射(已确认的2026秋季校历，Asia/Shanghai)
  *
  * 大节(中文) → 索引 0-9
  * "1-2节"     → 时段 [startMinutes, endMinutes]
@@ -12,16 +12,16 @@ export interface ClassTime {
 }
 
 const TIMES: ClassTime[] = [
-  { startMinutes: 8 * 60,      endMinutes: 8 * 60 + 45,  label: '08:00 - 08:45' },
-  { startMinutes: 8 * 60 + 55, endMinutes: 9 * 60 + 40,  label: '08:55 - 09:40' },
-  { startMinutes: 10 * 60 + 10,endMinutes: 10 * 60 + 55, label: '10:10 - 10:55' },
-  { startMinutes: 11 * 60 + 5, endMinutes: 11 * 60 + 50, label: '11:05 - 11:50' },
-  { startMinutes: 14 * 60,     endMinutes: 14 * 60 + 45, label: '14:00 - 14:45' },
-  { startMinutes: 14 * 60 + 55,endMinutes: 15 * 60 + 40, label: '14:55 - 15:40' },
-  { startMinutes: 16 * 60 + 10,endMinutes: 16 * 60 + 55, label: '16:10 - 16:55' },
-  { startMinutes: 17 * 60 + 5, endMinutes: 17 * 60 + 50, label: '17:05 - 17:50' },
-  { startMinutes: 19 * 60,     endMinutes: 19 * 60 + 45, label: '19:00 - 19:45' },
-  { startMinutes: 19 * 60 + 55,endMinutes: 20 * 60 + 40, label: '19:55 - 20:40' },
+  { startMinutes: 600, endMinutes: 645, label: '10:00 - 10:45' },
+  { startMinutes: 655, endMinutes: 700, label: '10:55 - 11:40' },
+  { startMinutes: 720, endMinutes: 765, label: '12:00 - 12:45' },
+  { startMinutes: 775, endMinutes: 820, label: '12:55 - 13:40' },
+  { startMinutes: 960, endMinutes: 1005, label: '16:00 - 16:45' },
+  { startMinutes: 1015, endMinutes: 1060, label: '16:55 - 17:40' },
+  { startMinutes: 1080, endMinutes: 1125, label: '18:00 - 18:45' },
+  { startMinutes: 1135, endMinutes: 1180, label: '18:55 - 19:40' },
+  { startMinutes: 1230, endMinutes: 1275, label: '20:30 - 21:15' },
+  { startMinutes: 1285, endMinutes: 1330, label: '21:25 - 22:10' },
 ]
 
 /**
