@@ -123,7 +123,8 @@ export struct ScheduleTab {
         this.totalWeeks = readNumber(res.data, ['totalWeeks', 'weeksTotal'], this.totalWeeks)
         this.currentWeek = AppStorage.get<number>('currentWeek') ?? this.currentWeek
         // 首次加载时若已恢复用户上次浏览的周次，则保留并做范围收敛，不回退到当前周。
-        this.selectedWeek = (this.hasLoaded || this.restoredWeek > 0) ? Math.min(this.selectedWeek, this.totalWeeks) : this.currentWeek
+        const preferredWeek: number = (this.hasLoaded || this.restoredWeek > 0) ? this.selectedWeek : this.currentWeek
+        this.selectedWeek = Number.isInteger(preferredWeek) ? Math.max(1, Math.min(preferredWeek, this.totalWeeks)) : 1
         this.hasLoaded = true
         AppStorage.setOrCreate<string>('term', this.term)
         this.allCourses = (res.data['courses'] ?? []) as Course[]
