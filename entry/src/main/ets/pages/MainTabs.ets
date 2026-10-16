@@ -60,11 +60,11 @@ struct MainTabs {
     else if (route === 'todo') { this.campusRoute = ''; safePush(this.getUIContext(), { url: 'pages/TodoPage' }) }
   }
   private selectTab(index: number): void {
-    if (index < 0 || index > 2 || index === this.currentIndex) return
+    if (!Number.isInteger(index) || index < 0 || index > 2 || index === this.currentIndex) return
     const previous: number = this.currentIndex
     if (index === 1) this.scheduleVisited = true
     if (index === 2) this.profileVisited = true
-    // 离场标签多保留一帧时长，与入场标签交叉淡入淡出，避免透出背景闪白。
+    // Keep the outgoing instance briefly; opacity switches instantly to avoid text ghosting.
     this.clearLeaveTimer()
     const duration: number = motionDuration(Motion.duration.fast)
     this.leavingTab = duration > 0 ? previous : -1
