@@ -22,6 +22,7 @@ function fixture(name) {
     .replace('export struct ' + name, 'struct ' + name).replace('struct ' + name, 'export class ' + name);
   const module = { exports: {} };
   const context = {
+    AppStorage: { get:()=>7, setOrCreate(){} },
     exports: module.exports, module, console, Date: class extends Date { static now() { return state.now; } },
     setTimeout(fn, delay) { const id = state.nextTimer++; state.timers.set(id, { fn, delay, interval: false }); return id; },
     setInterval(fn, delay) { const id = state.nextTimer++; state.timers.set(id, { fn, delay, interval: true }); return id; },
@@ -53,6 +54,14 @@ test('schedule restoration ignores fractional nonfinite and out-of-term weeks',(
  }
  const f=fixture('ScheduleTab');f.state.savedUi={selectedWeek:12};f.page.onActivityChange=()=>{};
  f.page.aboutToAppear();assert.equal(f.page.selectedWeek,12);assert.equal(f.page.restoredWeek,12);
+});
+test('schedule ignores invalid total weeks instead of truncating or accepting infinity',async()=>{
+ for(const totalWeeks of [Infinity,NaN,0,-1,0.5,1.5,61,999]){
+  const f=fixture('ScheduleTab');f.page.alive=true;f.page.totalWeeks=20;f.page.updateDerived=()=>{};
+  const task=f.page.loadSchedule(false);await until(()=>f.state.requests.length===1);
+  f.state.requests[0].resolve({ok:true,data:{courses:[],totalWeeks}});await task;
+  assert.equal(f.page.totalWeeks,20);assert.equal(f.page.hasLoaded,true);assert.equal(f.page.errorMsg,'');
+ }
 });
 test('schedule tab handles thrown request and permits retry',async()=>{
  const f=fixture('ScheduleTab'); f.page.alive=true;
