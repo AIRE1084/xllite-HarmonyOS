@@ -1,4 +1,5 @@
 import uiMaterial from '@ohos.arkui.uiMaterial'
+import hilog from '@ohos.hilog'
 
 const materials: Map<string, uiMaterial.ImmersiveMaterial> = new Map<string, uiMaterial.ImmersiveMaterial>()
 export function supportsNativeMaterial(): boolean {
@@ -16,5 +17,6 @@ export function createNativeMaterial(isDark: boolean, interactive: boolean, prom
     lightEffect: interactive ? { color: isDark ? '#A9C4FF' : '#FFFFFF' } : null,
   })
   materials.set(key, material)
+  hilog.info(0x0000, 'XJITMaterial', 'Native material created')
   return material
 }
