@@ -1,9 +1,15 @@
 import uiMaterial from '@ohos.arkui.uiMaterial'
+import deviceInfo from '@ohos.deviceInfo'
 
 const materials: Map<string, uiMaterial.ImmersiveMaterial> = new Map<string, uiMaterial.ImmersiveMaterial>()
 
 export function supportsImmersiveMaterial(): boolean {
-  try { return uiMaterial.isImmersiveMaterialSupported() && uiMaterial.getMaterialInfo().state !== uiMaterial.MaterialState.DISABLE } catch (_e) { return false }
+  try {
+    const rawApi: number = deviceInfo.sdkApiVersion
+    const api: number = rawApi >= 100000000 ? rawApi % 1000 : rawApi
+    if (api < 26) return false
+    return uiMaterial.isImmersiveMaterialSupported() && uiMaterial.getMaterialInfo().state !== uiMaterial.MaterialState.DISABLE
+  } catch (_e) { return false }
 }
 
 export function glassMaterial(isDark: boolean, interactive: boolean = false,

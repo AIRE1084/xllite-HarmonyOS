@@ -108,7 +108,7 @@ struct CampusSettingsPage {
   @Builder
   StatusLine($$: CampusStatusLine) {
     Row({ space: 7 }) {
-      Circle({ width: 5, height: 5 }).fill($$.status.indexOf('失败') >= 0 ? this.palette.error : this.palette.primary)
+      Row().width(5).height(5).borderRadius(2.5).backgroundColor($$.status.indexOf('失败') >= 0 ? this.palette.error : this.palette.primary)
       Text($$.status).fontSize(12).fontColor($$.status.indexOf('失败') >= 0 ? this.palette.error : this.palette.onSurfaceVariant)
         .layoutWeight(1)
     }.width('100%').margin({ top: 12 })

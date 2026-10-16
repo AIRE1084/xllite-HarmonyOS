@@ -103,7 +103,7 @@ try {
     if ($null -eq $moduleEntry) { throw 'HAP module.json not found.' }
     $reader = [IO.StreamReader]::new($moduleEntry.Open())
     try { $moduleInfo = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-    if ($moduleInfo.app.minAPIVersion -ne 260000026 -or $moduleInfo.app.targetAPIVersion -ne 260000026) { throw 'HAP minimum/target API does not match the selected API 26 configuration.' }
+    if ($moduleInfo.app.minAPIVersion -ne 60100023 -or $moduleInfo.app.targetAPIVersion -ne 260000026) { throw 'HAP minimum/target API does not match minimum API 23 and target API 26.' }
   } finally { $archive.Dispose() }
   $outputRoot = Join-Path $sourceRoot 'entry\build\default\outputs\default'
   New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
@@ -118,7 +118,7 @@ try {
   [ordered]@{
     builtAt = (Get-Date).ToString('o'); sourceRoot = $sourceRoot; stageRoot = $stageRoot
     devEcoRoot = $DevEcoRoot; nodeModulesPath = $NodeModulesPath
-    minimumApi = 26; targetApi = 26; compileSdk = $moduleInfo.app.compileSdkVersion
+    minimumApi = 23; targetApi = 26; compileSdk = $moduleInfo.app.compileSdkVersion
     hap = $deliveredHap; bytes = (Get-Item -LiteralPath $deliveredHap).Length; sha256 = $hash; inputs = $inputHashes; sourceDrift = $sourceDrift
   } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $recordRoot 'build-api26-inputs.json') -Encoding utf8
   Write-Output "Unsigned HAP: $deliveredHap"
