@@ -30,6 +30,7 @@ function fixture(name) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
+      if (spec.endsWith('/UiStateCache')) return { loadUiState() { return null; }, saveUiState() {}, clearUiState() {} };
       if (spec.endsWith('/ListDataSource')) return rowsModule.exports;
       if (spec.endsWith('/RouterHelper')) return { safeBack() {} };
       if (spec.endsWith('/ToastHelper')) return { safeToast(_ctx, text) { state.toasts.push(text); } };

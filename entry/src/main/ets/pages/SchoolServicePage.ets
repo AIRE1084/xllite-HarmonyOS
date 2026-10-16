@@ -5,6 +5,7 @@ import { isSchoolHttps, isSuperappUrl, isCardUrl, schoolLoginUrl, schoolFeatureU
 import { acceptSchoolLogin, acceptSchoolCardLogin } from '../services/SchoolNativeApi'
 import { getUsername } from '../services/AuthManager'
 import { getCacheEpoch } from '../services/MemoryCache'
+import { Motion, motionDuration } from '../theme/Motion'
 
 interface SchoolPageParams { mode?: string; feature?: string; title?: string; forgot?: string }
 // Fixed script, evaluated only on the exact school service origin. No passwords/cookies are read.
@@ -122,4 +123,16 @@ struct SchoolServicePage {
       }
     }.height('100%').width('100%').padding({ bottom: this.safeAreaBottom }).backgroundColor(getColors(this.isDark).surface)
   }
+
+  // 统一页面过渡：前进时新页右侧 30% 淡入、底层静止；返回时镜像右出淡出。
+  // 减少动效偏好下时长为 0（同时禁用设备默认页面动画，保持瞬时切换）。
+  pageTransition(): void {
+    PageTransitionEnter({ type: RouteType.Push, duration: motionDuration(Motion.duration.base), curve: Motion.curve.decelerate })
+      .translate({ x: motionDuration(Motion.duration.base) > 0 ? '30%' : '0%' }).opacity(motionDuration(Motion.duration.base) > 0 ? 0 : 1)
+    PageTransitionExit({ type: RouteType.Push, duration: motionDuration(Motion.duration.base) })
+    PageTransitionEnter({ type: RouteType.Pop, duration: motionDuration(Motion.duration.base) })
+    PageTransitionExit({ type: RouteType.Pop, duration: motionDuration(Motion.duration.base), curve: Motion.curve.accelerate })
+      .translate({ x: motionDuration(Motion.duration.base) > 0 ? '30%' : '0%' }).opacity(motionDuration(Motion.duration.base) > 0 ? 0 : 1)
+  }
+
 }

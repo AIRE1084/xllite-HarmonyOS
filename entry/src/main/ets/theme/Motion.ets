@@ -24,3 +24,8 @@ export const Motion: MotionSystem = {
   curve: { standard: Curve.EaseInOut, decelerate: Curve.EaseOut, accelerate: Curve.EaseIn,
     emphasized: Curve.Friction, smooth: Curve.Smooth, sharp: Curve.Sharp, linear: Curve.Linear },
 }
+
+/** 时长遵循应用内"减少动效"偏好；返回 0 时调用方按瞬时切换处理（同时禁用系统默认页面动画）。 */
+export function motionDuration(base: number): number {
+  return AppStorage.get<boolean>('reduceMotion') === true ? 0 : base
+}

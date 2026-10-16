@@ -7,14 +7,18 @@ import { BlurTabBar } from '../components/BlurTabBar'
 import { AmbientBackground } from '../components/AmbientBackground'
 import { getUsername, getPassword } from '../services/AuthManager'
 import { prewarmCampusData } from '../services/ApiService'
+import { Motion, motionDuration } from '../theme/Motion'
+import { ThemeWash } from '../components/common/ThemeWash'
 
 @Entry
 @Component
 struct MainTabs {
   @StorageLink('campusRoute') @Watch('applyRequestedRoute') campusRoute: string = ''
   @State currentIndex: number = 0
+  @State leavingTab: number = -1
   @State scheduleVisited: boolean = false
   @State profileVisited: boolean = false
+  private leaveTimer: number = -1
   @StorageLink('isDark') isDark: boolean = false
   @StorageLink('safeAreaBottom') safeAreaBottom: number = 0
   @StorageLink('mainPageActive') mainPageActive: boolean = true
@@ -29,6 +33,11 @@ struct MainTabs {
     this.alive = false
     this.mainPageActive = false
     this.cancelWarmupTimer()
+    this.clearLeaveTimer()
+  }
+  private clearLeaveTimer(): void {
+    if (this.leaveTimer >= 0) clearTimeout(this.leaveTimer)
+    this.leaveTimer = -1
   }
   private cancelWarmupTimer(): void {
     if (this.warmupTimer >= 0) clearTimeout(this.warmupTimer)
@@ -51,22 +60,40 @@ struct MainTabs {
     else if (route === 'todo') { this.campusRoute = ''; safePush(this.getUIContext(), { url: 'pages/TodoPage' }) }
   }
   private selectTab(index: number): void {
+    if (index === this.currentIndex) return
+    const previous: number = this.currentIndex
     if (index === 1) this.scheduleVisited = true
     if (index === 2) this.profileVisited = true
+    // 离场标签多保留一帧时长，与入场标签交叉淡入淡出，避免透出背景闪白。
+    this.clearLeaveTimer()
+    this.leavingTab = previous
     this.currentIndex = index
+    this.leaveTimer = setTimeout(() => {
+      this.leaveTimer = -1
+      if (this.leavingTab === previous && this.currentIndex !== previous) this.leavingTab = -1
+    }, motionDuration(Motion.duration.fast))
+  }
+  private tabVisible(index: number): boolean {
+    return this.currentIndex === index || this.leavingTab === index
   }
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       AmbientBackground()
       HomeTab({ active: this.currentIndex === 0 })
-        .visibility(this.currentIndex === 0 ? Visibility.Visible : Visibility.Hidden)
+        .visibility(this.tabVisible(0) ? Visibility.Visible : Visibility.Hidden)
+        .opacity(this.currentIndex === 0 ? 1 : 0)
+        .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
       if (this.scheduleVisited) {
         ScheduleTab({ active: this.currentIndex === 1 })
-          .visibility(this.currentIndex === 1 ? Visibility.Visible : Visibility.Hidden)
+          .visibility(this.tabVisible(1) ? Visibility.Visible : Visibility.Hidden)
+          .opacity(this.currentIndex === 1 ? 1 : 0)
+          .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
       }
       if (this.profileVisited) {
         ProfileTab({ active: this.currentIndex === 2 })
-          .visibility(this.currentIndex === 2 ? Visibility.Visible : Visibility.Hidden)
+          .visibility(this.tabVisible(2) ? Visibility.Visible : Visibility.Hidden)
+          .opacity(this.currentIndex === 2 ? 1 : 0)
+          .animation({ duration: motionDuration(Motion.duration.fast), curve: Motion.curve.decelerate })
       }
       // A separate passive scrim protects dock labels when scrolling text moves underneath.
       // Keep custom backgrounds off the node that owns the native material.
@@ -84,8 +111,21 @@ struct MainTabs {
       }
       .width('100%')
       .padding({ left: 24, right: 24, bottom: this.safeAreaBottom + 10 })
+      ThemeWash()
     }
     .width('100%').height('100%')
   }
+
+  // 统一页面过渡：前进时新页右侧 30% 淡入、底层静止；返回时镜像右出淡出。
+  // 减少动效偏好下时长为 0（同时禁用设备默认页面动画，保持瞬时切换）。
+  pageTransition(): void {
+    PageTransitionEnter({ type: RouteType.Push, duration: motionDuration(Motion.duration.base), curve: Motion.curve.decelerate })
+      .translate({ x: motionDuration(Motion.duration.base) > 0 ? '30%' : '0%' }).opacity(motionDuration(Motion.duration.base) > 0 ? 0 : 1)
+    PageTransitionExit({ type: RouteType.Push, duration: motionDuration(Motion.duration.base) })
+    PageTransitionEnter({ type: RouteType.Pop, duration: motionDuration(Motion.duration.base) })
+    PageTransitionExit({ type: RouteType.Pop, duration: motionDuration(Motion.duration.base), curve: Motion.curve.accelerate })
+      .translate({ x: motionDuration(Motion.duration.base) > 0 ? '30%' : '0%' }).opacity(motionDuration(Motion.duration.base) > 0 ? 0 : 1)
+  }
+
 }
 

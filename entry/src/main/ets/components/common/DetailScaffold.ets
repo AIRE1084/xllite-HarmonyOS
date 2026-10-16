@@ -1,5 +1,6 @@
 import { AmbientBackground } from '../AmbientBackground'
 import { DetailHeader } from './DetailHeader'
+import { ThemeWash } from './ThemeWash'
 
 @Component
 export struct DetailScaffold {
@@ -19,6 +20,7 @@ export struct DetailScaffold {
           onBack: () => this.onBack(), onAction: () => this.onAction() })
         this.content()
       }.width('100%').height('100%').padding({ bottom: this.safeAreaBottom })
+      ThemeWash()
     }.width('100%').height('100%')
   }
 }
