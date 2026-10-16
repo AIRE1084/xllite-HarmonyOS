@@ -146,7 +146,9 @@ async function syncReminders(): Promise<void> {
   } catch (error) {
     lastPlan = ''
     const err = error as BusinessError
-    AppStorage.setOrCreate<string>('courseReminderStatus', err.code !== undefined ? '提醒登记失败（' + err.code + '），请检查通知权限' : (error as Error).message)
+    AppStorage.setOrCreate<string>('courseReminderStatus', err.code === 401 ? '提醒参数无效（401），请同步课表后重试' :
+      err.code === 201 ? '提醒权限未授予（201）' : err.code === 1700001 ? '系统通知尚未开启（1700001）' :
+      err.code !== undefined ? '提醒登记失败（' + err.code + '），请稍后重试' : (error as Error).message)
     throw error as Error
   }
 }
