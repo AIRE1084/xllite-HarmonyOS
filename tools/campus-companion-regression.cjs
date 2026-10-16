@@ -130,6 +130,14 @@ test('widget distinguishes no courses today from all courses ended',()=>{
  assert.equal(f.calendar.widgetData(snapshot(),new Date(2026,9,12,23)).status,'今日课程已结束');
  assert.equal(f.calendar.widgetData(snapshot(),new Date(2026,9,12,9)).status,'下一节课');
 });
+test('widget lesson state observes inclusive start and exclusive end boundaries',()=>{
+ const f=fixture(),data=snapshot();
+ assert.equal(f.calendar.widgetData(data,new Date(2026,9,12,9,59,59)).status,'下一节课');
+ assert.equal(f.calendar.widgetData(data,new Date(2026,9,12,10,0)).status,'上课中');
+ assert.equal(f.calendar.widgetData(data,new Date(2026,9,12,11,39,59)).status,'上课中');
+ const ended=f.calendar.widgetData(data,new Date(2026,9,12,11,40));
+ assert.equal(ended.status,'今日课程已结束');assert.equal(ended.courseRoom,'');assert.equal(ended.courseTime,'');
+});
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;
  await assert.rejects(core.setCampusOption('reminders',true)); assert.equal(f.values.get('courseReminderEnabled'),false); assert.equal(f.state.reminders.size,0);
