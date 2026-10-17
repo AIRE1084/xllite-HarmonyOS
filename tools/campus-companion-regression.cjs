@@ -26,7 +26,7 @@ function fixture() {
     openSync(p) { const fd = nextFile++; openFiles.set(fd,p); return {fd}; },
     writeSync(fd,s) {if(state.writeFail)throw Error('write failed');disks.set(openFiles.get(fd),s);}, closeSync() {state.closedFiles=(state.closedFiles||0)+1;},
     renameSync(a,b) {if(state.renameFail)throw Error('rename failed');disks.set(b,disks.get(a)); disks.delete(a);} };
-  const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;}, async isNotificationEnabled(){if(state.notificationQueryHook)await state.notificationQueryHook();return state.notificationAllowed;}};
+  const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;if(state.notificationRequestHook)await state.notificationRequestHook();}, async isNotificationEnabled(){if(state.notificationQueryHook)await state.notificationQueryHook();return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
     async getAllValidReminders(){if(state.allValidHook)await state.allValidHook();if(state.allValidQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
@@ -222,6 +222,13 @@ test('logout during live view preflight cannot reenable live switch',async()=>{
  const f=fixture(),core=await readyCourse(f),gate=deferred();let entered=false;f.state.liveQueryHook=async()=>{entered=true;await gate.promise};
  const enable=core.setCampusOption('live',true);await until(()=>entered);await core.clearCampusCompanion();gate.resolve();await enable;
  assert.equal(f.values.get('liveViewEnabled'),false);assert.equal(f.state.liveStarts.length,0);
+});
+test('closing reminders during permission dialog wins over late grant or denial',async()=>{
+ for(const granted of [false,true]){
+  const f=fixture(),core=await readyCourse(f),gate=deferred();f.state.notificationAllowed=false;f.state.notificationRequestHook=()=>gate.promise;
+  const enable=core.setCampusOption('reminders',true);await until(()=>f.state.notificationRequests===1);await core.setCampusOption('reminders',false);
+  f.state.notificationAllowed=granted;gate.resolve();await enable;assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.state.requests.length,0);assert.equal(f.values.get('courseReminderStatus'),'已关闭并取消课程提醒');
+ }
 });
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;
