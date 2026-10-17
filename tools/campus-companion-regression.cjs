@@ -209,6 +209,12 @@ test('widget lesson state observes inclusive start and exclusive end boundaries'
  const ended=f.calendar.widgetData(data,new Date(2026,9,12,11,40));
  assert.equal(ended.status,'今日课程已结束');assert.equal(ended.courseRoom,'');assert.equal(ended.courseTime,'');
 });
+test('unknown companion option never mutates settings or calls native services',async()=>{
+ for(const option of ['', 'Live', 'unknown']){
+  const f=fixture(),core=await readyCourse(f),before=plain([...f.values]);await assert.rejects(core.setCampusOption(option,true),/选项/);
+  assert.deepEqual(plain([...f.values]),before);assert.equal(f.state.liveStarts.length,0);assert.equal(f.state.requests.length,0);
+ }
+});
 test('enabled notifications skip another permission request',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('reminders',true);
  assert.equal(f.state.notificationRequests||0,0);
