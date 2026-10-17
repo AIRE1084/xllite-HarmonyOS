@@ -93,6 +93,13 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('logout retires add paused before mutation enqueue',async()=>{
+ const f=fixture(),gate=deferred();let entered=false;
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get'){entered=true;await gate.promise}};
+ const add=f.todo.addTodo({title:'Old account',note:'',dueText:''});const retired=assert.rejects(add,/会话/);
+ await until(()=>entered);const clear=f.todo.clearTodos();gate.resolve();await Promise.all([retired,clear]);
+ assert.equal((await f.todo.loadTodos()).length,0);assert.equal(f.state.todoWidgets.at(-1).openCount,0);
+});
 test('logout clears todo storage and desktop data after earlier pending writes',async()=>{
  const f=fixture();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});
  await f.auth.clearSession();assert.equal((await f.todo.loadTodos()).length,0);
