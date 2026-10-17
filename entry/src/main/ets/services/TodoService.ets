@@ -127,6 +127,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
 }
 
 export async function loadTodos(): Promise<TodoItem[]> {
+  const version = sessionVersion
   if (cleanupPending) throw new Error('上一会话待办清理未完成，请重试退出清理')
   if (loaded) return cloneItems(todoStore)
   if (loadTask === null) {
@@ -135,6 +136,7 @@ export async function loadTodos(): Promise<TodoItem[]> {
       if (task === null) return
       const prefs = await task
       const raw = await prefs.get(KEY_ITEMS, '')
+      if (version !== sessionVersion || cleanupPending) throw new Error('待办会话已变化，旧读取已失效')
       if (typeof raw !== 'string') throw new Error('待办存储类型异常，原数据已保留')
       if (raw.length > 0) todoStore = parseItems(raw)
       loaded = true
@@ -142,6 +144,7 @@ export async function loadTodos(): Promise<TodoItem[]> {
   }
   const task = loadTask
   try { await task } finally { if (loadTask === task) loadTask = null }
+  if (version !== sessionVersion || cleanupPending) throw new Error('待办会话已变化，旧读取已失效')
   return cloneItems(todoStore)
 }
 
