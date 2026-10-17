@@ -1,6 +1,17 @@
 # 独立验收包刷新
 
-2026-10-17；最新应用源码基线5d0dabe，配套回归基线a64ba11。
+2026-10-17；最新应用源码基线a5f25f2，产物验证工具基线fa42d88。
+
+## 最新诊断及状态修复产物
+
+- 同步CampusCompanionService.ets，逐文件哈希相同，独立签名配置前后不变，assembleHap成功。
+- 包含旧关闭结果不覆盖重开状态、设置选项白名单、1700002 SDK定义与实际根因区分、本应用提醒数量口径修正。
+- 实际运行acceptance-artifact-regression.ps1：verify-app成功，签名及代码签名通过；错误最低API、正式包预期负向测试通过。
+- 签名HAP实际清单：com.xjit.app.acceptance，minAPIVersion=60100023，targetAPIVersion=260000026。
+- 最新SHA256：04A7ADC493249AF195A79ACFC3AC71B38A404895C32A25659974783E2D73A9D5。
+- 签名工具仍提示可选outproof参数缺失，但返回验证成功；不声明零警告。
+- HDC端口8710为[Empty]。未安装启动、未执行真实支付，正式包及会话保持不动。
+
 
 ## 授权与系统预检竞态修复刷新
 
