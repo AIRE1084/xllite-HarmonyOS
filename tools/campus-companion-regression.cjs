@@ -379,6 +379,13 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('live view handles returned to callers never expose internal identity',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
+ const result=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);const original={...result.handle};
+ result.handle.id='changed';assert.equal(live.getCurrentHandle().id,original.id);
+ const exposed=live.getCurrentHandle();exposed.startTime=0;assert.equal(live.getCurrentHandle().startTime,original.startTime);
+ await live.finishLiveView(original);assert.equal(live.getCurrentHandle(),null);
+});
 test('stale live view handles cannot update or finish a newer instance',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
  const first=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);
