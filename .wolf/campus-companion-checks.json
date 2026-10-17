@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T08:00:15.088Z",
+  "checkedAt": "2026-10-17T08:03:10.787Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 59,
+  "checks": 60,
   "failed": 0,
   "results": [
     {
@@ -215,6 +215,10 @@
     },
     {
       "name": "todo live target uses structured deadline rather than fabricated one hour",
+      "ok": true
+    },
+    {
+      "name": "invalid live view times never reach the native service",
       "ok": true
     },
     {
