@@ -5,11 +5,20 @@ import { buildTodoReminderPlans } from '../utils/TodoReminderPlan'
 import { cancelReminderGroup } from './ReminderGroups'
 
 let reminderQueue: Promise<void> = Promise.resolve()
+let reminderVersion: number = 0
+
+export function clearTodoReminders(): Promise<void> {
+  reminderVersion++
+  const task = reminderQueue.then(() => cancelReminderGroup('campus_todos'))
+  reminderQueue = task.catch((_error: Error) => {})
+  return task
+}
 
 export function syncTodoReminders(items: TodoItem[], bundleName: string): Promise<number> {
   const snapshot = items.map((item: TodoItem): TodoItem => ({ id: item.id, title: item.title, note: '', dueText: '',
     dueAt: item.dueAt, done: item.done, createdAt: item.createdAt, updatedAt: item.updatedAt }))
-  const task = reminderQueue.then(() => replaceTodoReminders(snapshot, bundleName))
+  const version = reminderVersion
+  const task = reminderQueue.then(() => version === reminderVersion ? replaceTodoReminders(snapshot, bundleName) : 0)
   reminderQueue = task.then(() => {}).catch((_error: Error) => {})
   return task
 }
