@@ -94,11 +94,17 @@ export struct ProfileTab {
   async handleLogout(): Promise<void> {
     if (this.loggingOut) return
     this.loggingOut = true
-    await logoutGatewayAccount()
-    if (this.alive) {
-      safeToast(this.getUIContext(), '已退出登录')
-      this.getUIContext().getRouter().clear()
-      safeReplace(this.getUIContext(), { url: 'pages/LoginPage' })
+    try {
+      await logoutGatewayAccount()
+      if (this.alive) {
+        safeToast(this.getUIContext(), '已退出登录')
+        this.getUIContext().getRouter().clear()
+        safeReplace(this.getUIContext(), { url: 'pages/LoginPage' })
+      }
+    } catch (_error) {
+      if (this.alive) safeToast(this.getUIContext(), '本地清理未完成，请再次退出重试')
+    } finally {
+      this.loggingOut = false
     }
   }
 
