@@ -11,6 +11,11 @@ let currentHandle: LiveViewHandle | null = null
 let currentKey: string = ''
 let currentTodoId: string = ''
 let revision: number = 0
+let lastViewId: number = Math.floor(Date.now() / 1000)
+function nextViewId(): number {
+  lastViewId = lastViewId >= 2147483647 ? -2147483648 : lastViewId + 1
+  return lastViewId
+}
 let operation: Promise<void> = Promise.resolve()
 let supportReason: string = '开启后检查系统实况窗能力'
 let applicationBundleName: string = 'com.xjit.app'
@@ -113,7 +118,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
     const deadline = target.startTime > Date.now() ? target.startTime : target.endTime
     const duration = Math.max(0, deadline - Date.now())
     const view: liveViewManager.LiveView = {
-      id: Math.floor(Date.now() / 1000), event: 'TIMER', sequence: 0, isMute: true,
+      id: nextViewId(), event: 'TIMER', sequence: 0, isMute: true,
       lifeCycleMode: liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE,
       timer: { time: duration, isCountdown: true },
       liveViewData: {

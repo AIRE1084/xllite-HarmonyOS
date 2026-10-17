@@ -379,6 +379,12 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('same-tick live view instances have distinct system ids and reject old handles',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService'),item={id:'a',title:'Study',note:'',dueText:'',done:false,createdAt:1,updatedAt:1};
+ const first=await live.startTodoLiveView(item),second=await live.startTodoLiveView({...item,id:'b'});
+ assert.notEqual(first.handle.id,second.handle.id);const stops=f.state.liveStops.length;
+ await live.finishLiveView(first.handle);assert.equal(f.state.liveStops.length,stops);assert.equal(live.getCurrentHandle().id,second.handle.id);
+});
 test('todo native live view capsule never uses class wording',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
  await live.startTodoLiveView({id:'task',title:'Study',note:'',dueText:'',done:false,createdAt:1,updatedAt:1});
