@@ -1,3 +1,4 @@
+import { clearTodoReminders } from './TodoReminderService'
 import { clearTodos } from './TodoService'
 import { clearCampusCompanion } from './CampusCompanionService'
 import preferences from '@ohos.data.preferences'
@@ -177,5 +178,5 @@ export async function clearSession(): Promise<void> {
     if (task === null) return
     const prefs = await task; await prefs.clear(); await prefs.flush()
   })
-  await Promise.all([cacheClearTask, authClearTask, companionTask, clearTodos()])
+  await Promise.all([cacheClearTask, authClearTask, companionTask, clearTodos(), clearTodoReminders()])
 }
