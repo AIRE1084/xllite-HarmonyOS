@@ -191,9 +191,13 @@ struct TodoPage {
     const version = this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
-    const result = await startTodoLiveView(item)
-    if (this.isCurrentOperation(version, epoch, username)) {
-      safeToast(this.getUIContext(), result.ok ? '系统实况窗已更新' : (result.reason !== undefined ? result.reason : '当前不可用'))
+    try {
+      const result = await startTodoLiveView(item)
+      if (this.isCurrentOperation(version, epoch, username)) {
+        safeToast(this.getUIContext(), result.ok ? '系统实况窗已更新' : (result.reason !== undefined ? result.reason : '当前不可用'))
+      }
+    } catch (_error) {
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '实况窗更新未完成，请稍后重试')
     }
   }
 

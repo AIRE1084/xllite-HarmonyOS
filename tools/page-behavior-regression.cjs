@@ -134,6 +134,13 @@ test('todo live view result only reports to the current page and account',async(
   resolve({ok:true});await task;assert.equal(state.toasts.length,mode==='active'?1:0);
  }
 });
+test('todo live view thrown errors are contained only for active page',async()=>{
+ for(const mode of ['active','disappear']){
+  const {page,state}=fixture('TodoPage');let reject;state.livePending=new Promise((_r,j)=>reject=j);const task=page.handleLiveView({id:'task',title:'Study'});
+  if(mode==='disappear')page.aboutToDisappear();reject(Error('fixture native failure'));await task;
+  assert.equal(state.toasts.length,mode==='active'?1:0);
+ }
+});
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
   const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;
