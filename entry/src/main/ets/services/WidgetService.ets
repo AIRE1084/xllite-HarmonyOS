@@ -12,6 +12,15 @@ export function saveTodoWidgetSnapshot(context: common.Context, data: TodoWidget
   try { fs.writeSync(file.fd, JSON.stringify(data)) } finally { fs.closeSync(file) }
   fs.renameSync(path + '.tmp', path)
 }
+export async function publishTodoWidgets(context: common.Context, data: TodoWidgetData): Promise<void> {
+  saveTodoWidgetSnapshot(context, data)
+  const forms = await formProvider.getPublishedRunningFormInfos()
+  for (const form of forms) {
+    if (form.formName === 'CampusTodoCard') {
+      await formProvider.updateForm(form.formId, formBindingData.createFormBindingData(data))
+    }
+  }
+}
 function readTodoWidgetSnapshot(context: common.Context): TodoWidgetData {
   try {
     const data = JSON.parse(fs.readTextSync(context.filesDir + '/todo_widget.json')) as TodoWidgetData

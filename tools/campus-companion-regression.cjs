@@ -76,6 +76,13 @@ test('todo form snapshot roundtrips and corrupt counts fall back',()=>{
  f.disks.set('/data/todo_widget.json',JSON.stringify({openCount:-1,overdueCount:0,firstTitle:'Bad',secondTitle:'',thirdTitle:''}));
  assert.equal(service.buildFormBinding(ctx,'CampusTodoCard').data.firstTitle,'打开应用同步待办');
 });
+test('todo publication persists snapshot and refreshes only todo forms',async()=>{
+ const f=fixture(),service=f.get('services/WidgetService'),ctx={filesDir:'/data'};
+ f.state.forms=[{formName:'CampusScheduleCard',formId:'schedule'},{formName:'CampusTodoCard',formId:'todo'}];
+ await service.publishTodoWidgets(ctx,{openCount:1,overdueCount:0,firstTitle:'Study',secondTitle:'',thirdTitle:''});
+ assert.equal(f.state.widgetUpdates.length,1);assert.equal(f.state.widgetUpdates[0].id,'todo');assert.equal(f.state.widgetUpdates[0].data.firstTitle,'Study');
+ assert.equal(service.buildFormBinding(ctx,'CampusTodoCard').data.firstTitle,'Study');
+});
 function course(extra={}) { return {day:'星期一',slot:'1-2节',title:'高等数学',teacher:'教师',weeks:'1-20周',sections:'1-2节',location:'教学楼A101',...extra}; }
 function snapshot(extra={}) { return {account:'test-student',term:'2026-2027-1',courses:[course()],currentWeek:6,totalWeeks:20,weekKnown:true,
   anchorDate:'2026-10-12',updatedAt:new Date(2026,9,12).getTime(),widgetEnabled:true,...extra}; }
