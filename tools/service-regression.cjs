@@ -93,6 +93,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('logout clears todo storage and desktop data after earlier pending writes',async()=>{
+ const f=fixture();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});
+ await f.auth.clearSession();assert.equal((await f.todo.loadTodos()).length,0);
+ assert.equal(JSON.parse(f.stores.get('xjit_todos').data.get('items')).length,0);
+ assert.equal(f.state.todoWidgets.at(-1).openCount,0);
+});
 test('todo commits publish real card data while widget failure does not undo saved task',async()=>{
  const f=fixture();const rows=await f.todo.addTodo({title:'Study',note:'private',dueText:''});
  assert.equal(f.state.todoWidgets.at(-1).firstTitle,'Study');f.state.todoWidgetFailure=true;
