@@ -92,6 +92,21 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('electricity binding persists in current session and logout clears it',async()=>{
+ const f=fixture();await f.seedToken();await f.auth.saveElectricityRoom(' 9#312 ');
+ assert.equal(await f.auth.loadElectricityRoom(),'9#312');
+ assert.equal(f.stores.get('xjit_session')?.data.get('electricity_room'),'9#312');
+ await f.auth.clearSession();assert.equal(await f.auth.loadElectricityRoom(),'');
+});
+test('logout retires pending electricity binding reads and writes',async()=>{
+ const f=fixture();await f.seedToken();await f.auth.saveElectricityRoom('9#312');
+ const gate=deferred();let entered=false;
+ f.state.hook=async(name,op,key)=>{if(name==='xjit_session'&&op==='get'&&key==='electricity_room'){entered=true;await gate.promise}};
+ const read=f.auth.loadElectricityRoom();await until(()=>entered);
+ const write=f.auth.saveElectricityRoom('3#312');const logout=f.auth.clearSession();gate.resolve();
+ assert.equal(await read,'');await Promise.all([write,logout]);
+ assert.equal(f.stores.get('xjit_session').data.has('electricity_room'),false);
+});
 test('gateway token alone authorizes all card business without school web authentication', async () => {
   const f = fixture(); await f.auth.saveSchoolSession('student', 'gateway-fixture', Date.now()+3600000, f.cache.getCacheEpoch(), 'xllite-gateway');
   f.state.respond = async () => ({responseCode:200,result:JSON.stringify({ok:true,data:{accounts:[]}})});

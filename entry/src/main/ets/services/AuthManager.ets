@@ -37,6 +37,32 @@ function enqueue(action: () => Promise<void>): Promise<void> {
   persistenceTask = task.catch((_e: Error) => {})
   return task
 }
+export async function loadElectricityRoom(): Promise<string> {
+  const epoch = getCacheEpoch()
+  const owner = savedUsername
+  let room: string = ''
+  await enqueue(async () => {
+    const task = getPrefs()
+    if (task === null || owner.length === 0 || epoch !== getCacheEpoch() || owner !== savedUsername) return
+    const prefs = await task
+    const value = await prefs.get('electricity_room', '')
+    if (epoch === getCacheEpoch() && owner === savedUsername && typeof value === 'string') room = value
+  })
+  return room
+}
+export function saveElectricityRoom(value: string): Promise<void> {
+  const epoch = getCacheEpoch()
+  const owner = savedUsername
+  const room = value.trim()
+  return enqueue(async () => {
+    const task = getPrefs()
+    if (task === null || owner.length === 0 || room.length === 0 || epoch !== getCacheEpoch() || owner !== savedUsername) return
+    const prefs = await task
+    if (epoch !== getCacheEpoch() || owner !== savedUsername) return
+    await prefs.put('electricity_room', room)
+    await prefs.flush()
+  })
+}
 export async function loadSession(): Promise<boolean> {
   const epoch = getCacheEpoch()
   let valid: boolean = false
