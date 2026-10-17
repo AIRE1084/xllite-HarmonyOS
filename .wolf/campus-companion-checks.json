@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:36:54.569Z",
+  "checkedAt": "2026-10-17T10:40:29.665Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 82,
+  "checks": 83,
   "failed": 0,
   "results": [
     {
@@ -103,6 +103,10 @@
     },
     {
       "name": "widget lesson state observes inclusive start and exclusive end boundaries",
+      "ok": true
+    },
+    {
+      "name": "unknown companion option never mutates settings or calls native services",
       "ok": true
     },
     {

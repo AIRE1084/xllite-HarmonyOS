@@ -231,6 +231,7 @@ export function calibrateCampusWeek(week: number): Promise<void> {
   })
 }
 export async function setCampusOption(option: string, enabled: boolean): Promise<void> {
+  if (option !== 'widget' && option !== 'reminders' && option !== 'live') throw new Error('校园伴随设置选项无效')
   const requestedVersion = revision
   await readyTask
   if (requestedVersion !== revision) return
