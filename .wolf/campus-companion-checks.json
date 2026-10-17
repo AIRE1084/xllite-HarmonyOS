@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:26:52.399Z",
+  "checkedAt": "2026-10-17T10:29:58.873Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 79,
+  "checks": 80,
   "failed": 0,
   "results": [
     {
@@ -111,6 +111,10 @@
     },
     {
       "name": "logout during notification preflight cannot reenable course reminders",
+      "ok": true
+    },
+    {
+      "name": "logout during live view preflight cannot reenable live switch",
       "ok": true
     },
     {
