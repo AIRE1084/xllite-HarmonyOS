@@ -138,6 +138,18 @@ struct ElectricityPage {
       }
     } finally { if (this.alive && version === this.requestVersion) this.paying = false }
   }
+  changeRoom(): void {
+    if (this.paying) return
+    this.requestVersion++
+    this.loading = false
+    this.step = 1
+    this.electricity = null
+    this.rechargeConfig = null
+    this.selectedAmount = ''
+    this.selectedPayCode = ''
+    this.paymentPassword = ''
+    this.errorMsg = ''
+  }
   back(): void {
     if (this.paying) return
     this.requestVersion++
@@ -212,17 +224,17 @@ struct ElectricityPage {
               .margin({ right: 8 })
               .enabled(!this.loading && !this.paying)
               .onClick(() => { this.loadRechargeConfig() })
-            Button('重新查询')
+            Button(this.loading ? '刷新中…' : '刷新电量')
               .height(48).layoutWeight(1).backgroundColor(getColors(this.isDark).surfaceVariant).borderRadius(16)
               .fontColor(getColors(this.isDark).onSurface)
-              .onClick(() => {
-                this.step = 1
-                this.electricity = null
-                this.errorMsg = ''
-              })
+              .enabled(!this.loading && !this.paying)
+              .onClick(() => { this.queryElectricity() })
           }
           .width('90%')
           .margin({ top: 24 })
+          Button('更换宿舍').backgroundColor(Color.Transparent)
+            .fontColor(getColors(this.isDark).onSurfaceVariant).enabled(!this.paying)
+            .onClick(() => this.changeRoom()).margin({ top: 12 })
 
           if (this.errorMsg.length > 0) {
             Text(this.errorMsg).fontColor(getColors(this.isDark).error).fontSize(12).margin({ top: 12 })
