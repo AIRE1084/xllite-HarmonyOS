@@ -102,6 +102,7 @@ async function syncReminders(): Promise<void> {
       if (!await notificationManager.isNotificationEnabled()) throw new Error('请允许通知后再开启课程提醒')
       for (const item of items) {
         if (version !== revision || AppStorage.get<boolean>('courseReminderEnabled') !== true) return
+        if (item.startTime - 600000 <= Date.now()) continue
         const trigger = new Date(item.startTime - 600000)
         const request: reminderAgentManager.ReminderRequestCalendar = {
           reminderType: reminderAgentManager.ReminderType.REMINDER_TYPE_CALENDAR,

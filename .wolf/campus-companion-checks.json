@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:09:40.491Z",
+  "checkedAt": "2026-10-17T10:11:43.042Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 73,
+  "checks": 74,
   "failed": 0,
   "results": [
     {
@@ -115,6 +115,10 @@
     },
     {
       "name": "course ten-minute trigger boundary never registers an elapsed calendar time",
+      "ok": true
+    },
+    {
+      "name": "course reminder skips trigger that elapsed during native group query",
       "ok": true
     },
     {
