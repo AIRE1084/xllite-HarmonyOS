@@ -95,6 +95,13 @@ test('course reminder reconciliation preserves todo reminders',async()=>{
  await core.setCampusOption('reminders',true);assert.equal(f.state.reminders.has(9999),true);
  await core.setCampusOption('reminders',false);assert.equal(f.state.reminders.has(9999),true);assert.equal(f.state.cancelAll,0);
 });
+test('todo reminder service registers native todo routes and preserves courses',async()=>{
+ const f=fixture(),service=f.get('services/TodoReminderService');f.state.reminders.set(9999,{groupId:'campus_courses'});
+ const due=f.clock.now()+3600000,item={id:'task',title:'Study',note:'',dueText:'',dueAt:due,done:false,createdAt:1,updatedAt:1};
+ assert.equal(await service.syncTodoReminders([item],'com.xjit.app.acceptance'),1);
+ assert.equal(f.state.requests.at(-1).groupId,'campus_todos');assert.equal(f.state.requests.at(-1).wantAgent.parameters.campusRoute,'todo');assert.equal(f.state.reminders.has(9999),true);
+ f.state.publishHook=async()=>{throw new Error('fixture publication failed')};await assert.rejects(service.syncTodoReminders([item],'com.xjit.app.acceptance'),/publication failed/);assert.equal(f.state.reminders.size,1);
+});
 function course(extra={}) { return {day:'星期一',slot:'1-2节',title:'高等数学',teacher:'教师',weeks:'1-20周',sections:'1-2节',location:'教学楼A101',...extra}; }
 function snapshot(extra={}) { return {account:'test-student',term:'2026-2027-1',courses:[course()],currentWeek:6,totalWeeks:20,weekKnown:true,
   anchorDate:'2026-10-12',updatedAt:new Date(2026,9,12).getTime(),widgetEnabled:true,...extra}; }
