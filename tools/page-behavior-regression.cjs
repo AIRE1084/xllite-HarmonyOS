@@ -165,6 +165,10 @@ test('todo direct entry without account never loads private tasks or companion s
  page.titleInput='Private';await page.handleAdd();assert.equal(state.todoAdds||0,0);
  await page.handleReloadTodos();assert.ok(page.loadError.includes('登录'));
 });
+test('signed-out todo page clears private draft and stale companion labels',async()=>{
+ const {page,state}=fixture('TodoPage');page.titleInput='Private';page.noteInput='Secret';page.dueInput='Tomorrow';page.dueAt=200000;page.reminderStatus='Old';page.liveCleanupStatus='Old';state.username='';
+ await page.handleReloadTodos();assert.equal(page.titleInput,'');assert.equal(page.noteInput,'');assert.equal(page.dueInput,'');assert.equal(page.dueAt,undefined);assert.equal(page.liveCleanupStatus,'');assert.equal(page.reminderStatus,'登录后查看提醒状态');
+});
 test('signed-out todo controls never invoke reminder or live view services',async()=>{
  const {page,state}=fixture('TodoPage');state.username='';state.liveCleanupStatus='pending';
  await page.handleReminders();await page.handleDisableReminders();await page.handleRetryLiveCleanup();await page.handleToggle({id:'old'});await page.handleDelete({id:'old'});await page.handleLiveView({id:'old'});
