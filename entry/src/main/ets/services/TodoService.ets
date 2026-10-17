@@ -122,6 +122,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
         }
       }
     }
+    if (version !== sessionVersion) throw new Error('待办会话已变化，旧保存结果已失效')
     return cloneItems(todoStore)
   })
   persistenceTask = writeTask.then(() => {}).catch((_e: Error) => {})
