@@ -225,6 +225,11 @@ test('course reminder skips trigger that elapsed during native group query',asyn
  f.state.allValidHook=async()=>{f.state.now=new Date(2026,9,12,9,50,1).getTime()};await core.setCampusOption('reminders',true);
  assert.equal(f.state.requests.filter(r=>r.dateTime.day===12).length,0);
 });
+test('course reminder rechecks later items after slow native publication',async()=>{
+ const f=fixture(),core=await readyCourse(f,[course(),course({sections:'3-4节',title:'Later course'})]);
+ f.state.publishHook=async()=>{f.state.now=new Date(2026,9,12,12,0).getTime()};await core.setCampusOption('reminders',true);
+ const today=f.state.requests.filter(r=>r.dateTime.day===12);assert.equal(today.length,1);assert.ok(today[0].title.includes('高等数学'));
+});
 test('turning reminders off cancels native reminders and persists switch',async()=>{
  const f=fixture(), core=await readyCourse(f);await core.setCampusOption('reminders',true);await core.setCampusOption('reminders',false);
  assert.equal(f.state.reminders.size,0);assert.equal(f.stores.get('xjit_campus_companion').get('reminders'),false);
