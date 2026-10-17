@@ -19,7 +19,7 @@ function fixture() {
   const preferences = { async getPreferences(_ctx, name) {
     if (!stores.has(name)) stores.set(name, new Map()); const store = stores.get(name);
     return { async get(k, fallback) { return store.has(k) ? store.get(k) : fallback; }, async put(k,v) {store.set(k,v);},
-      async flush() {}, async delete(k) {store.delete(k);}, async clear() {store.clear();} };
+      async flush() {if(state.preferenceFlushFail)throw Error('fixture preference flush failed');}, async delete(k) {store.delete(k);}, async clear() {store.clear();} };
   }};
   const nativeFs = { OpenMode: {CREATE:1, WRITE_ONLY:2, TRUNC:4},
     readTextSync(p) { if (!disks.has(p)) throw Error('not found'); return disks.get(p); },
@@ -566,6 +566,11 @@ test('course LiveView changes timer at class start and stops on switch off',asyn
  assert.equal(f.state.liveUpdates[0].liveViewData.capsule.content,'上课中');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.activateCampusCompanion('test-student');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.setCampusOption('live',false);assert.equal(f.state.liveStops.length,1);
+});
+test('preference flush failure during logout still clears widget and reminders',async()=>{
+ const f=fixture(),core=await readyCourse(f);await core.setCampusOption('widget',true);await core.setCampusOption('reminders',true);
+ f.state.preferenceFlushFail=true;await assert.rejects(core.clearCampusCompanion(),/preference flush failed/);assert.equal(f.state.reminders.size,0);assert.equal(f.disks.get('/data/campus_widget.json'),'null');
+ f.state.preferenceFlushFail=false;await core.clearCampusCompanion();
 });
 test('widget disk failure during logout does not leave course reminders registered',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('reminders',true);assert.equal(f.state.reminders.size,1);
