@@ -178,5 +178,10 @@ export async function clearSession(): Promise<void> {
     if (task === null) return
     const prefs = await task; await prefs.clear(); await prefs.flush()
   })
-  await Promise.all([cacheClearTask, authClearTask, companionTask, clearTodos(), clearTodoReminders()])
+  let cleanupError: Error | null = null
+  const tasks: Promise<void>[] = [cacheClearTask, authClearTask, companionTask, clearTodos(), clearTodoReminders()]
+  await Promise.all(tasks.map((task: Promise<void>): Promise<void> => task.catch((error: Error) => {
+    if (cleanupError === null) cleanupError = error
+  })))
+  if (cleanupError !== null) throw cleanupError as Error
 }
