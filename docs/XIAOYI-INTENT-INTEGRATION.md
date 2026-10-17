@@ -25,6 +25,19 @@ https://developer.huawei.com/consumer/cn/doc/service/intents-ai-distribution-cha
 
 不在没有用户确认的情况下解释歧义时间，不将设备当前日期硬编码为示例日期。时间需包括时区或明确解释策略；过去时间、缺少标题、重复调用、登出和切换账号均有独立处理。提醒失败可保留任务但须明确状态，不能返回“已准时提醒”。
 
+## 2026-10-17 页面入口契约复核
+
+本机SDK实际声明已逐段读取，非根据示例推测：
+
+- IntentDecoratorInfo第87、99、108、117行要求intentName、domain、intentVersion、displayName；schema为可选，不填schema也不代表domain可任意命名。
+- domain第89—92行明确要求参考官方垂域取值范围；目前尚无已核实的任务垂域值，不使用猜测的education/office或自定义字符串填充。
+- PageIntentDecoratorInfo第333、342行：uiAbility可选，pagePath必填且必须对应存在的页面；navigationId与navDestinationName可选。
+- InsightIntentPage第366—378行：仅适用于struct页面，基础能力since20。
+- 当前EntryAbility在启动时加载LoginPage，而待办页面本身尚无独立登录闸门。直接把TodoPage装饰为AI页面入口可能绕开原启动登录路径；挂接前必须验证意图页面加载顺序及账号检查，不能只验证编译。
+- 本轮外部搜索未取得相关正文，返回结果与意图无关，未作为平台契约证据。
+
+已具备的应用内部前置条件：dueAt结构化时间、原生时间选择、串行持久化、卡片刷新、显式提醒登记、完成删除实况窗清理及失败重试。仍未具备：意图专用输入确认与幂等处理、平台垂域/分发确认、直接页面账号闸门和真机小艺触发证据。
+
 ## 实施前仍需落实
 
 1. 任务模型从dueText升级为可调度的结构化时间并做好旧数据迁移；现有TodoService不是现成的账号隔离提醒系统。
