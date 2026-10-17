@@ -98,6 +98,12 @@ test('todo storage rejects malformed shapes and keeps valid rows',async()=>{
  }
  const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([null,{id:'x',title:'Task',note:'',dueText:'',done:false,createdAt:1,updatedAt:2}]));assert.equal((await f.todo.loadTodos())[0].title,'Task');
 });
+test('todo storage deduplicates valid identities before toggle and delete',async()=>{
+ const f=fixture(),item={id:'same',title:'First',note:'',dueText:'',done:false,createdAt:1,updatedAt:2};
+ await f.prefs('xjit_todos').put('items',JSON.stringify([item,{...item,title:'Duplicate'}]));
+ const rows=await f.todo.loadTodos();assert.equal(rows.length,1);assert.equal(rows[0].title,'First');
+ assert.equal((await f.todo.toggleTodo('same'))[0].done,true);assert.equal((await f.todo.deleteTodo('same')).length,0);
+});
 test('electricity binding persists in current session and logout clears it',async()=>{
  const f=fixture();await f.seedToken();await f.auth.saveElectricityRoom(' 9#312 ');
  assert.equal(await f.auth.loadElectricityRoom(),'9#312');
