@@ -379,6 +379,15 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('failed live view stop preserves active content for later retry',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
+ const started=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);f.state.stopFail=true;
+ await assert.rejects(live.finishLiveView(started.handle));f.state.stopFail=false;
+ await live.updateLiveView(started.handle,course(),f.clock.now());const updated=f.state.liveUpdates[0];
+ assert.equal(updated.liveViewData.capsule.status,f.state.liveStarts[0].liveViewData.capsule.status);
+ assert.equal(updated.liveViewData.primary.keepTime,f.state.liveStarts[0].liveViewData.primary.keepTime);
+ await live.finishLiveView(started.handle);assert.equal(live.getCurrentHandle(),null);
+});
 test('failed live view title update restores committed content and reports failure',async()=>{
  for(const thrown of [false,true]){
   const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService'),original=course();

@@ -48,6 +48,8 @@ export function buildTodoLiveTarget(todo: TodoItem): LiveViewTarget {
 async function stopCurrent(): Promise<void> {
   if (currentView === null) return
   const view = currentView
+  const previousStatus = view.liveViewData.capsule?.status
+  const previousKeepTime = view.liveViewData.primary.keepTime
   view.sequence = (view.sequence ?? 0) + 1
   if (view.liveViewData.capsule !== undefined) view.liveViewData.capsule.status = -1
   view.liveViewData.primary.keepTime = 0
@@ -56,7 +58,11 @@ async function stopCurrent(): Promise<void> {
     if (result.resultCode !== 0) throw new Error('系统结束实况窗失败：' + result.resultCode)
   } catch (error) {
     const code = (error as BusinessError).code
-    if (code !== 1003500009 && code !== 1003500010) throw error as Error
+    if (code !== 1003500009 && code !== 1003500010) {
+      if (view.liveViewData.capsule !== undefined && previousStatus !== undefined) view.liveViewData.capsule.status = previousStatus
+      view.liveViewData.primary.keepTime = previousKeepTime
+      throw error as Error
+    }
   }
   currentView = null; currentHandle = null; currentKey = ''
 }
