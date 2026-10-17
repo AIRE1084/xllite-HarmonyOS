@@ -384,6 +384,12 @@ test('todo live target uses structured deadline rather than fabricated one hour'
  assert.equal(live.buildTodoLiveTarget(item).endTime,item.dueAt);
  assert.equal(live.buildTodoLiveTarget({...item,dueAt:undefined}).endTime,f.clock.now()+3600000);
 });
+test('invalid live view times never reach the native service',async()=>{
+ for(const endTime of [NaN,Infinity,8640000000000001]){
+  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
+  const result=await live.startLiveView({type:'todo',title:'Study',text:'',extra:'',startTime:f.clock.now(),endTime});assert.equal(result.ok,false);assert.equal(f.state.liveStarts.length,0);
+ }
+});
 test('completed todo cannot start a native live view',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
  const result=await live.startTodoLiveView({id:'done',title:'Finished',note:'',dueText:'',done:true,createdAt:1,updatedAt:1});

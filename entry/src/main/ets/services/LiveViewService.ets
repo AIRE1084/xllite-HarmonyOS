@@ -62,7 +62,11 @@ async function stopCurrent(): Promise<void> {
 }
 async function startTarget(target: LiveViewTarget, captured: number): Promise<LiveViewResult> {
   if (AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '请先在「桌面与提醒」开启实况窗' }
-  if (target.endTime <= Date.now() || target.startTime < 1000000000000) return { ok: false, reason: '课程时间无效或已结束' }
+  if (!Number.isSafeInteger(target.startTime) || !Number.isSafeInteger(target.endTime) ||
+    target.endTime > 8640000000000000 || target.endTime <= Date.now() ||
+    target.startTime < 1000000000000 || target.startTime >= target.endTime) {
+    return { ok: false, reason: '时间无效或已结束' }
+  }
   if (!await isLiveViewSupported()) return { ok: false, reason: supportReason }
   if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '实况窗已关闭' }
   const key = target.type + '|' + target.title + '|' + target.startTime
