@@ -30,7 +30,7 @@ function fixture(name) {
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
-      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{throw new Error('fixture disk failure')},deleteTodo:async()=>{throw new Error('fixture disk failure')},loadTodos:async()=>[],countOpenTodos:()=>0};
+      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{throw new Error('fixture disk failure')},deleteTodo:async()=>{throw new Error('fixture disk failure')},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},loadTodos:async()=>[],countOpenTodos:()=>0};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
@@ -38,6 +38,7 @@ function fixture(name) {
       if (spec.endsWith('/ListDataSource')) return rowsModule.exports;
       if (spec.endsWith('/RouterHelper')) return { safeBack() {} };
       if (spec.endsWith('/ToastHelper')) return { safeToast(_ctx, text) { state.toasts.push(text); } };
+      if (spec === '@ohos.notificationManager') return {default:{isNotificationEnabled:async()=>true,requestEnableNotification:async()=>{}}};
       if (spec === '@ohos.web.webview') return { default: { WebviewController: class {} } };
       if (spec === '@ohos.util') return { default: {} };
       return {};
@@ -92,6 +93,9 @@ test('todo toggle and delete errors retain visible rows and report retry',async(
  const {page,state}=fixture('TodoPage');const item={id:'fixture',title:'Study'};page.todos=[item];
  await page.handleToggle(item);assert.equal(page.todos[0],item);assert.equal(state.toasts.length,1);
  await page.handleDelete(item);assert.equal(page.todos[0],item);assert.equal(state.toasts.length,2);
+});
+test('todo explicit reminder action reports actual registration count',async()=>{
+ const {page,state}=fixture('TodoPage');await page.handleReminders();assert.equal(state.todoRegisters,1);assert.ok(state.toasts.at(-1).includes('2'));assert.equal(page.reminderBusy,false);
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){

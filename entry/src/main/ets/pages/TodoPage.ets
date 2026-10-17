@@ -1,8 +1,10 @@
+import notificationManager from '@ohos.notificationManager'
+import common from '@ohos.app.ability.common'
 import { DetailScaffold } from '../components/common/DetailScaffold'
 import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
 import { TodoItem } from '../models/TodoTypes'
-import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets } from '../services/TodoService'
+import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders } from '../services/TodoService'
 import { startTodoLiveView } from '../services/LiveViewService'
 import { LiquidGlass } from '../components/LiquidGlass'
 import { getColors, ColorPalette } from '../theme/Colors'
@@ -100,6 +102,19 @@ struct TodoPage {
     catch (_error) { safeToast(this.getUIContext(), '任务删除未完成，请重试') }
   }
 
+  @State reminderBusy: boolean = false
+  async handleReminders(): Promise<void> {
+    if (this.reminderBusy) return
+    this.reminderBusy = true
+    try {
+      if (!await notificationManager.isNotificationEnabled()) {
+        await notificationManager.requestEnableNotification(this.getUIContext().getHostContext() as common.UIAbilityContext)
+      }
+      const count = await registerTodoReminders()
+      safeToast(this.getUIContext(), '已登记 ' + count + ' 条任务提醒；任务变更后请重新登记')
+    } catch (_error) { safeToast(this.getUIContext(), '任务保留，提醒登记未完成，请检查通知设置后重试') }
+    finally { this.reminderBusy = false }
+  }
   private async handleLiveView(item: TodoItem): Promise<void> {
     const result = await startTodoLiveView(item)
     safeToast(this.getUIContext(), result.ok ? '系统实况窗已更新' : (result.reason !== undefined ? result.reason : '当前不可用'))
@@ -267,6 +282,9 @@ struct TodoPage {
           }
           .margin({ left: 16, right: 16, top: 4 })
 
+          Button(this.reminderBusy ? '登记中…' : '登记任务提醒').enabled(!this.reminderBusy)
+            .fontSize(13).fontColor(this.palette.primary).backgroundColor(this.palette.primaryContainer)
+            .margin({ left: 16, right: 16, top: 12 }).onClick(() => this.handleReminders())
           Row() {
             this.FilterChip('全部', 0)
             this.FilterChip('未完成', 1)
