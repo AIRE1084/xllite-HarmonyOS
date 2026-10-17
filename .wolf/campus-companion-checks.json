@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:07:35.701Z",
+  "checkedAt": "2026-10-17T10:09:40.491Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 72,
+  "checks": 73,
   "failed": 0,
   "results": [
     {
@@ -111,6 +111,10 @@
     },
     {
       "name": "system calendar reminder is exactly ten minutes early and opens schedule",
+      "ok": true
+    },
+    {
+      "name": "course ten-minute trigger boundary never registers an elapsed calendar time",
       "ok": true
     },
     {
