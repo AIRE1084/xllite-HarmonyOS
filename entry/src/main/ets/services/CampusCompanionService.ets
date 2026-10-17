@@ -269,7 +269,7 @@ export async function setCampusOption(option: string, enabled: boolean): Promise
     }
   })
   if (stopError !== null) throw stopError
-  if (option === 'live' && !enabled) AppStorage.setOrCreate<string>('liveViewStatus', '已关闭课程实况窗')
+  if (option === 'live' && !enabled && optionVersion === revision) AppStorage.setOrCreate<string>('liveViewStatus', '已关闭课程实况窗')
 }
 export function setCompanionForeground(active: boolean): void {
   if (foregroundTimer >= 0) clearInterval(foregroundTimer)

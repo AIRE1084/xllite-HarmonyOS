@@ -39,7 +39,7 @@ function fixture() {
       state.liveStarts.push(JSON.parse(JSON.stringify(view))); if(state.liveError) throw state.liveError;
       return {resultCode:state.liveCode,message:'mock'};
     }, async updateLiveView(view){state.liveUpdates.push(JSON.parse(JSON.stringify(view)));if(state.updateError)throw state.updateError;return {resultCode:state.updateCode||0,message:'mock'};},
-    async stopLiveView(view){state.liveStops.push(JSON.parse(JSON.stringify(view))); if(state.stopFail) throw {code:1003500003}; return {resultCode:0,message:'mock'};}};
+    async stopLiveView(view){state.liveStops.push(JSON.parse(JSON.stringify(view))); if(state.stopHook)await state.stopHook(); if(state.stopFail) throw {code:1003500003}; return {resultCode:0,message:'mock'};}};
   const formKit = {formBindingData:{createFormBindingData:data=>({data})}, formProvider:{async getPublishedRunningFormInfos(){return state.forms;},
     async updateForm(id,data){state.widgetUpdates.push({id,...data});}}};
   const wantAgent = {OperationType:{START_ABILITY:0}, WantAgentFlags:{UPDATE_PRESENT_FLAG:0}, async getWantAgent(options){return {options};}};
@@ -229,6 +229,12 @@ test('closing reminders during permission dialog wins over late grant or denial'
   const enable=core.setCampusOption('reminders',true);await until(()=>f.state.notificationRequests===1);await core.setCampusOption('reminders',false);
   f.state.notificationAllowed=granted;gate.resolve();await enable;assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.state.requests.length,0);assert.equal(f.values.get('courseReminderStatus'),'已关闭并取消课程提醒');
  }
+});
+test('late live disable completion cannot overwrite a newer enabled status',async()=>{
+ const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const gate=deferred();f.state.stopHook=()=>gate.promise;const off=core.setCampusOption('live',false);await until(()=>f.state.liveStops.length>0);
+ const on=core.setCampusOption('live',true);await until(()=>f.values.get('liveViewEnabled')===true);gate.resolve();await Promise.all([off,on]);
+ assert.equal(f.values.get('liveViewEnabled'),true);assert.notEqual(f.values.get('liveViewStatus'),'已关闭课程实况窗');
 });
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;
