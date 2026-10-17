@@ -129,9 +129,7 @@ export async function loadTodos(): Promise<TodoItem[]> {
       if (task === null) return
       const prefs = await task
       const raw = await prefs.get(KEY_ITEMS, '')
-      try {
-        if (typeof raw === 'string' && raw.length > 0) todoStore = parseItems(raw)
-      } catch (_e) { todoStore = [] }
+      if (typeof raw === 'string' && raw.length > 0) todoStore = parseItems(raw)
       loaded = true
     })()
   }

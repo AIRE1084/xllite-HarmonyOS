@@ -213,6 +213,11 @@ test('todo storage rejects malformed shapes and keeps valid rows',async()=>{
  }
  const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([null,{id:'x',title:'Task',note:'',dueText:'',done:false,createdAt:1,updatedAt:2}]));assert.equal((await f.todo.loadTodos())[0].title,'Task');
 });
+test('malformed todo JSON stays untouched and blocks additions until repaired',async()=>{
+ const f=fixture();const raw='[{"id":"unfinished"';await f.prefs('xjit_todos').put('items',raw);
+ await assert.rejects(f.todo.loadTodos());await assert.rejects(f.todo.addTodo({title:'New',note:'',dueText:''}));assert.equal(f.stores.get('xjit_todos').data.get('items'),raw);
+ await f.prefs('xjit_todos').put('items','[]');assert.equal((await f.todo.loadTodos()).length,0);
+});
 test('todo storage deduplicates valid identities before toggle and delete',async()=>{
  const f=fixture(),item={id:'same',title:'First',note:'',dueText:'',done:false,createdAt:1,updatedAt:2};
  await f.prefs('xjit_todos').put('items',JSON.stringify([item,{...item,title:'Duplicate'}]));
