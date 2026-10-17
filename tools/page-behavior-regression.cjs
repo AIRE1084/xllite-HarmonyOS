@@ -30,7 +30,7 @@ function fixture(name) {
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
-      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{throw new Error('fixture disk failure')},deleteTodo:async()=>{throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},getTodoReminderStatus:()=> 'fixture status',loadTodos:async()=>[],countOpenTodos:()=>0};
+      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{throw new Error('fixture disk failure')},deleteTodo:async()=>{throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
@@ -99,6 +99,13 @@ test('todo explicit reminder action reports actual registration count',async()=>
 });
 test('todo reminder cancellation reports success and unlocks controls',async()=>{
  const {page,state}=fixture('TodoPage');await page.handleDisableReminders();assert.equal(state.todoDisabled,true);assert.equal(page.reminderBusy,false);assert.ok(state.toasts.at(-1).includes('已取消'));
+});
+test('todo initial load ignores results after disappearance or account change',async()=>{
+ for(const mode of ['disappear','account']){
+  const {page,state}=fixture('TodoPage');let resolve;state.todoLoad=new Promise(r=>resolve=r);const task=page.aboutToAppear();
+  if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
+  resolve([{id:'old',title:'Private'}]);await task;assert.equal(page.todos.length,0);assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);
+ }
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
