@@ -147,10 +147,21 @@ export async function updateLiveView(handle: LiveViewHandle, course: Course, now
   const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
   const task = operation.then(async () => {
     if (currentView === null || !matchesCurrentHandle(snapshot)) return
-    currentView.sequence = (currentView.sequence ?? 0) + 1
-    currentView.liveViewData.primary.title = title
-    const result = await liveViewManager.updateLiveView(currentView)
-    if (result.resultCode !== 0) setReason('实况窗更新失败（' + result.resultCode + '）')
+    const view = currentView
+    const previousTitle = view.liveViewData.primary.title
+    view.sequence = (view.sequence ?? 0) + 1
+    view.liveViewData.primary.title = title
+    try {
+      const result = await liveViewManager.updateLiveView(view)
+      if (result.resultCode !== 0) {
+        setReason('实况窗更新失败（' + result.resultCode + '）')
+        throw new Error('系统实况窗更新失败：' + result.resultCode)
+      }
+    } catch (error) {
+      view.liveViewData.primary.title = previousTitle
+      if ((error as BusinessError).code !== undefined) setReason(reasonFor(error as BusinessError))
+      throw error as Error
+    }
   })
   operation = task.catch((_e: Error) => {})
   return task

@@ -38,7 +38,7 @@ function fixture() {
     async isLiveViewEnabled(){return state.liveAllowed;}, async startLiveView(view){
       state.liveStarts.push(JSON.parse(JSON.stringify(view))); if(state.liveError) throw state.liveError;
       return {resultCode:state.liveCode,message:'mock'};
-    }, async updateLiveView(view){state.liveUpdates.push(JSON.parse(JSON.stringify(view)));return {resultCode:0,message:'mock'};},
+    }, async updateLiveView(view){state.liveUpdates.push(JSON.parse(JSON.stringify(view)));if(state.updateError)throw state.updateError;return {resultCode:state.updateCode||0,message:'mock'};},
     async stopLiveView(view){state.liveStops.push(JSON.parse(JSON.stringify(view))); if(state.stopFail) throw {code:1003500003}; return {resultCode:0,message:'mock'};}};
   const formKit = {formBindingData:{createFormBindingData:data=>({data})}, formProvider:{async getPublishedRunningFormInfos(){return state.forms;},
     async updateForm(id,data){state.widgetUpdates.push({id,...data});}}};
@@ -378,6 +378,16 @@ test('reminder taps return to the running app bundle and course schedule',async(
 test('LiveView taps return to the running app bundle and course schedule',async()=>{
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
+});
+test('failed live view title update restores committed content and reports failure',async()=>{
+ for(const thrown of [false,true]){
+  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService'),original=course();
+  const started=await live.startCourseLiveView(original,f.clock.now(),f.clock.now()+3600000);
+  if(thrown)f.state.updateError={code:1003500003};else f.state.updateCode=4;
+  await assert.rejects(live.updateLiveView(started.handle,{...original,title:'Failed title'},f.clock.now()));
+  await live.finishLiveView(started.handle);assert.equal(f.state.liveStops[0].liveViewData.primary.title,original.title);
+  assert.ok(live.getLiveViewSupportReason().includes('失败')||live.getLiveViewSupportReason().includes('服务'));
+ }
 });
 test('queued course live view update preserves the submitted title',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
