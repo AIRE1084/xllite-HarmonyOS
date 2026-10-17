@@ -16,6 +16,8 @@ let prefsTask: Promise<preferences.Preferences> | null = null
 let persistenceTask: Promise<void> = Promise.resolve()
 let sessionVersion: number = 0
 let remindersEnabled: boolean = false
+let reminderStatus: string = '尚未登记任务提醒'
+export function getTodoReminderStatus(): string { return reminderStatus }
 
 export function setTodoContext(ctx: common.UIAbilityContext): void {
   todoContext = ctx
@@ -83,8 +85,12 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
       catch (_error) { console.warn('XJITTodo: task saved; widget refresh pending') }
       if (remindersEnabled && version === sessionVersion) {
-        try { await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName) }
-        catch (_error) { console.warn('XJITTodo: task saved; reminder refresh pending') }
+        try {
+          const count = await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
+          if (version === sessionVersion) reminderStatus = '已登记 ' + count + ' 条任务提醒'
+        } catch (_error) {
+          if (version === sessionVersion) reminderStatus = '任务已保存，提醒未同步，请重新登记'
+        }
       }
     }
     return cloneItems(todoStore)
@@ -167,6 +173,7 @@ export function disableTodoReminders(): Promise<void> {
   const task = persistenceTask.then(async () => {
     remindersEnabled = false
     await clearTodoReminders()
+    reminderStatus = '任务提醒已取消'
   })
   persistenceTask = task.catch((_error: Error) => {})
   return task
@@ -177,7 +184,10 @@ export function registerTodoReminders(): Promise<number> {
     await loadTodos()
     if (version !== sessionVersion || todoContext === null) throw new Error('待办会话已变化，请重新进入')
     const count = await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
-    if (version === sessionVersion) remindersEnabled = true
+    if (version === sessionVersion) {
+      remindersEnabled = true
+      reminderStatus = '已登记 ' + count + ' 条任务提醒'
+    }
     return count
   })
   persistenceTask = task.then(() => {}).catch((_error: Error) => {})
@@ -196,6 +206,7 @@ export function refreshTodoWidgets(): Promise<void> {
 export async function clearTodos(): Promise<void> {
   sessionVersion++
   remindersEnabled = false
+  reminderStatus = '尚未登记任务提醒'
   if (todoContext === null) return
   await mutate((_items: TodoItem[]): TodoItem[] => [])
 }
