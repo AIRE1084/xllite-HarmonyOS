@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:21:45.507Z",
+  "checkedAt": "2026-10-17T10:24:29.044Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 77,
+  "checks": 78,
   "failed": 0,
   "results": [
     {
@@ -139,6 +139,10 @@
     },
     {
       "name": "retired course publication failure cannot disable a newer enable request",
+      "ok": true
+    },
+    {
+      "name": "logout survives late course publication errors and preserves todo group",
       "ok": true
     },
     {

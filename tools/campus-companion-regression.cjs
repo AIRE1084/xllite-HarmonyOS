@@ -255,6 +255,14 @@ test('retired course publication failure cannot disable a newer enable request',
  const second=core.setCampusOption('reminders',true);await Promise.resolve();await Promise.resolve();f.state.publishHook=null;gate.resolve();
  await Promise.allSettled([first,second]);assert.equal(f.values.get('courseReminderEnabled'),true);assert.equal(f.state.reminders.size,1);
 });
+test('logout survives late course publication errors and preserves todo group',async()=>{
+ for(const code of [401,1700002]){
+  const f=fixture(),core=await readyCourse(f),gate=deferred();f.state.reminders.set(9999,{groupId:'campus_todos'});
+  f.state.publishHook=async()=>{await gate.promise;throw {code}};const enable=core.setCampusOption('reminders',true);await until(()=>f.state.requests.length===1);
+  const clear=core.clearCampusCompanion();gate.resolve();await Promise.allSettled([enable,clear]);
+  assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.values.get('courseReminderStatus'),'已关闭并取消课程提醒');assert.equal(f.state.reminders.size,1);assert.equal(f.state.reminders.get(9999).groupId,'campus_todos');
+ }
+});
 test('logout cancels reminders, clears widget snapshot and rejects stale schedule',async()=>{
  const f=fixture(), core=await readyCourse(f);await core.setCampusOption('widget',true);await core.setCampusOption('reminders',true);
  const cache=f.get('services/MemoryCache');await cache.clearAllCachedValues();await core.clearCampusCompanion();
