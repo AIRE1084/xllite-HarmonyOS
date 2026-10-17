@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-17T11:03:39.335Z",
+  "checkedAt": "2026-10-17T11:07:29.200Z",
   "networkUsed": false,
   "nativeApisMocked": true,
   "checks": 83,
@@ -334,7 +334,7 @@
       "ok": true
     },
     {
-      "name": "failed LiveView stop cannot prevent logout privacy and reminder cleanup",
+      "name": "failed LiveView stop reports logout failure after privacy and reminder cleanup",
       "ok": true
     }
   ]

@@ -287,12 +287,17 @@ export function clearCampusCompanion(): Promise<void> {
   AppStorage.setOrCreate<boolean>('courseReminderEnabled', false)
   AppStorage.setOrCreate<boolean>('liveViewEnabled', false)
   AppStorage.setOrCreate<boolean>('scheduleWeekKnown', false)
-  const stop = finishAllLiveViews().catch((_e: Error) => { AppStorage.setOrCreate<string>('liveViewStatus', '系统实况窗结束失败，请检查系统设置') })
+  let stopError: Error | null = null
+  const stop = finishAllLiveViews().catch((error: Error) => {
+    stopError = error
+    AppStorage.setOrCreate<string>('liveViewStatus', '系统实况窗结束失败，请检查系统设置')
+  })
   return enqueue(async () => {
     await stop
     AppStorage.setOrCreate<boolean>('courseReminderEnabled', false)
     AppStorage.setOrCreate<boolean>('liveViewEnabled', false)
     snapshot = null; activeAccount = ''
     await persist(); await syncWidgets(); await syncReminders()
+    if (stopError !== null) throw stopError
   })
 }
