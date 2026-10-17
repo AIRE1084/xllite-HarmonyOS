@@ -101,6 +101,12 @@ test('persisted cleanup marker blocks old todo data in a fresh process and permi
  const restarted=fixture(f.stores);await assert.rejects(restarted.todo.loadTodos(),/清理/);await assert.rejects(restarted.todo.addTodo({title:'New',note:'',dueText:''}),/清理/);
  await restarted.todo.clearTodos();assert.equal(restarted.stores.get('xjit_todos').data.get('cleanup_pending'),false);assert.equal((await fixture(f.stores).todo.loadTodos()).length,0);
 });
+test('actual failed cleanup persists marker before task deletion and survives service restart',async()=>{
+ const f=fixture();await f.todo.addTodo({title:'Private old',note:'',dueText:''});const before=f.stores.get('xjit_todos').data.get('items');
+ f.state.hook=async(name,op,key)=>{if(name==='xjit_todos'&&op==='put'&&key==='items')throw Error('fixture task deletion failed')};
+ await assert.rejects(f.todo.clearTodos(),/task deletion failed/);assert.equal(f.stores.get('xjit_todos').data.get('items'),before);assert.equal(f.stores.get('xjit_todos').data.get('cleanup_pending'),true);
+ const restarted=fixture(f.stores);await assert.rejects(restarted.todo.loadTodos(),/清理/);await restarted.todo.clearTodos();assert.equal((await fixture(f.stores).todo.loadTodos()).length,0);
+});
 test('logout failure waits for other cleanup branches before allowing retry',async()=>{
  const f=fixture(),gate=deferred();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});f.state.companionClearFailure=true;let entered=false,settled=false;
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put'){entered=true;await gate.promise}};
