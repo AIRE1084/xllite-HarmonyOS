@@ -92,6 +92,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo desktop card is registered with native route and empty synchronization state',()=>{
+ const config=JSON.parse(fs.readFileSync(path.join(root,'entry/src/main/resources/base/profile/campus_form_config.json'),'utf8'));
+ const card=config.forms.find(x=>x.name==='CampusTodoCard');assert.ok(card);assert.equal(card.isDefault,false);
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/widget/pages/CampusTodoCard.ets'),'utf8');
+ assert.match(source,/campusRoute: 'todo'/);assert.match(source,/打开应用同步待办/);assert.match(source,/LocalStorageProp\('firstTitle'\)/);
+});
 test('todo card projection sorts timed open tasks without mutating source',()=>{
  const f=fixture(),project=f.load('entry/src/main/ets/utils/TodoWidgetData.ets').buildTodoWidgetData;
  const item=(id,dueAt,done=false)=>({id,title:id,note:'private note',dueText:'',dueAt,done,createdAt:1,updatedAt:1});
