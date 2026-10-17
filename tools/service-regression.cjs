@@ -95,6 +95,7 @@ function fixture() {
 test('todo write failures reach caller and persistence queue recovers',async()=>{
  const f=fixture();f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put')throw new Error('fixture disk failure')};
  await assert.rejects(f.todo.addTodo({title:'First',note:'',dueText:''}),/fixture disk failure/);
+ assert.equal((await f.todo.loadTodos()).length,0);
  f.state.hook=null;await f.todo.addTodo({title:'Second',note:'',dueText:''});
  assert.ok(JSON.parse(f.stores.get('xjit_todos').data.get('items')).some(x=>x.title==='Second'));
 });
