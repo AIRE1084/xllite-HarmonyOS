@@ -64,14 +64,15 @@ function getPrefs(): Promise<preferences.Preferences> | null {
 
 function persist(): Promise<void> {
   const snapshot = JSON.stringify(todoStore)
-  persistenceTask = persistenceTask.then(async () => {
+  const writeTask = persistenceTask.then(async () => {
     const task = getPrefs()
-    if (task === null) return
+    if (task === null) throw new Error('待办存储尚未初始化')
     const prefs = await task
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
-  }).catch((_e: Error) => {})
-  return persistenceTask
+  })
+  persistenceTask = writeTask.catch((_e: Error) => {})
+  return writeTask
 }
 
 export async function loadTodos(): Promise<TodoItem[]> {
