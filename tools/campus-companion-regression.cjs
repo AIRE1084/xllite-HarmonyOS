@@ -28,6 +28,7 @@ function fixture() {
     renameSync(a,b) {if(state.renameFail)throw Error('rename failed');disks.set(b,disks.get(a)); disks.delete(a);} };
   const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;}, async isNotificationEnabled(){return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
+    async getAllValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
      async cancelReminder(id){state.reminders.delete(id);}, async publishReminder(request){
       state.requests.push(request); if (state.publishHook) await state.publishHook(request);
@@ -82,6 +83,12 @@ test('todo publication persists snapshot and refreshes only todo forms',async()=
  await service.publishTodoWidgets(ctx,{openCount:1,overdueCount:0,firstTitle:'Study',secondTitle:'',thirdTitle:''});
  assert.equal(f.state.widgetUpdates.length,1);assert.equal(f.state.widgetUpdates[0].id,'todo');assert.equal(f.state.widgetUpdates[0].data.firstTitle,'Study');
  assert.equal(service.buildFormBinding(ctx,'CampusTodoCard').data.firstTitle,'Study');
+});
+test('group reminder cancellation preserves unrelated reminders and surfaces query failure',async()=>{
+ const f=fixture(),service=f.get('services/ReminderGroups');
+ f.state.reminders.set(1,{groupId:'campus_courses'});f.state.reminders.set(2,{groupId:'campus_todos'});
+ await service.cancelReminderGroup('campus_courses');assert.equal(f.state.reminders.has(1),false);assert.equal(f.state.reminders.has(2),true);assert.equal(f.state.cancelAll,0);
+ f.state.validQueryFails=true;await assert.rejects(service.cancelReminderGroup('campus_todos'),/query failed/);assert.equal(f.state.reminders.has(2),true);
 });
 function course(extra={}) { return {day:'星期一',slot:'1-2节',title:'高等数学',teacher:'教师',weeks:'1-20周',sections:'1-2节',location:'教学楼A101',...extra}; }
 function snapshot(extra={}) { return {account:'test-student',term:'2026-2027-1',courses:[course()],currentWeek:6,totalWeeks:20,weekKnown:true,
