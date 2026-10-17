@@ -26,7 +26,7 @@ function fixture() {
     openSync(p) { const fd = nextFile++; openFiles.set(fd,p); return {fd}; },
     writeSync(fd,s) {if(state.writeFail)throw Error('write failed');disks.set(openFiles.get(fd),s);}, closeSync() {state.closedFiles=(state.closedFiles||0)+1;},
     renameSync(a,b) {if(state.renameFail)throw Error('rename failed');disks.set(b,disks.get(a)); disks.delete(a);} };
-  const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;}, async isNotificationEnabled(){return state.notificationAllowed;}};
+  const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;}, async isNotificationEnabled(){if(state.notificationQueryHook)await state.notificationQueryHook();return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
     async getAllValidReminders(){if(state.allValidHook)await state.allValidHook();if(state.allValidQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
@@ -212,6 +212,11 @@ test('widget lesson state observes inclusive start and exclusive end boundaries'
 test('enabled notifications skip another permission request',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('reminders',true);
  assert.equal(f.state.notificationRequests||0,0);
+});
+test('logout during notification preflight cannot reenable course reminders',async()=>{
+ const f=fixture(),core=await readyCourse(f),gate=deferred();let entered=false;f.state.notificationQueryHook=async()=>{entered=true;await gate.promise};
+ const enable=core.setCampusOption('reminders',true);await until(()=>entered);await core.clearCampusCompanion();gate.resolve();await enable;
+ assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.state.requests.length,0);
 });
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;
