@@ -15,6 +15,7 @@ let loadTask: Promise<void> | null = null
 let prefsTask: Promise<preferences.Preferences> | null = null
 let persistenceTask: Promise<void> = Promise.resolve()
 let sessionVersion: number = 0
+let remindersEnabled: boolean = false
 
 export function setTodoContext(ctx: common.UIAbilityContext): void {
   todoContext = ctx
@@ -81,6 +82,10 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     if (todoContext !== null) {
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
       catch (_error) { console.warn('XJITTodo: task saved; widget refresh pending') }
+      if (remindersEnabled && version === sessionVersion) {
+        try { await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName) }
+        catch (_error) { console.warn('XJITTodo: task saved; reminder refresh pending') }
+      }
     }
     return cloneItems(todoStore)
   })
@@ -162,7 +167,9 @@ export function registerTodoReminders(): Promise<number> {
   const task = persistenceTask.then(async (): Promise<number> => {
     await loadTodos()
     if (version !== sessionVersion || todoContext === null) throw new Error('待办会话已变化，请重新进入')
-    return syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
+    const count = await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
+    if (version === sessionVersion) remindersEnabled = true
+    return count
   })
   persistenceTask = task.then(() => {}).catch((_error: Error) => {})
   return task
@@ -179,6 +186,7 @@ export function refreshTodoWidgets(): Promise<void> {
 }
 export async function clearTodos(): Promise<void> {
   sessionVersion++
+  remindersEnabled = false
   if (todoContext === null) return
   await mutate((_items: TodoItem[]): TodoItem[] => [])
 }

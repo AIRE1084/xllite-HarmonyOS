@@ -111,7 +111,7 @@ struct TodoPage {
         await notificationManager.requestEnableNotification(this.getUIContext().getHostContext() as common.UIAbilityContext)
       }
       const count = await registerTodoReminders()
-      safeToast(this.getUIContext(), '已登记 ' + count + ' 条任务提醒；任务变更后请重新登记')
+      safeToast(this.getUIContext(), '已登记 ' + count + ' 条任务提醒；本次会话内随任务变更同步')
     } catch (_error) { safeToast(this.getUIContext(), '任务保留，提醒登记未完成，请检查通知设置后重试') }
     finally { this.reminderBusy = false }
   }
