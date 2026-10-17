@@ -48,11 +48,7 @@ export struct BlurTabBar {
       Stack({ alignContent: Alignment.Start }) {
         Column()
           .width(this.itemWidth).height(58).borderRadius(29)
-          .linearGradient({ angle: 145, colors: this.isDark
-            ? [['#754F78B9', 0], ['#403B5689', 0.5], ['#6546719B', 1]]
-            : [['#EFFFFFFF', 0], ['#804D83EF', 0.55], ['#B0D8F4FF', 1]] })
-          .border({ width: 1, color: this.isDark ? '#90BDD9FF' : '#F0FFFFFF' })
-          .shadow({ radius: 10, color: this.isDark ? '#302D78E8' : '#254779BE', offsetY: 3 })
+          .backgroundColor(this.isDark ? '#263B59' : '#E5EDFF')
           .translate({ x: this.currentIndex * this.itemWidth })
           .animation({ duration: this.reduceMotion ? 0 : 320,
             curve: this.reduceMotion ? Curve.Linear : curves.springMotion(0.32, 0.86, 0.12) })
