@@ -95,6 +95,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('failed logout clearing blocks old todo cache until explicit cleanup retry succeeds',async()=>{
+ const f=fixture();await f.todo.addTodo({title:'Private old task',note:'',dueText:''});
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put')throw Error('fixture clear failure')};await assert.rejects(f.todo.clearTodos());
+ await assert.rejects(f.todo.loadTodos(),/清理/);await assert.rejects(f.todo.addTodo({title:'New account',note:'',dueText:''}),/清理/);
+ f.state.hook=null;await f.todo.clearTodos();assert.equal((await f.todo.loadTodos()).length,0);
+});
 test('todo read failure blocks mutation without overwriting existing tasks and allows retry',async()=>{
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const original=JSON.stringify([{id:'old',title:'Existing',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]);await f.prefs('xjit_todos').put('items',original);
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get')throw Error('fixture read failure')};
