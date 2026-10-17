@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T11:07:29.200Z",
+  "checkedAt": "2026-10-17T11:11:09.925Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 83,
+  "checks": 84,
   "failed": 0,
   "results": [
     {
@@ -331,6 +331,10 @@
     },
     {
       "name": "course LiveView changes timer at class start and stops on switch off",
+      "ok": true
+    },
+    {
+      "name": "widget disk failure during logout does not leave course reminders registered",
       "ok": true
     },
     {
