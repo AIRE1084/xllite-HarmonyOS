@@ -59,6 +59,14 @@ struct TodoPage {
       if (!this.isCurrentOperation(version, epoch, username)) return
       this.todos = items
       this.loadError = ''
+      await restoreTodoReminderStatus()
+      if (!this.isCurrentOperation(version, epoch, username)) return
+      this.reminderStatus = getTodoReminderStatus()
+      this.liveCleanupStatus = getTodoLiveCleanupStatus()
+      try { await refreshTodoWidgets() }
+      catch (_error) {
+        if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '任务已读取，桌面卡片暂未刷新')
+      }
     } catch (_error) {
       if (this.isCurrentOperation(version, epoch, username)) this.loadError = '任务读取未完成，原数据保留，请重试'
     } finally {
