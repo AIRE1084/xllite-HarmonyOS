@@ -188,8 +188,13 @@ struct TodoPage {
     }
   }
   private async handleLiveView(item: TodoItem): Promise<void> {
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
     const result = await startTodoLiveView(item)
-    safeToast(this.getUIContext(), result.ok ? '系统实况窗已更新' : (result.reason !== undefined ? result.reason : '当前不可用'))
+    if (this.isCurrentOperation(version, epoch, username)) {
+      safeToast(this.getUIContext(), result.ok ? '系统实况窗已更新' : (result.reason !== undefined ? result.reason : '当前不可用'))
+    }
   }
 
   @Builder
