@@ -36,7 +36,7 @@ function fixture() {
       async put(key, value) { store.writes++; if (state.hook) await state.hook(name, 'put', key); store.data.set(key, value); },
       async delete(key) { if (state.hook) await state.hook(name, 'delete', key); store.data.delete(key); },
       async clear() { store.data.clear(); },
-      async flush() { store.flushes++; },
+      async flush() { store.flushes++; if (state.hook) await state.hook(name, 'flush'); },
     };
   }
   const preferences = { async getPreferences(_ctx, name) { opens.set(name, (opens.get(name) || 0) + 1); return prefs(name); } };
@@ -99,6 +99,12 @@ test('todo read started before logout never returns the retired private rows',as
  const f=fixture(),gate=deferred();await f.prefs('xjit_todos').put('items',JSON.stringify([{id:'old',title:'Private',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]));let started=false;
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get'){started=true;await gate.promise}};
  const read=f.todo.loadTodos(),observed=assert.rejects(read,/会话|清理/);await until(()=>started);const clear=f.todo.clearTodos();gate.resolve();await Promise.all([observed,clear]);assert.equal((await f.todo.loadTodos()).length,0);
+});
+test('todo flush failure preserves committed memory and blocks failed logout cleanup',async()=>{
+ const f=fixture();await f.todo.addTodo({title:'Committed',note:'',dueText:''});const widgets=f.state.todoWidgets.length;
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='flush')throw Error('fixture flush failure')};
+ await assert.rejects(f.todo.addTodo({title:'Uncommitted',note:'',dueText:''}),/flush failure/);assert.equal((await f.todo.loadTodos()).length,1);assert.equal(f.state.todoWidgets.length,widgets);
+ await assert.rejects(f.todo.clearTodos(),/flush failure/);await assert.rejects(f.todo.loadTodos(),/清理/);f.state.hook=null;await f.todo.clearTodos();assert.equal((await f.todo.loadTodos()).length,0);
 });
 test('failed logout clearing blocks old todo cache until explicit cleanup retry succeeds',async()=>{
  const f=fixture();await f.todo.addTodo({title:'Private old task',note:'',dueText:''});
