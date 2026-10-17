@@ -61,6 +61,7 @@ function fixture() {
     const source = fs.readFileSync(full, 'utf8');
     const output = ts.transpileModule(source, { fileName: full.replace(/\.ets$/, '.ts'), compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
     const localRequire = spec => {
+      if (spec === './LiveViewService' && full.endsWith('TodoService.ets')) return {async reconcileTodoLiveView(items){state.liveTodoItems=items;if(state.liveTodoFailure)throw Error('fixture live failure')}};
       if (spec === './TodoReminderService') return {async getTodoReminderCount(){if(state.todoCountFailure)throw Error('fixture count failure');return state.todoNativeCount||0},async syncTodoReminders(items,bundle){state.todoSync={items,bundle};if(state.todoSyncPending)await state.todoSyncPending;if(state.todoSyncFailure)throw Error('fixture sync failure');return items.length},async clearTodoReminders(){state.todoReminderClears=(state.todoReminderClears||0)+1;if(state.todoClearPending)await state.todoClearPending;if(state.todoClearFailure)throw Error('fixture clear failure');}};
       if (spec === './WidgetService') return {async publishTodoWidgets(_ctx,data){state.todoWidgets=(state.todoWidgets||[]);state.todoWidgets.push(data);if(state.todoWidgetFailure)throw new Error('fixture widget failure')}};
       if (spec === '@ohos.data.preferences') return { default: preferences };
@@ -94,6 +95,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('saved todo changes reconcile live view even when system stop fails',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const rows=await f.todo.addTodo({title:'Study',note:'',dueText:''});
+ f.state.liveTodoFailure=true;const changed=await f.todo.toggleTodo(rows[0].id);assert.equal(changed[0].done,true);assert.equal(f.state.liveTodoItems[0].done,true);
+ await f.todo.deleteTodo(rows[0].id);assert.equal(f.state.liveTodoItems.length,0);
+});
 test('todo restored reminder status reflects native count without enabling automatic sync',async()=>{
  const f=fixture();f.state.todoNativeCount=3;await f.todo.restoreTodoReminderStatus();assert.ok(f.todo.getTodoReminderStatus().includes('3'));assert.ok(f.todo.getTodoReminderStatus().includes('未开启'));
  await f.todo.addTodo({title:'Study',note:'',dueText:''});assert.equal(f.state.todoSync,undefined);

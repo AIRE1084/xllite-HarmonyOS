@@ -9,6 +9,7 @@ export type { LiveViewHandle }
 let currentView: liveViewManager.LiveView | null = null
 let currentHandle: LiveViewHandle | null = null
 let currentKey: string = ''
+let currentTodoId: string = ''
 let revision: number = 0
 let operation: Promise<void> = Promise.resolve()
 let supportReason: string = '开启后检查系统实况窗能力'
@@ -42,7 +43,7 @@ export function buildCourseLiveTarget(course: Course, startTime: number, endTime
 }
 export function buildTodoLiveTarget(todo: TodoItem): LiveViewTarget {
   const now = Date.now()
-  return { type: 'todo', title: todo.title, text: todo.dueText || '待办计时', extra: todo.note,
+  return { todoId: todo.id, type: 'todo', title: todo.title, text: todo.dueText || '待办计时', extra: todo.note,
     startTime: now, endTime: todo.dueAt === undefined ? now + 3600000 : todo.dueAt }
 }
 async function stopCurrent(): Promise<void> {
@@ -64,7 +65,7 @@ async function stopCurrent(): Promise<void> {
       throw error as Error
     }
   }
-  currentView = null; currentHandle = null; currentKey = ''
+  currentView = null; currentHandle = null; currentKey = ''; currentTodoId = ''
 }
 async function startTarget(target: LiveViewTarget, captured: number): Promise<LiveViewResult> {
   if (AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '请先在「桌面与提醒」开启实况窗' }
@@ -132,7 +133,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       setReason('实况窗显示不完整（' + result.resultCode + '）')
       return { ok: false, reason: supportReason }
     }
-    currentView = view; currentKey = key
+    currentView = view; currentKey = key; currentTodoId = target.todoId ?? ''
     currentHandle = { id: String(view.id), startTime: target.startTime, targetType: target.type }
     if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) {
       await stopCurrent(); return { ok: false, reason: '实况窗已关闭' }
@@ -143,7 +144,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
 }
 export function startLiveView(target: LiveViewTarget): Promise<LiveViewResult> {
   const captured = revision
-  const snapshot: LiveViewTarget = { type: target.type, title: target.title, text: target.text,
+  const snapshot: LiveViewTarget = { todoId: target.todoId, type: target.type, title: target.title, text: target.text,
     extra: target.extra, startTime: target.startTime, endTime: target.endTime }
   const task = operation.then(() => startTarget(snapshot, captured))
   operation = task.then(() => {}).catch((_e: Error) => {})
@@ -188,6 +189,16 @@ export function finishLiveView(handle: LiveViewHandle): Promise<void> {
   const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
   const task = operation.then(async () => {
     if (matchesCurrentHandle(snapshot)) await stopCurrent()
+  })
+  operation = task.catch((_e: Error) => {})
+  return task
+}
+export function reconcileTodoLiveView(items: TodoItem[]): Promise<void> {
+  const openIds = items.filter((item: TodoItem): boolean => !item.done).map((item: TodoItem): string => item.id)
+  const task = operation.then(async () => {
+    if (currentHandle?.targetType === 'todo' && currentTodoId.length > 0 && !openIds.includes(currentTodoId)) {
+      await stopCurrent()
+    }
   })
   operation = task.catch((_e: Error) => {})
   return task

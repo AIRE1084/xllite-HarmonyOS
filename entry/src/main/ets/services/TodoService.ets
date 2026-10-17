@@ -3,6 +3,7 @@ import common from '@ohos.app.ability.common'
 import { TodoDraft, TodoItem } from '../models/TodoTypes'
 import { buildTodoWidgetData } from '../utils/TodoWidgetData'
 import { syncTodoReminders, clearTodoReminders, getTodoReminderCount } from './TodoReminderService'
+import { reconcileTodoLiveView } from './LiveViewService'
 import { publishTodoWidgets } from './WidgetService'
 
 const PREFS_NAME: string = 'xjit_todos'
@@ -81,6 +82,8 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     todoStore = next
+    try { await reconcileTodoLiveView(cloneItems(todoStore)) }
+    catch (_error) { console.warn('XJITTodo: task saved; live view cleanup pending') }
     if (todoContext !== null) {
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
       catch (_error) { console.warn('XJITTodo: task saved; widget refresh pending') }
