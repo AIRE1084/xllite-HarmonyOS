@@ -29,7 +29,7 @@ function fixture(name) {
     clearTimeout(id) { state.timers.delete(id); }, clearInterval(id) { state.timers.delete(id); },
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
-      if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
+      if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
@@ -46,6 +46,17 @@ function fixture(name) {
   const page = new module.exports[name](); page.getUIContext = () => ({});
   return { page, state };
 }
+test('electricity restores saved room and queries without rebinding',async()=>{
+ const {page,state}=fixture('ElectricityPage');state.room='9#312';
+ const task=page.aboutToAppear();for(let i=0;i<20&&state.requests.length===0;i++)await Promise.resolve();
+ assert.equal(state.requests.length,1);assert.equal(state.requests[0].params.roomQuery,'9#312');
+ state.requests[0].resolve({ok:true,data:{}});await task;assert.equal(page.step,2);
+});
+test('electricity successful query remembers room while failed query preserves binding',async()=>{
+ const {page,state}=fixture('ElectricityPage');page.alive=true;page.roomQuery=' 9#312 ';
+ const task=page.queryElectricity();state.requests[0].resolve({ok:true,data:{}});await task;assert.equal(state.room,'9#312');
+ page.roomQuery='3#312';const fail=page.queryElectricity();state.requests[1].resolve({ok:false,error:'fixture'});await fail;assert.equal(state.room,'9#312');
+});
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
   const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;

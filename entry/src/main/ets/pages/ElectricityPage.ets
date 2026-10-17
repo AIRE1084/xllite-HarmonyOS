@@ -3,7 +3,7 @@ import { getCacheEpoch } from '../services/MemoryCache'
 import { getColors } from '../theme/Colors'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername, getPassword, loadElectricityRoom, saveElectricityRoom } from '../services/AuthManager'
 import { ElectricityAccount, ElecRechargeConfig, ElecRechargePayResult, AmountOption, PayMethod } from '../models/CardTypes'
 import { Motion, motionDuration } from '../theme/Motion'
 
@@ -15,7 +15,22 @@ struct ElectricityPage {
   @StorageLink('isDark') isDark: boolean = false
   private alive: boolean = false
   private requestVersion: number = 0
-  aboutToAppear(): void { this.alive = true }
+  async aboutToAppear(): Promise<void> {
+    this.alive = true
+    const version = ++this.requestVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
+    try {
+      const room = await loadElectricityRoom()
+      if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
+      if (this.roomQuery.length === 0 && room.length > 0) {
+        this.roomQuery = room
+        await this.queryElectricity()
+      }
+    } catch (_error) {
+      if (this.alive && version === this.requestVersion) this.errorMsg = '宿舍绑定读取失败，请重新查询'
+    }
+  }
   aboutToDisappear(): void { this.alive = false; this.requestVersion++; this.loading = false; this.paymentPassword = '' }
   @State step: number = 1
   @State roomQuery: string = ''
@@ -48,6 +63,12 @@ struct ElectricityPage {
     if (res.ok) {
       this.electricity = res.data as Object as ElectricityAccount
       this.step = 2
+      try { await saveElectricityRoom(params['roomQuery'] as string) }
+      catch (_error) {
+        if (this.alive && version === this.requestVersion && epoch === getCacheEpoch() && username === getUsername()) {
+          this.errorMsg = '电量已查询，宿舍绑定未保存，请稍后重新查询'
+        }
+      }
     } else {
       this.errorMsg = res.error
     }
