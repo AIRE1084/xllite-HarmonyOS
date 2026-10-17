@@ -166,6 +166,7 @@ struct TodoPage {
   }
   clearDueTime(): void { this.dueAt = undefined; this.dueInput = '' }
   chooseDueTime(): void {
+    if (!this.hasAccount()) return
     const version = this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
