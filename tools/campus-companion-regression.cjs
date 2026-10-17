@@ -116,7 +116,7 @@ test('todo reminder clear retires queued plans after active publication',async()
  const f=fixture(),service=f.get('services/TodoReminderService');let release,entered=false;const gate=new Promise(r=>release=r);
  f.state.reminders.set(9999,{groupId:'campus_courses'});f.state.publishHook=async()=>{entered=true;await gate};
  const item={id:'old',title:'Old',note:'',dueText:'',dueAt:f.clock.now()+3600000,done:false,createdAt:1,updatedAt:1};
- const first=service.syncTodoReminders([item],'com.xjit.app.acceptance');for(let i=0;i<100&&!entered;i++)await Promise.resolve();assert.equal(entered,true);
+ const first=service.syncTodoReminders([item,{...item,id:'second',title:'Second'}],'com.xjit.app.acceptance');for(let i=0;i<100&&!entered;i++)await Promise.resolve();assert.equal(entered,true);
  const queued=service.syncTodoReminders([item],'com.xjit.app.acceptance');const clear=service.clearTodoReminders();release();
  await Promise.all([first,queued,clear]);assert.equal(f.state.requests.length,1);assert.equal(f.state.reminders.size,1);assert.equal(f.state.reminders.has(9999),true);
 });

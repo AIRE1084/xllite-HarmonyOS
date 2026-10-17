@@ -18,17 +18,18 @@ export function syncTodoReminders(items: TodoItem[], bundleName: string): Promis
   const snapshot = items.map((item: TodoItem): TodoItem => ({ id: item.id, title: item.title, note: '', dueText: '',
     dueAt: item.dueAt, done: item.done, createdAt: item.createdAt, updatedAt: item.updatedAt }))
   const version = reminderVersion
-  const task = reminderQueue.then(() => version === reminderVersion ? replaceTodoReminders(snapshot, bundleName) : 0)
+  const task = reminderQueue.then(() => version === reminderVersion ? replaceTodoReminders(snapshot, bundleName, version) : 0)
   reminderQueue = task.then(() => {}).catch((_error: Error) => {})
   return task
 }
-async function replaceTodoReminders(items: TodoItem[], bundleName: string): Promise<number> {
+async function replaceTodoReminders(items: TodoItem[], bundleName: string, version: number): Promise<number> {
   const plans = buildTodoReminderPlans(items)
   if (plans.length > 0 && !await notificationManager.isNotificationEnabled()) throw new Error('请允许通知后再登记待办提醒')
   await cancelReminderGroup('campus_todos')
   let count: number = 0
   try {
     for (const plan of plans) {
+      if (version !== reminderVersion) return 0
       const trigger = new Date(plan.triggerAt)
       const request: reminderAgentManager.ReminderRequestCalendar = {
         reminderType: reminderAgentManager.ReminderType.REMINDER_TYPE_CALENDAR,
