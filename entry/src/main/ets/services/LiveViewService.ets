@@ -41,8 +41,9 @@ export function buildCourseLiveTarget(course: Course, startTime: number, endTime
     startTime: startTime, endTime: endTime }
 }
 export function buildTodoLiveTarget(todo: TodoItem): LiveViewTarget {
+  const now = Date.now()
   return { type: 'todo', title: todo.title, text: todo.dueText || '待办计时', extra: todo.note,
-    startTime: Date.now(), endTime: Date.now() + 3600000 }
+    startTime: now, endTime: todo.dueAt === undefined ? now + 3600000 : todo.dueAt }
 }
 async function stopCurrent(): Promise<void> {
   if (currentView === null) return

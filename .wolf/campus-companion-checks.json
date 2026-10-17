@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T07:57:14.674Z",
+  "checkedAt": "2026-10-17T08:00:15.088Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 58,
+  "checks": 59,
   "failed": 0,
   "results": [
     {
@@ -211,6 +211,10 @@
     },
     {
       "name": "LiveView taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "todo live target uses structured deadline rather than fabricated one hour",
       "ok": true
     },
     {
