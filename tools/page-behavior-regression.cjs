@@ -29,7 +29,7 @@ function fixture(name) {
     clearTimeout(id) { state.timers.delete(id); }, clearInterval(id) { state.timers.delete(id); },
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
-      if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
+      if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
@@ -65,6 +65,12 @@ test('electricity change room retires requests and keeps stored binding until su
 test('electricity results offer refresh independently from change room',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/ElectricityPage.ets'),'utf8');
  assert.match(source,/Button\(this.loading \? '刷新中…' : '刷新电量'\)/);assert.match(source,/Button\('更换宿舍'\)/);
+});
+test('electricity restore errors from a retired account do not alter the page',async()=>{
+ const {page,state}=fixture('ElectricityPage');let reject;
+ state.roomLoad=new Promise((_resolve,r)=>{reject=r});const task=page.aboutToAppear();
+ state.epoch++;state.username='other-account';reject(new Error('fixture read failure'));await task;
+ assert.equal(page.errorMsg,'');assert.equal(state.requests.length,0);
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){

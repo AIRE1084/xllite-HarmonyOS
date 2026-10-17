@@ -28,7 +28,9 @@ struct ElectricityPage {
         await this.queryElectricity()
       }
     } catch (_error) {
-      if (this.alive && version === this.requestVersion) this.errorMsg = '宿舍绑定读取失败，请重新查询'
+      if (this.alive && version === this.requestVersion && epoch === getCacheEpoch() && username === getUsername()) {
+        this.errorMsg = '宿舍绑定读取失败，请重新查询'
+      }
     }
   }
   aboutToDisappear(): void { this.alive = false; this.requestVersion++; this.loading = false; this.paymentPassword = '' }
