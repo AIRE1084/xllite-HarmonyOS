@@ -48,7 +48,14 @@ struct TodoPage {
 
   @State loadError: string = ''
   @State reloadBusy: boolean = false
+  private hasAccount(): boolean {
+    if (getUsername().length > 0) return true
+    this.todos = []
+    this.loadError = '请先登录后查看待办'
+    return false
+  }
   async handleReloadTodos(): Promise<void> {
+    if (!this.hasAccount()) return
     if (this.reloadBusy) return
     this.reloadBusy = true
     const version = this.loadVersion
@@ -86,6 +93,7 @@ struct TodoPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     this.palette = getColors(this.isDark)
+    if (!this.hasAccount()) return
     let items: TodoItem[] = []
     try { items = await loadTodos() }
     catch (_error) {
@@ -156,6 +164,7 @@ struct TodoPage {
   }
   @State saving: boolean = false
   private async handleAdd(): Promise<void> {
+    if (!this.hasAccount()) return
     if (this.saving) return
     if (this.dueAt !== undefined && this.dueAt <= Date.now()) {
       safeToast(this.getUIContext(), '任务时间已过，请重新选择'); return
