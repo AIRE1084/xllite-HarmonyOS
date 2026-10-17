@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T06:42:54.044Z",
+  "checkedAt": "2026-10-17T06:45:28.396Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 55,
+  "checks": 56,
   "failed": 0,
   "results": [
     {
@@ -31,6 +31,10 @@
     },
     {
       "name": "todo reminder synchronization serializes overlapping replacement plans",
+      "ok": true
+    },
+    {
+      "name": "todo reminder clear retires queued plans after active publication",
       "ok": true
     },
     {
