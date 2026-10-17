@@ -2,7 +2,7 @@ import { DetailScaffold } from '../components/common/DetailScaffold'
 import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
 import { TodoItem } from '../models/TodoTypes'
-import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo } from '../services/TodoService'
+import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets } from '../services/TodoService'
 import { startTodoLiveView } from '../services/LiveViewService'
 import { LiquidGlass } from '../components/LiquidGlass'
 import { getColors, ColorPalette } from '../theme/Colors'
@@ -26,6 +26,8 @@ struct TodoPage {
   async aboutToAppear(): Promise<void> {
     this.palette = getColors(this.isDark)
     this.todos = await loadTodos()
+    try { await refreshTodoWidgets() }
+    catch (_error) { safeToast(this.getUIContext(), '任务已读取，桌面卡片暂未刷新') }
   }
 
   onThemeChange(): void {

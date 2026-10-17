@@ -156,6 +156,16 @@ export async function deleteTodo(id: string): Promise<TodoItem[]> {
   return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id), version)
 }
 
+export function refreshTodoWidgets(): Promise<void> {
+  const version = sessionVersion
+  const refresh = persistenceTask.then(async () => {
+    await loadTodos()
+    if (version !== sessionVersion || todoContext === null) return
+    await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore))
+  })
+  persistenceTask = refresh.catch((_error: Error) => {})
+  return refresh
+}
 export async function clearTodos(): Promise<void> {
   sessionVersion++
   if (todoContext === null) return

@@ -93,6 +93,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo restored disk tasks refresh card without a task mutation',async()=>{
+ const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([{id:'restored',title:'Restored',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]));
+ await f.todo.refreshTodoWidgets();assert.equal(f.state.todoWidgets.at(-1).firstTitle,'Restored');
+ assert.equal(f.stores.get('xjit_todos').writes,1);
+});
 test('logout retires add paused before mutation enqueue',async()=>{
  const f=fixture(),gate=deferred();let entered=false;
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get'){entered=true;await gate.promise}};
