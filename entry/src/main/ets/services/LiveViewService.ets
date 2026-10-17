@@ -81,7 +81,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
   }
   if (!await isLiveViewSupported()) return { ok: false, reason: supportReason }
   if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '实况窗已关闭' }
-  const key = JSON.stringify([target.type, target.todoId ?? '', target.title, target.startTime])
+  const key = JSON.stringify([target.type, target.todoId ?? '', target.title, target.startTime, target.endTime])
   if (currentKey === key && currentHandle !== null && currentView !== null) {
     if (target.startTime <= Date.now() && currentView.liveViewData.capsule?.content === '距上课') {
       const previousTimer = currentView.timer

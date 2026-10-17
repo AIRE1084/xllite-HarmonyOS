@@ -379,6 +379,11 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('changed live view deadline replaces the old timer',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService'),target={type:'todo',todoId:'task',title:'Study',text:'',extra:'',startTime:f.clock.now(),endTime:f.clock.now()+3600000};
+ await live.startLiveView(target);await live.startLiveView({...target,endTime:target.endTime+3600000});
+ assert.equal(f.state.liveStarts.length,2);assert.equal(f.state.liveStarts[1].timer.time,7200000);
+});
 test('same-tick live view instances have distinct system ids and reject old handles',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService'),item={id:'a',title:'Study',note:'',dueText:'',done:false,createdAt:1,updatedAt:1};
  const first=await live.startTodoLiveView(item),second=await live.startTodoLiveView({...item,id:'b'});
