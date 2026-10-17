@@ -28,7 +28,7 @@ function fixture() {
     renameSync(a,b) {if(state.renameFail)throw Error('rename failed');disks.set(b,disks.get(a)); disks.delete(a);} };
   const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;}, async isNotificationEnabled(){return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
-    async getAllValidReminders(){if(state.allValidQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
+    async getAllValidReminders(){if(state.allValidHook)await state.allValidHook();if(state.allValidQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
      async cancelReminder(id){state.reminders.delete(id);}, async publishReminder(request){
       state.requests.push(request); if (state.publishHook) await state.publishHook(request);
@@ -219,6 +219,11 @@ test('course ten-minute trigger boundary never registers an elapsed calendar tim
   const today=f.state.requests.filter(r=>r.dateTime.year===2026&&r.dateTime.month===10&&r.dateTime.day===12);
   assert.equal(today.length,offset<0?1:0);if(today.length){assert.equal(today[0].groupId,'campus_courses');assert.equal(today[0].dateTime.minute,50)}
  }
+});
+test('course reminder skips trigger that elapsed during native group query',async()=>{
+ const f=fixture();f.state.now=new Date(2026,9,12,9,49,59).getTime();const core=await readyCourse(f);
+ f.state.allValidHook=async()=>{f.state.now=new Date(2026,9,12,9,50,1).getTime()};await core.setCampusOption('reminders',true);
+ assert.equal(f.state.requests.filter(r=>r.dateTime.day===12).length,0);
 });
 test('turning reminders off cancels native reminders and persists switch',async()=>{
  const f=fixture(), core=await readyCourse(f);await core.setCampusOption('reminders',true);await core.setCampusOption('reminders',false);
