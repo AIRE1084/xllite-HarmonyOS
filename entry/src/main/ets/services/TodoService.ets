@@ -109,6 +109,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     todoStore = next
     if (clearing) { loaded = true; cleanupPending = false }
     await reconcileLiveState(version)
+    if (version !== sessionVersion) throw new Error('待办会话已变化，旧发布已停止')
     if (todoContext !== null) {
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
       catch (_error) { console.warn('XJITTodo: task saved; widget refresh pending') }
