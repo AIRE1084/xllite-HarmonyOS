@@ -20,6 +20,7 @@ function parseItems(raw: string): TodoItem[] {
   const data = JSON.parse(raw) as Object
   if (!Array.isArray(data)) return []
   const valid: TodoItem[] = []
+  const ids: Set<string> = new Set<string>()
   for (const value of data as Object[]) {
     if (value === null || typeof value !== 'object') continue
     const item = value as TodoItem
@@ -28,6 +29,8 @@ function parseItems(raw: string): TodoItem[] {
       typeof item.note !== 'string' || typeof item.dueText !== 'string' || typeof item.done !== 'boolean' ||
       !Number.isFinite(item.createdAt) || !Number.isFinite(item.updatedAt) ||
       item.createdAt < 0 || item.updatedAt < item.createdAt) continue
+    if (ids.has(item.id)) continue
+    ids.add(item.id)
     valid.push(item)
   }
   return valid
