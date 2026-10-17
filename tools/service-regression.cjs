@@ -24,8 +24,8 @@ async function until(predicate) {
   for (let i = 0; i < 500; i++) { if (predicate()) return; await Promise.resolve(); }
   throw new Error('Expected asynchronous checkpoint was not reached');
 }
-function fixture() {
-  const stores = new Map(), opens = new Map(), modules = new Map();
+function fixture(sharedStores = new Map()) {
+  const stores = sharedStores, opens = new Map(), modules = new Map();
   const timers = new Map(); let nextTimer = 1;
   const state = { requests: [], created: 0, destroyed: 0, active: 0, peak: 0, appActive: true, mainPageActive: true, hook: null, respond: null };
   function prefs(name) {
@@ -96,6 +96,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('persisted cleanup marker blocks old todo data in a fresh process and permits explicit clearing',async()=>{
+ const f=fixture();await f.todo.addTodo({title:'Private old',note:'',dueText:''});await f.prefs('xjit_todos').put('cleanup_pending',true);
+ const restarted=fixture(f.stores);await assert.rejects(restarted.todo.loadTodos(),/清理/);await assert.rejects(restarted.todo.addTodo({title:'New',note:'',dueText:''}),/清理/);
+ await restarted.todo.clearTodos();assert.equal(restarted.stores.get('xjit_todos').data.get('cleanup_pending'),false);assert.equal((await fixture(f.stores).todo.loadTodos()).length,0);
+});
 test('logout failure waits for other cleanup branches before allowing retry',async()=>{
  const f=fixture(),gate=deferred();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});f.state.companionClearFailure=true;let entered=false,settled=false;
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put'){entered=true;await gate.promise}};
@@ -384,7 +389,7 @@ test('concurrent todo initialization waits for one read and returns independent 
   f.state.hook = async (name, op) => { if (name === TODOS && op === 'get') { started = true; await gate.promise; } };
   const first = f.todo.loadTodos(); await until(() => started); const second = f.todo.loadTodos().then(v => { resolved = true; return v; });
   await Promise.resolve(); assert.equal(resolved, false); gate.resolve(); const [a, b] = await Promise.all([first, second]);
-  assert.equal(a.length, 1); assert.equal(b.length, 1); assert.equal(f.stores.get(TODOS).reads, 1); a[0].title = 'changed'; assert.equal(b[0].title, 'task');
+  assert.equal(a.length, 1); assert.equal(b.length, 1); assert.equal(f.stores.get(TODOS).reads, 2); a[0].title = 'changed'; assert.equal(b[0].title, 'task');
 });
 
 test('concurrent feature reads deduplicate; cache hit and manual refresh differ', async () => {
