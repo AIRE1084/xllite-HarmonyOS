@@ -12,6 +12,7 @@ const KEY_ITEMS: string = 'items'
 let todoContext: common.UIAbilityContext | null = null
 let todoStore: TodoItem[] = []
 let loaded: boolean = false
+let cleanupPending: boolean = false
 let loadTask: Promise<void> | null = null
 let prefsTask: Promise<preferences.Preferences> | null = null
 let persistenceTask: Promise<void> = Promise.resolve()
@@ -105,7 +106,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     todoStore = next
-    if (clearing) loaded = true
+    if (clearing) { loaded = true; cleanupPending = false }
     await reconcileLiveState(version)
     if (todoContext !== null) {
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
@@ -126,6 +127,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
 }
 
 export async function loadTodos(): Promise<TodoItem[]> {
+  if (cleanupPending) throw new Error('上一会话待办清理未完成，请重试退出清理')
   if (loaded) return cloneItems(todoStore)
   if (loadTask === null) {
     loadTask = (async (): Promise<void> => {
@@ -255,6 +257,7 @@ export function refreshTodoWidgets(): Promise<void> {
   return refresh
 }
 export async function clearTodos(): Promise<void> {
+  cleanupPending = true
   sessionVersion++
   remindersEnabled = false
   reminderStatus = '尚未登记任务提醒'
