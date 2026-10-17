@@ -18,6 +18,7 @@ struct TodoPage {
   @State titleInput: string = ''
   @State noteInput: string = ''
   @State dueInput: string = ''
+  @State dueAt: number | undefined = undefined
   @State filter: number = 0
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
@@ -41,6 +42,26 @@ struct TodoPage {
     return this.todos
   }
 
+  selectDueTime(date: Date, hour: number, minute: number): void {
+    if (!Number.isFinite(date.getTime()) || !Number.isInteger(hour) || !Number.isInteger(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) return
+    const value = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute).getTime()
+    if (value <= Date.now()) { safeToast(this.getUIContext(), '请选择未来时间'); return }
+    this.dueAt = value
+    this.dueInput = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0')
+  }
+  clearDueTime(): void { this.dueAt = undefined; this.dueInput = '' }
+  chooseDueTime(): void {
+    const selected = this.dueAt === undefined ? new Date() : new Date(this.dueAt)
+    this.getUIContext().showDatePickerDialog({ selected: selected,
+      onAccept: (result: DatePickerResult) => {
+        if (result.year === undefined || result.month === undefined || result.day === undefined) return
+        const date = new Date(result.year, result.month, result.day)
+        this.getUIContext().showTimePickerDialog({ selected: selected, useMilitaryTime: true,
+          onAccept: (time: TimePickerResult) => {
+            if (time.hour !== undefined && time.minute !== undefined) this.selectDueTime(date, time.hour, time.minute)
+          } })
+      } })
+  }
   private async handleAdd(): Promise<void> {
     if (this.titleInput.trim().length === 0) {
       safeToast(this.getUIContext(), '先写下要做什么')
@@ -50,10 +71,11 @@ struct TodoPage {
       title: this.titleInput,
       note: this.noteInput,
       dueText: this.dueInput,
+      dueAt: this.dueAt,
     })
     this.titleInput = ''
     this.noteInput = ''
-    this.dueInput = ''
+    this.clearDueTime()
   }
 
   private async handleToggle(item: TodoItem): Promise<void> {
@@ -193,15 +215,14 @@ struct TodoPage {
                 .onChange((value: string) => { this.titleInput = value })
 
               Row({ space: 8 }) {
-                TextInput({ placeholder: '时间', text: this.dueInput })
-                  .fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
-                  .caretColor(this.palette.primary)
-                  .layoutWeight(1)
-                  .height(38)
-                  .fontSize(13)
-                  .backgroundColor(this.palette.surfaceVariant)
-                  .borderRadius(Radius.sm)
-                  .onChange((value: string) => { this.dueInput = value })
+                Button(this.dueInput.length > 0 ? this.dueInput : '选择任务时间')
+                  .fontColor(this.palette.onSurfaceVariant).layoutWeight(1).height(38).fontSize(12)
+                  .backgroundColor(this.palette.surfaceVariant).borderRadius(Radius.sm)
+                  .onClick(() => this.chooseDueTime())
+                if (this.dueAt !== undefined) {
+                  Button('清除').fontSize(12).backgroundColor(Color.Transparent)
+                    .fontColor(this.palette.onSurfaceVariant).onClick(() => this.clearDueTime())
+                }
                 TextInput({ placeholder: '备注', text: this.noteInput })
                   .fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
                   .caretColor(this.palette.primary)

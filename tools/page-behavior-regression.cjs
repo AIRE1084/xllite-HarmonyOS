@@ -72,6 +72,13 @@ test('electricity restore errors from a retired account do not alter the page',a
  state.epoch++;state.username='other-account';reject(new Error('fixture read failure'));await task;
  assert.equal(page.errorMsg,'');assert.equal(state.requests.length,0);
 });
+test('todo explicit time accepts future only and can be cleared',()=>{
+ const {page,state}=fixture('TodoPage');const date=new Date(2026,9,18);
+ page.selectDueTime(date,20,0);assert.equal(page.dueAt,new Date(2026,9,18,20,0).getTime());assert.ok(page.dueInput.includes('20:00'));
+ const prior=page.dueAt;page.selectDueTime(date,24,0);assert.equal(page.dueAt,prior);
+ page.selectDueTime(new Date(1970,0,1),0,0);assert.equal(page.dueAt,prior);
+ page.clearDueTime();assert.equal(page.dueAt,undefined);assert.equal(page.dueInput,'');
+});
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
   const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;
