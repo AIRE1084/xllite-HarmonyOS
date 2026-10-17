@@ -1,6 +1,14 @@
 # 独立验收包刷新
 
-2026-10-17；最新应用源码基线10a1b5b（前版81d6f2b）。
+2026-10-17；最新应用源码基线5d0dabe，配套回归基线a64ba11。
+
+## 授权与系统预检竞态修复刷新
+
+- 同步CampusCompanionService.ets并核对SHA256相同，签名配置前后哈希一致；assembleHap成功。
+- 包含旧发布错误、通知授权等待、实况窗能力等待的版本校验，配套回归覆盖退出或关闭后的迟到结果。
+- 最新签名包SHA256：B018D7017095E4C10C41C0746D0594D407851A328939C58DA75FE594098D0C08。
+- 直接从签名HAP压缩条目的module.json读取：bundleName=com.xjit.app.acceptance，minAPIVersion=60100023，targetAPIVersion=260000026，apiReleaseType=Release。该元数据符合最低API23、目标API26；不代表API23运行验证。
+- HDC端口8710仍为[Empty]，未安装启动、未执行真实支付，正式包及会话不动。
 
 ## 提醒发布时效修复刷新
 
