@@ -30,7 +30,7 @@ function fixture(name) {
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
-      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},loadTodos:async()=>[],countOpenTodos:()=>0};
+      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{throw new Error('fixture disk failure')},deleteTodo:async()=>{throw new Error('fixture disk failure')},loadTodos:async()=>[],countOpenTodos:()=>0};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
@@ -87,6 +87,11 @@ test('todo add revalidates time and deduplicates pending submission',async()=>{
 test('todo add failure preserves input and unlocks retry',async()=>{
  const {page,state}=fixture('TodoPage');page.titleInput='Study';state.todoPending=Promise.reject(new Error('fixture'));
  await page.handleAdd();assert.equal(page.titleInput,'Study');assert.equal(page.saving,false);assert.ok(state.toasts.length>0);
+});
+test('todo toggle and delete errors retain visible rows and report retry',async()=>{
+ const {page,state}=fixture('TodoPage');const item={id:'fixture',title:'Study'};page.todos=[item];
+ await page.handleToggle(item);assert.equal(page.todos[0],item);assert.equal(state.toasts.length,1);
+ await page.handleDelete(item);assert.equal(page.todos[0],item);assert.equal(state.toasts.length,2);
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
