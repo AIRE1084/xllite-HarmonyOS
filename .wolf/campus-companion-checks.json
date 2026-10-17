@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:13:52.733Z",
+  "checkedAt": "2026-10-17T10:15:56.646Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 75,
+  "checks": 76,
   "failed": 0,
   "results": [
     {
@@ -31,6 +31,10 @@
     },
     {
       "name": "todo reminder service registers native todo routes and preserves courses",
+      "ok": true
+    },
+    {
+      "name": "todo reminders skip elapsed triggers after native query and earlier publication",
       "ok": true
     },
     {

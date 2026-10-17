@@ -107,6 +107,15 @@ test('todo reminder service registers native todo routes and preserves courses',
  assert.equal(f.state.requests.at(-1).groupId,'campus_todos');assert.equal(f.state.requests.at(-1).wantAgent.parameters.campusRoute,'todo');assert.equal(f.state.reminders.has(9999),true);
  f.state.publishHook=async()=>{throw new Error('fixture publication failed')};await assert.rejects(service.syncTodoReminders([item],'com.xjit.app.acceptance'),/publication failed/);assert.equal(f.state.reminders.size,1);
 });
+test('todo reminders skip elapsed triggers after native query and earlier publication',async()=>{
+ for(const stage of ['query','publish']){
+  const f=fixture(),service=f.get('services/TodoReminderService'),due=f.clock.now()+3600000;
+  const item=(id,time)=>({id,title:id,note:'',dueText:'',dueAt:time,done:false,createdAt:1,updatedAt:1});
+  const advance=async()=>{f.state.now=due+180000};if(stage==='query')f.state.allValidHook=advance;else f.state.publishHook=advance;
+  const count=await service.syncTodoReminders([item('first',due),item('second',due+60000)],'com.xjit.app.acceptance');
+  assert.equal(count,stage==='query'?0:1);assert.equal(f.state.requests.length,count);
+ }
+});
 test('todo reminder synchronization serializes overlapping replacement plans',async()=>{
  const f=fixture(),service=f.get('services/TodoReminderService');let release,entered=false;
  const gate=new Promise(r=>release=r);f.state.publishHook=async()=>{if(!entered){entered=true;await gate}};

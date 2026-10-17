@@ -38,6 +38,7 @@ async function replaceTodoReminders(items: TodoItem[], bundleName: string, versi
   try {
     for (const plan of plans) {
       if (version !== reminderVersion) return 0
+      if (plan.triggerAt <= Date.now()) continue
       const trigger = new Date(plan.triggerAt)
       const request: reminderAgentManager.ReminderRequestCalendar = {
         reminderType: reminderAgentManager.ReminderType.REMINDER_TYPE_CALENDAR,
