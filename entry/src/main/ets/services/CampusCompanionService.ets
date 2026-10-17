@@ -1,3 +1,4 @@
+import { cancelReminderGroup } from './ReminderGroups'
 import common from '@ohos.app.ability.common'
 import preferences from '@ohos.data.preferences'
 import notificationManager from '@ohos.notificationManager'
@@ -92,9 +93,8 @@ async function syncReminders(): Promise<void> {
   const plan = enabled + '|' + localDateText(new Date()) + '|' + upcoming.length + '|' + items.map((item): string => item.key).join(';')
   if (plan === lastPlan) return
   try {
-    // This app uses the agent exclusively for course reminders. Cancelling all also
-    // recovers orphan reminders after a crash between system publication and disk I/O.
-    await reminderAgentManager.cancelAllReminders()
+    // Recover orphan course reminders without deleting other feature groups.
+    await cancelReminderGroup('campus_courses')
     if (version !== revision) return
     const ids: number[] = []
     let capacityFull: boolean = false
@@ -248,7 +248,7 @@ export async function setCampusOption(option: string, enabled: boolean): Promise
     try { await reconcile(option === 'reminders') } catch (error) {
       if (option === 'reminders' && enabled) {
         AppStorage.setOrCreate<boolean>('courseReminderEnabled', false)
-        await reminderAgentManager.cancelAllReminders()
+        await cancelReminderGroup('campus_courses')
         lastPlan = ''; await persist()
       }
       throw error as Error

@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T06:34:00.353Z",
+  "checkedAt": "2026-10-17T06:38:07.083Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 52,
+  "checks": 53,
   "failed": 0,
   "results": [
     {
@@ -19,6 +19,10 @@
     },
     {
       "name": "group reminder cancellation preserves unrelated reminders and surfaces query failure",
+      "ok": true
+    },
+    {
+      "name": "course reminder reconciliation preserves todo reminders",
       "ok": true
     },
     {
