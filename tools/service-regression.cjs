@@ -93,6 +93,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo reminder plans exclude inactive tasks and never round delivery earlier',()=>{
+ const f=fixture(),plan=f.load('entry/src/main/ets/utils/TodoReminderPlan.ets').buildTodoReminderPlans;
+ const item=(id,dueAt,done=false)=>({id,title:id,note:'',dueText:'',dueAt,done,createdAt:1,updatedAt:1});
+ const rows=plan([item('later',180001),item('past',500),item('done',120000,true),item('untimed'),item('first',120000)],1000);
+ assert.equal(rows.length,2);assert.equal(rows[0].taskId,'first');assert.equal(rows[0].triggerAt,120000);assert.equal(rows[1].triggerAt,240000);assert.equal(rows[0].route,'todo');
+});
 test('todo restored disk tasks refresh card without a task mutation',async()=>{
  const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([{id:'restored',title:'Restored',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]));
  await f.todo.refreshTodoWidgets();assert.equal(f.state.todoWidgets.at(-1).firstTitle,'Restored');
