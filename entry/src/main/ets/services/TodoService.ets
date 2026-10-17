@@ -133,7 +133,8 @@ export async function loadTodos(): Promise<TodoItem[]> {
       if (task === null) return
       const prefs = await task
       const raw = await prefs.get(KEY_ITEMS, '')
-      if (typeof raw === 'string' && raw.length > 0) todoStore = parseItems(raw)
+      if (typeof raw !== 'string') throw new Error('待办存储类型异常，原数据已保留')
+      if (raw.length > 0) todoStore = parseItems(raw)
       loaded = true
     })()
   }
