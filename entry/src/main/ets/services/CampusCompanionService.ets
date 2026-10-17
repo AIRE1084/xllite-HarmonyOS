@@ -246,7 +246,11 @@ export async function setCampusOption(option: string, enabled: boolean): Promise
       if (!granted) throw new Error('未允许通知，课程提醒保持关闭')
     }
   }
-  if (option === 'live' && enabled && !await isLiveViewSupported()) throw new Error('系统实况窗暂不可用，请检查系统设置')
+  if (option === 'live' && enabled) {
+    const supported = await isLiveViewSupported()
+    if (requestedVersion !== revision) return
+    if (!supported) throw new Error('系统实况窗暂不可用，请检查系统设置')
+  }
   const key = option === 'widget' ? 'campusWidgetEnabled' : option === 'reminders' ? 'courseReminderEnabled' : 'liveViewEnabled'
   AppStorage.setOrCreate<boolean>(key, enabled); revision++
   const optionVersion = revision

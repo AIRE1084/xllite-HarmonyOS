@@ -35,7 +35,7 @@ function fixture() {
       const id = nextReminder++; state.reminders.set(id,request); return id;
     }};
   const liveViewManager = {LifeCycleMode:{AUTO_STOP_WHEN_APP_TERMINATE:1}, CapsuleType:{CAPSULE_TYPE_TIMER:2},
-    async isLiveViewEnabled(){return state.liveAllowed;}, async startLiveView(view){
+    async isLiveViewEnabled(){if(state.liveQueryHook)await state.liveQueryHook();return state.liveAllowed;}, async startLiveView(view){
       state.liveStarts.push(JSON.parse(JSON.stringify(view))); if(state.liveError) throw state.liveError;
       return {resultCode:state.liveCode,message:'mock'};
     }, async updateLiveView(view){state.liveUpdates.push(JSON.parse(JSON.stringify(view)));if(state.updateError)throw state.updateError;return {resultCode:state.updateCode||0,message:'mock'};},
@@ -217,6 +217,11 @@ test('logout during notification preflight cannot reenable course reminders',asy
  const f=fixture(),core=await readyCourse(f),gate=deferred();let entered=false;f.state.notificationQueryHook=async()=>{entered=true;await gate.promise};
  const enable=core.setCampusOption('reminders',true);await until(()=>entered);await core.clearCampusCompanion();gate.resolve();await enable;
  assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.state.requests.length,0);
+});
+test('logout during live view preflight cannot reenable live switch',async()=>{
+ const f=fixture(),core=await readyCourse(f),gate=deferred();let entered=false;f.state.liveQueryHook=async()=>{entered=true;await gate.promise};
+ const enable=core.setCampusOption('live',true);await until(()=>entered);await core.clearCampusCompanion();gate.resolve();await enable;
+ assert.equal(f.values.get('liveViewEnabled'),false);assert.equal(f.state.liveStarts.length,0);
 });
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;
