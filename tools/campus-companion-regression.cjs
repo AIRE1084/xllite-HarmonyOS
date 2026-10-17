@@ -379,6 +379,14 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('stale live view handles cannot update or finish a newer instance',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
+ const first=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);
+ const second=await live.startCourseLiveView(course(),f.clock.now()+60000,f.clock.now()+7200000);
+ const stops=f.state.liveStops.length;await live.updateLiveView(first.handle,course(),f.clock.now());await live.finishLiveView(first.handle);
+ assert.equal(f.state.liveUpdates.length,0);assert.equal(f.state.liveStops.length,stops);assert.equal(live.getCurrentHandle().startTime,second.handle.startTime);
+ await live.finishLiveView(second.handle);assert.equal(f.state.liveStops.length,stops+1);
+});
 test('queued live view target preserves caller snapshot',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');const target={type:'todo',title:'Original',text:'',extra:'',startTime:f.clock.now(),endTime:f.clock.now()+3600000};
  const pending=live.startLiveView(target);target.endTime=0;const result=await pending;assert.equal(result.ok,true);assert.equal(f.state.liveStarts.length,1);

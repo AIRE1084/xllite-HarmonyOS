@@ -138,9 +138,14 @@ export function startTodoLiveView(todo: TodoItem): Promise<LiveViewResult> {
   if (todo.done) return Promise.resolve<LiveViewResult>({ ok: false, reason: '任务已完成，无需启动实况窗' })
   return startLiveView(buildTodoLiveTarget(todo))
 }
-export async function updateLiveView(_handle: LiveViewHandle, course: Course, now: number): Promise<void> {
+function matchesCurrentHandle(handle: LiveViewHandle): boolean {
+  return currentHandle !== null && handle.id === currentHandle.id &&
+    handle.startTime === currentHandle.startTime && handle.targetType === currentHandle.targetType
+}
+export async function updateLiveView(handle: LiveViewHandle, course: Course, now: number): Promise<void> {
+  const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
   const task = operation.then(async () => {
-    if (currentView === null) return
+    if (currentView === null || !matchesCurrentHandle(snapshot)) return
     currentView.sequence = (currentView.sequence ?? 0) + 1
     currentView.liveViewData.primary.title = course.title.slice(0, 40)
     const result = await liveViewManager.updateLiveView(currentView)
@@ -149,7 +154,14 @@ export async function updateLiveView(_handle: LiveViewHandle, course: Course, no
   operation = task.catch((_e: Error) => {})
   return task
 }
-export function finishLiveView(_handle: LiveViewHandle): Promise<void> { return finishAllLiveViews() }
+export function finishLiveView(handle: LiveViewHandle): Promise<void> {
+  const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
+  const task = operation.then(async () => {
+    if (matchesCurrentHandle(snapshot)) await stopCurrent()
+  })
+  operation = task.catch((_e: Error) => {})
+  return task
+}
 export function finishAllLiveViews(): Promise<void> {
   revision++
   const task = operation.then(() => stopCurrent())
