@@ -23,7 +23,7 @@ for (const file of fs.readdirSync(pages).filter(name => name.endsWith('.ets'))) 
 }
 check('LoginPage theme overlay remains inside the root Stack', () => {
   const source = fs.readFileSync(path.join(pages, 'LoginPage.ets'), 'utf8');
-  assert.match(source, /\n      ThemeWash\(\)\n    \}\.width\('100%'\)\.height\('100%'\)\n  \}/);
+  assert.match(source, /\n      ThemeWash\(\)\n    \}\.width\('100%'\)\.height\('100%'\)\.backgroundColor\(this\.palette\.background\)\n  \}/);
 });
 console.log(`${checks} UI structure checks, ${failed} failed`);
 process.exitCode = failed ? 1 : 0;
