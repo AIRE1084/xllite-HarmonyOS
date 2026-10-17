@@ -4,6 +4,23 @@ import { formProvider, formBindingData } from '@kit.FormKit'
 import { ScheduleSnapshot, CampusWidgetData } from '../models/CampusCompanionTypes'
 import { widgetData } from '../utils/CourseCalendar'
 
+import { TodoWidgetData } from '../utils/TodoWidgetData'
+
+export function saveTodoWidgetSnapshot(context: common.Context, data: TodoWidgetData): void {
+  const path = context.filesDir + '/todo_widget.json'
+  const file = fs.openSync(path + '.tmp', fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY | fs.OpenMode.TRUNC)
+  try { fs.writeSync(file.fd, JSON.stringify(data)) } finally { fs.closeSync(file) }
+  fs.renameSync(path + '.tmp', path)
+}
+function readTodoWidgetSnapshot(context: common.Context): TodoWidgetData {
+  try {
+    const data = JSON.parse(fs.readTextSync(context.filesDir + '/todo_widget.json')) as TodoWidgetData
+    if (data !== null && Number.isSafeInteger(data.openCount) && data.openCount >= 0 &&
+      Number.isSafeInteger(data.overdueCount) && data.overdueCount >= 0 && data.overdueCount <= data.openCount &&
+      typeof data.firstTitle === 'string' && typeof data.secondTitle === 'string' && typeof data.thirdTitle === 'string') return data
+  } catch (_error) {}
+  return { openCount: 0, overdueCount: 0, firstTitle: '打开应用同步待办', secondTitle: '', thirdTitle: '' }
+}
 const FILE_NAME: string = '/campus_widget.json'
 export function readWidgetSnapshot(context: common.Context): ScheduleSnapshot | null {
   try {
@@ -36,8 +53,7 @@ export async function updateCampusWidgets(data: CampusWidgetData): Promise<void>
 }
 export function buildFormBinding(context: common.Context, formName: string): formBindingData.FormBindingData {
   if (formName === 'CampusTodoCard') {
-    return formBindingData.createFormBindingData({ openCount: 0, overdueCount: 0,
-      firstTitle: '打开应用同步待办', secondTitle: '', thirdTitle: '' })
+    return formBindingData.createFormBindingData(readTodoWidgetSnapshot(context))
   }
   return buildWidgetBinding(context)
 }
