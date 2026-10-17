@@ -62,20 +62,30 @@ struct TodoPage {
           } })
       } })
   }
+  @State saving: boolean = false
   private async handleAdd(): Promise<void> {
+    if (this.saving) return
+    if (this.dueAt !== undefined && this.dueAt <= Date.now()) {
+      safeToast(this.getUIContext(), '任务时间已过，请重新选择'); return
+    }
     if (this.titleInput.trim().length === 0) {
       safeToast(this.getUIContext(), '先写下要做什么')
       return
     }
-    this.todos = await addTodo({
-      title: this.titleInput,
-      note: this.noteInput,
-      dueText: this.dueInput,
-      dueAt: this.dueAt,
-    })
-    this.titleInput = ''
-    this.noteInput = ''
-    this.clearDueTime()
+    this.saving = true
+    try {
+      this.todos = await addTodo({
+        title: this.titleInput,
+        note: this.noteInput,
+        dueText: this.dueInput,
+        dueAt: this.dueAt,
+      })
+      this.titleInput = ''
+      this.noteInput = ''
+      this.clearDueTime()
+    } catch (_error) {
+      safeToast(this.getUIContext(), '任务保存未完成，请重试')
+    } finally { this.saving = false }
   }
 
   private async handleToggle(item: TodoItem): Promise<void> {
