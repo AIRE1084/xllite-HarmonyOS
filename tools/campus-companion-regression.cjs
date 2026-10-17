@@ -379,6 +379,12 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('same-title todo live views retain distinct task identities',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');const a={id:'a',title:'Study',note:'',dueText:'',done:false,createdAt:1,updatedAt:1},b={...a,id:'b'};
+ await live.startTodoLiveView(a);await live.startTodoLiveView(b);assert.equal(f.state.liveStarts.length,2);
+ const stops=f.state.liveStops.length;await live.reconcileTodoLiveView([{...a,done:true},b]);assert.equal(f.state.liveStops.length,stops);
+ await live.reconcileTodoLiveView([a]);assert.equal(f.state.liveStops.length,stops+1);
+});
 test('todo reconciliation ends only the completed or deleted active task',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');const item={id:'task',title:'Study',note:'',dueText:'',done:false,createdAt:1,updatedAt:1};
  await live.startTodoLiveView(item);await live.reconcileTodoLiveView([item]);assert.equal(f.state.liveStops.length,0);
