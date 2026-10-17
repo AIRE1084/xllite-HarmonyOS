@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:24:29.044Z",
+  "checkedAt": "2026-10-17T10:26:52.399Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 78,
+  "checks": 79,
   "failed": 0,
   "results": [
     {
@@ -107,6 +107,10 @@
     },
     {
       "name": "enabled notifications skip another permission request",
+      "ok": true
+    },
+    {
+      "name": "logout during notification preflight cannot reenable course reminders",
       "ok": true
     },
     {
