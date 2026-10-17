@@ -213,6 +213,13 @@ test('system calendar reminder is exactly ten minutes early and opens schedule',
  assert.equal(f.state.reminders.size,1); const request=f.state.requests[0]; assert.deepEqual(plain(request.dateTime),{year:2026,month:10,day:12,hour:9,minute:50});
  assert.equal(request.wantAgent.parameters.campusRoute,'schedule'); assert.equal(f.stores.get('xjit_campus_companion').get('reminders'),true);
 });
+test('course ten-minute trigger boundary never registers an elapsed calendar time',async()=>{
+ for(const offset of [-1,0,1]){
+  const f=fixture();f.state.now=new Date(2026,9,12,9,50).getTime()+offset;const core=await readyCourse(f);await core.setCampusOption('reminders',true);
+  const today=f.state.requests.filter(r=>r.dateTime.year===2026&&r.dateTime.month===10&&r.dateTime.day===12);
+  assert.equal(today.length,offset<0?1:0);if(today.length){assert.equal(today[0].groupId,'campus_courses');assert.equal(today[0].dateTime.minute,50)}
+ }
+});
 test('turning reminders off cancels native reminders and persists switch',async()=>{
  const f=fixture(), core=await readyCourse(f);await core.setCampusOption('reminders',true);await core.setCampusOption('reminders',false);
  assert.equal(f.state.reminders.size,0);assert.equal(f.stores.get('xjit_campus_companion').get('reminders'),false);
