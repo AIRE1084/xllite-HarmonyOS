@@ -19,6 +19,26 @@ let sessionVersion: number = 0
 let remindersEnabled: boolean = false
 let reminderStatus: string = '尚未登记任务提醒'
 export function getTodoReminderStatus(): string { return reminderStatus }
+let liveCleanupStatus: string = ''
+export function getTodoLiveCleanupStatus(): string { return liveCleanupStatus }
+async function reconcileLiveState(version: number): Promise<void> {
+  try {
+    await reconcileTodoLiveView(cloneItems(todoStore))
+    if (version === sessionVersion) liveCleanupStatus = ''
+  } catch (_error) {
+    if (version === sessionVersion) liveCleanupStatus = '任务已保存，实况窗结束未完成，请重试清理'
+  }
+}
+export function retryTodoLiveCleanup(): Promise<void> {
+  const version = sessionVersion
+  const task = persistenceTask.then(async () => {
+    if (version !== sessionVersion) return
+    await loadTodos()
+    if (version === sessionVersion) await reconcileLiveState(version)
+  })
+  persistenceTask = task.catch((_error: Error) => {})
+  return task
+}
 
 export function setTodoContext(ctx: common.UIAbilityContext): void {
   todoContext = ctx
@@ -82,8 +102,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     todoStore = next
-    try { await reconcileTodoLiveView(cloneItems(todoStore)) }
-    catch (_error) { console.warn('XJITTodo: task saved; live view cleanup pending') }
+    await reconcileLiveState(version)
     if (todoContext !== null) {
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
       catch (_error) { console.warn('XJITTodo: task saved; widget refresh pending') }
@@ -236,6 +255,7 @@ export async function clearTodos(): Promise<void> {
   sessionVersion++
   remindersEnabled = false
   reminderStatus = '尚未登记任务提醒'
+  liveCleanupStatus = ''
   if (todoContext === null) return
   await mutate((_items: TodoItem[]): TodoItem[] => [])
 }

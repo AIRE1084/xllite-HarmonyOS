@@ -99,6 +99,8 @@ test('saved todo changes reconcile live view even when system stop fails',async(
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const rows=await f.todo.addTodo({title:'Study',note:'',dueText:''});
  f.state.liveTodoFailure=true;const changed=await f.todo.toggleTodo(rows[0].id);assert.equal(changed[0].done,true);assert.equal(f.state.liveTodoItems[0].done,true);
  await f.todo.deleteTodo(rows[0].id);assert.equal(f.state.liveTodoItems.length,0);
+ assert.ok(f.todo.getTodoLiveCleanupStatus().includes('未完成'));
+ f.state.liveTodoFailure=false;await f.todo.retryTodoLiveCleanup();assert.equal(f.todo.getTodoLiveCleanupStatus(),'');
 });
 test('todo restored reminder status reflects native count without enabling automatic sync',async()=>{
  const f=fixture();f.state.todoNativeCount=3;await f.todo.restoreTodoReminderStatus();assert.ok(f.todo.getTodoReminderStatus().includes('3'));assert.ok(f.todo.getTodoReminderStatus().includes('未开启'));

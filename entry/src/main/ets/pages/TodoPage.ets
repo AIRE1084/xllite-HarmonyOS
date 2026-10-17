@@ -6,7 +6,7 @@ import { DetailScaffold } from '../components/common/DetailScaffold'
 import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
 import { TodoItem } from '../models/TodoTypes'
-import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders, disableTodoReminders, getTodoReminderStatus, restoreTodoReminderStatus } from '../services/TodoService'
+import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders, disableTodoReminders, getTodoReminderStatus, restoreTodoReminderStatus, getTodoLiveCleanupStatus, retryTodoLiveCleanup } from '../services/TodoService'
 import { startTodoLiveView } from '../services/LiveViewService'
 import { LiquidGlass } from '../components/LiquidGlass'
 import { getColors, ColorPalette } from '../theme/Colors'
@@ -25,6 +25,24 @@ struct TodoPage {
   @State dueAt: number | undefined = undefined
   @State filter: number = 0
   @State reminderStatus: string = '尚未登记任务提醒'
+  @State liveCleanupStatus: string = ''
+  @State liveCleanupBusy: boolean = false
+  async handleRetryLiveCleanup(): Promise<void> {
+    if (this.liveCleanupBusy) return
+    this.liveCleanupBusy = true
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
+    try { await retryTodoLiveCleanup() }
+    catch (_error) {
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '实况窗清理未完成，请重试')
+    } finally {
+      if (this.isCurrentOperation(version, epoch, username)) {
+        this.liveCleanupBusy = false
+        this.liveCleanupStatus = getTodoLiveCleanupStatus()
+      }
+    }
+  }
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
 
@@ -35,6 +53,7 @@ struct TodoPage {
     this.alive = true
     this.saving = false
     this.reminderBusy = false
+    this.liveCleanupBusy = false
     const version = ++this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
@@ -44,7 +63,7 @@ struct TodoPage {
     this.todos = items
     await restoreTodoReminderStatus()
     if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
-    this.reminderStatus = getTodoReminderStatus()
+    this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus()
     try { await refreshTodoWidgets() }
     catch (_error) {
       if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
@@ -119,7 +138,7 @@ struct TodoPage {
       }
     } finally {
       if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
-        this.saving = false; this.reminderStatus = getTodoReminderStatus()
+        this.saving = false; this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus()
       }
     }
   }
@@ -146,7 +165,9 @@ struct TodoPage {
         safeToast(this.getUIContext(), deleting ? '任务删除未完成，请重试' : '任务状态未保存，请重试')
       }
     } finally {
-      if (this.isCurrentOperation(version, epoch, username)) this.reminderStatus = getTodoReminderStatus()
+      if (this.isCurrentOperation(version, epoch, username)) {
+        this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus()
+      }
     }
   }
 
@@ -163,7 +184,7 @@ struct TodoPage {
     } catch (_error) {
       if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '自动同步已关闭，系统提醒取消未完成，请重试')
     } finally {
-      if (this.isCurrentOperation(version, epoch, username)) { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
+      if (this.isCurrentOperation(version, epoch, username)) { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus() }
     }
   }
   async handleReminders(): Promise<void> {
@@ -184,7 +205,7 @@ struct TodoPage {
     } catch (_error) {
       if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '任务保留，提醒登记未完成，请检查通知设置后重试')
     } finally {
-      if (this.isCurrentOperation(version, epoch, username)) { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
+      if (this.isCurrentOperation(version, epoch, username)) { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus() }
     }
   }
   private async handleLiveView(item: TodoItem): Promise<void> {
@@ -366,6 +387,11 @@ struct TodoPage {
           Button(this.reminderBusy ? '登记中…' : '登记任务提醒').enabled(!this.reminderBusy)
             .fontSize(13).fontColor(this.palette.primary).backgroundColor(this.palette.primaryContainer)
             .margin({ left: 16, right: 16, top: 12 }).onClick(() => this.handleReminders())
+          if (this.liveCleanupStatus.length > 0) {
+            Text(this.liveCleanupStatus).fontSize(12).fontColor(this.palette.onSurfaceVariant)
+            Button('重试结束任务实况窗').enabled(!this.liveCleanupBusy)
+              .onClick(() => this.handleRetryLiveCleanup())
+          }
           Text(this.reminderStatus).fontSize(12).fontColor(this.palette.onSurfaceVariant)
             .margin({ left: 16, right: 16, top: 8 })
           Button('取消任务提醒').enabled(!this.reminderBusy).fontSize(12)
