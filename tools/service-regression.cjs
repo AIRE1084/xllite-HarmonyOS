@@ -185,6 +185,11 @@ test('logout retires add paused before mutation enqueue',async()=>{
  await until(()=>entered);const clear=f.todo.clearTodos();gate.resolve();await Promise.all([retired,clear]);
  assert.equal((await f.todo.loadTodos()).length,0);assert.equal(f.state.todoWidgets.at(-1).openCount,0);
 });
+test('todo write finishing after logout never publishes retired private task data',async()=>{
+ const f=fixture(),gate=deferred();let started=false;f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put'&&!started){started=true;await gate.promise}};
+ const add=f.todo.addTodo({title:'Private retired',note:'',dueText:''}),observed=assert.rejects(add,/会话/);await until(()=>started);
+ const clear=f.todo.clearTodos();gate.resolve();await Promise.all([observed,clear]);assert.equal(f.state.todoWidgets.length,1);assert.equal(f.state.todoWidgets[0].openCount,0);assert.equal((await f.todo.loadTodos()).length,0);
+});
 test('logout clears todo storage and desktop data after earlier pending writes',async()=>{
  const f=fixture();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});
  await f.auth.clearSession();assert.equal((await f.todo.loadTodos()).length,0);
