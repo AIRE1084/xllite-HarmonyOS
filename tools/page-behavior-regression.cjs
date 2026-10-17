@@ -148,6 +148,16 @@ test('todo initial read failure is contained and does not refresh empty widget',
  const {page,state}=fixture('TodoPage');let reject;state.todoLoad=new Promise((_r,j)=>reject=j);const task=page.aboutToAppear();reject(Error('fixture read failure'));await task;
  assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);
 });
+test('todo native picker callbacks ignore retired pages and accounts',()=>{
+ for(const phase of ['date','time'])for(const mode of ['active','disappear','account']){
+  const {page,state}=fixture('TodoPage');let dateOptions,timeOptions;
+  page.getUIContext=()=>({showDatePickerDialog:o=>dateOptions=o,showTimePickerDialog:o=>timeOptions=o});page.chooseDueTime();
+  const retire=()=>{if(mode==='disappear')page.aboutToDisappear();if(mode==='account'){state.epoch++;state.username='other'}};
+  if(phase==='date')retire();dateOptions.onAccept({year:2090,month:0,day:2});
+  if(phase==='date'&&mode!=='active'){assert.equal(timeOptions,undefined);continue}
+  if(phase==='time')retire();timeOptions.onAccept({hour:10,minute:30});assert.equal(page.dueAt!==undefined,mode==='active');
+ }
+});
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
   const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;
