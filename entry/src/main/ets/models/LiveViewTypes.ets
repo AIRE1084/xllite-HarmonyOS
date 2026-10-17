@@ -20,6 +20,7 @@ export interface LiveViewResult {
 }
 
 export interface LiveViewTarget {
+  todoId?: string
   type: string
   title: string
   text: string
