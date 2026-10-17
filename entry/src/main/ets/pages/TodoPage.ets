@@ -34,6 +34,7 @@ struct TodoPage {
   async aboutToAppear(): Promise<void> {
     this.alive = true
     this.saving = false
+    this.reminderBusy = false
     const version = ++this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
@@ -153,23 +154,38 @@ struct TodoPage {
   async handleDisableReminders(): Promise<void> {
     if (this.reminderBusy) return
     this.reminderBusy = true
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
     try {
       await disableTodoReminders()
-      safeToast(this.getUIContext(), '已取消任务提醒，任务仍保留')
-    } catch (_error) { safeToast(this.getUIContext(), '自动同步已关闭，系统提醒取消未完成，请重试') }
-    finally { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '已取消任务提醒，任务仍保留')
+    } catch (_error) {
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '自动同步已关闭，系统提醒取消未完成，请重试')
+    } finally {
+      if (this.isCurrentOperation(version, epoch, username)) { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
+    }
   }
   async handleReminders(): Promise<void> {
     if (this.reminderBusy) return
     this.reminderBusy = true
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
     try {
-      if (!await notificationManager.isNotificationEnabled()) {
+      const enabled = await notificationManager.isNotificationEnabled()
+      if (!this.isCurrentOperation(version, epoch, username)) return
+      if (!enabled) {
         await notificationManager.requestEnableNotification(this.getUIContext().getHostContext() as common.UIAbilityContext)
+        if (!this.isCurrentOperation(version, epoch, username)) return
       }
       const count = await registerTodoReminders()
-      safeToast(this.getUIContext(), '已登记 ' + count + ' 条任务提醒；本次会话内随任务变更同步')
-    } catch (_error) { safeToast(this.getUIContext(), '任务保留，提醒登记未完成，请检查通知设置后重试') }
-    finally { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '已登记 ' + count + ' 条任务提醒；本次会话内随任务变更同步')
+    } catch (_error) {
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '任务保留，提醒登记未完成，请检查通知设置后重试')
+    } finally {
+      if (this.isCurrentOperation(version, epoch, username)) { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
+    }
   }
   private async handleLiveView(item: TodoItem): Promise<void> {
     const result = await startTodoLiveView(item)
