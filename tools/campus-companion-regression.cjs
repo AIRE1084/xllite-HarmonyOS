@@ -30,7 +30,7 @@ function fixture() {
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
     async getAllValidReminders(){if(state.allValidHook)await state.allValidHook();if(state.allValidQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
-     async cancelReminder(id){if(state.cancelReminderFail)throw Error('fixture reminder cancel failed');state.reminders.delete(id);}, async publishReminder(request){
+     async cancelReminder(id){if(state.cancelReminderFail||state.cancelReminderFailId===id)throw Error('fixture reminder cancel failed');state.reminders.delete(id);}, async publishReminder(request){
       state.requests.push(request); if (state.publishHook) await state.publishHook(request);
       const id = nextReminder++; state.reminders.set(id,request); return id;
     }};
@@ -89,6 +89,10 @@ test('group reminder cancellation preserves unrelated reminders and surfaces que
  f.state.reminders.set(1,{groupId:'campus_courses'});f.state.reminders.set(2,{groupId:'campus_todos'});
  await service.cancelReminderGroup('campus_courses');assert.equal(f.state.reminders.has(1),false);assert.equal(f.state.reminders.has(2),true);assert.equal(f.state.cancelAll,0);
  f.state.allValidQueryFails=true;await assert.rejects(service.cancelReminderGroup('campus_todos'),/query failed/);assert.equal(f.state.reminders.has(2),true);
+});
+test('group cancellation attempts later reminders after one native cancellation fails',async()=>{
+ const f=fixture(),service=f.get('services/ReminderGroups');f.state.reminders.set(1,{groupId:'campus_courses'});f.state.reminders.set(2,{groupId:'campus_courses'});f.state.reminders.set(3,{groupId:'campus_todos'});f.state.cancelReminderFailId=1;
+ await assert.rejects(service.cancelReminderGroup('campus_courses'),/reminder cancel failed/);assert.equal(f.state.reminders.has(1),true);assert.equal(f.state.reminders.has(2),false);assert.equal(f.state.reminders.has(3),true);assert.equal(f.state.cancelAll,0);
 });
 test('course reminder reconciliation preserves todo reminders',async()=>{
  const f=fixture(),core=await readyCourse(f);f.state.reminders.set(9999,{groupId:'campus_todos'});
