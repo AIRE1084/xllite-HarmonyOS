@@ -38,7 +38,7 @@ function fixture(name) {
       if (spec.endsWith('/ListDataSource')) return rowsModule.exports;
       if (spec.endsWith('/RouterHelper')) return { safeBack() {} };
       if (spec.endsWith('/ToastHelper')) return { safeToast(_ctx, text) { state.toasts.push(text); } };
-      if (spec === '@ohos.notificationManager') return {default:{isNotificationEnabled:async()=>true,requestEnableNotification:async()=>{}}};
+      if (spec === '@ohos.notificationManager') return {default:{isNotificationEnabled:async()=>state.notificationPending?await state.notificationPending:true,requestEnableNotification:async()=>{}}};
       if (spec === '@ohos.web.webview') return { default: { WebviewController: class {} } };
       if (spec === '@ohos.util') return { default: {} };
       return {};
@@ -117,6 +117,13 @@ test('todo toggle delete callbacks ignore retired pages and accounts',async()=>{
   state.todoActionPending=new Promise(r=>resolve=r);const task=page[method](old);
   if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   resolve([]);await task;assert.equal(page.todos[0],old);assert.equal(state.toasts.length,0);
+ }
+});
+test('todo reminder permission wait cannot register after page or account retires',async()=>{
+ for(const mode of ['disappear','account']){
+  const {page,state}=fixture('TodoPage');let resolve;state.notificationPending=new Promise(r=>resolve=r);
+  const task=page.handleReminders();if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
+  resolve(true);await task;assert.equal(state.todoRegisters||0,0);assert.equal(state.toasts.length,0);
  }
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
