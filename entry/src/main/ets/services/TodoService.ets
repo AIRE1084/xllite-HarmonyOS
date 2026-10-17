@@ -172,8 +172,13 @@ export function disableTodoReminders(): Promise<void> {
   remindersEnabled = false
   const task = persistenceTask.then(async () => {
     remindersEnabled = false
-    await clearTodoReminders()
-    reminderStatus = '任务提醒已取消'
+    try {
+      await clearTodoReminders()
+      reminderStatus = '任务提醒已取消'
+    } catch (error) {
+      reminderStatus = '自动同步已关闭，系统提醒取消未完成，请重试'
+      throw error as Error
+    }
   })
   persistenceTask = task.catch((_error: Error) => {})
   return task
@@ -183,12 +188,17 @@ export function registerTodoReminders(): Promise<number> {
   const task = persistenceTask.then(async (): Promise<number> => {
     await loadTodos()
     if (version !== sessionVersion || todoContext === null) throw new Error('待办会话已变化，请重新进入')
-    const count = await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
-    if (version === sessionVersion) {
-      remindersEnabled = true
-      reminderStatus = '已登记 ' + count + ' 条任务提醒'
+    try {
+      const count = await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
+      if (version === sessionVersion) {
+        remindersEnabled = true
+        reminderStatus = '已登记 ' + count + ' 条任务提醒'
+      }
+      return count
+    } catch (error) {
+      if (version === sessionVersion) reminderStatus = '任务保留，提醒登记未完成，请重试'
+      throw error as Error
     }
-    return count
   })
   persistenceTask = task.then(() => {}).catch((_error: Error) => {})
   return task
