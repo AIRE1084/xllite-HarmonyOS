@@ -125,14 +125,14 @@ export async function loadTodos(): Promise<TodoItem[]> {
   if (loaded) return cloneItems(todoStore)
   if (loadTask === null) {
     loadTask = (async (): Promise<void> => {
+      const task = getPrefs()
+      if (task === null) return
+      const prefs = await task
+      const raw = await prefs.get(KEY_ITEMS, '')
       try {
-        const task = getPrefs()
-        if (task === null) return
-        const prefs = await task
-        const raw = await prefs.get(KEY_ITEMS, '')
         if (typeof raw === 'string' && raw.length > 0) todoStore = parseItems(raw)
-        loaded = true
       } catch (_e) { todoStore = [] }
+      loaded = true
     })()
   }
   const task = loadTask

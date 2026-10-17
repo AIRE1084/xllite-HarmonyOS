@@ -95,6 +95,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo read failure blocks mutation without overwriting existing tasks and allows retry',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const original=JSON.stringify([{id:'old',title:'Existing',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]);await f.prefs('xjit_todos').put('items',original);
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get')throw Error('fixture read failure')};
+ await assert.rejects(f.todo.addTodo({title:'New',note:'',dueText:''}),/read failure/);assert.equal(f.stores.get('xjit_todos').data.get('items'),original);
+ f.state.hook=null;assert.equal((await f.todo.loadTodos())[0].title,'Existing');
+});
 test('saved todo changes reconcile live view even when system stop fails',async()=>{
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const rows=await f.todo.addTodo({title:'Study',note:'',dueText:''});
  f.state.liveTodoFailure=true;const changed=await f.todo.toggleTodo(rows[0].id);assert.equal(changed[0].done,true);assert.equal(f.state.liveTodoItems[0].done,true);
