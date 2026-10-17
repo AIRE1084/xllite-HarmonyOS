@@ -192,10 +192,9 @@ export function registerTodoReminders(): Promise<number> {
     if (version !== sessionVersion || todoContext === null) throw new Error('待办会话已变化，请重新进入')
     try {
       const count = await syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
-      if (version === sessionVersion) {
-        remindersEnabled = true
-        reminderStatus = '已登记 ' + count + ' 条任务提醒'
-      }
+      if (version !== sessionVersion) throw new Error('待办会话已变化，登记结果已失效')
+      remindersEnabled = true
+      reminderStatus = '已登记 ' + count + ' 条任务提醒'
       return count
     } catch (error) {
       if (version === sessionVersion) reminderStatus = '任务保留，提醒登记未完成，请重试'
