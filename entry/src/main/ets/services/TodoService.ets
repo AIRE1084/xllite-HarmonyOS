@@ -151,6 +151,10 @@ export async function deleteTodo(id: string): Promise<TodoItem[]> {
   return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id))
 }
 
+export async function clearTodos(): Promise<void> {
+  if (todoContext === null) return
+  await mutate((_items: TodoItem[]): TodoItem[] => [])
+}
 export function countOpenTodos(items: TodoItem[]): number {
   return items.filter((item: TodoItem): boolean => !item.done).length
 }
