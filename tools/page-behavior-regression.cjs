@@ -31,6 +31,7 @@ function fixture(name) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
       if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},deleteTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
+      if (spec.endsWith('/LiveViewService')) return {startTodoLiveView:async()=>state.livePending?await state.livePending:{ok:true}};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
@@ -124,6 +125,13 @@ test('todo reminder permission wait cannot register after page or account retire
   const {page,state}=fixture('TodoPage');let resolve;state.notificationPending=new Promise(r=>resolve=r);
   const task=page.handleReminders();if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   resolve(true);await task;assert.equal(state.todoRegisters||0,0);assert.equal(state.toasts.length,0);
+ }
+});
+test('todo live view result only reports to the current page and account',async()=>{
+ for(const mode of ['active','disappear','account']){
+  const {page,state}=fixture('TodoPage');let resolve;state.livePending=new Promise(r=>resolve=r);const task=page.handleLiveView({id:'task',title:'Study'});
+  if(mode==='disappear')page.aboutToDisappear();if(mode==='account'){state.epoch++;state.username='other'}
+  resolve({ok:true});await task;assert.equal(state.toasts.length,mode==='active'?1:0);
  }
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
