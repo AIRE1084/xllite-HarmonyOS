@@ -105,6 +105,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     const prefs = await task
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
+    if (version !== sessionVersion) throw new Error('待办会话已变化，旧写入结果已失效')
     todoStore = next
     if (clearing) { loaded = true; cleanupPending = false }
     await reconcileLiveState(version)
