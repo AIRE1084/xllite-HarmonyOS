@@ -25,5 +25,12 @@ check('LoginPage theme overlay remains inside the root Stack', () => {
   const source = fs.readFileSync(path.join(pages, 'LoginPage.ets'), 'utf8');
   assert.match(source, /\n      ThemeWash\(\)\n    \}\.width\('100%'\)\.height\('100%'\)\.backgroundColor\(this\.palette\.background\)\n  \}/);
 });
+check('profile does not advertise graduation results as a training plan', () => {
+  const profile = fs.readFileSync(path.join(pages, 'ProfileTab.ets'), 'utf8');
+  const training = fs.readFileSync(path.join(pages, 'TrainingPage.ets'), 'utf8');
+  assert.doesNotMatch(profile, /this\.MenuRow\([^\n]*'TrainingPage'/);
+  assert.doesNotMatch(training, /培养方案/);
+  assert.match(training, /title: '毕业完成情况'/);
+});
 console.log(`${checks} UI structure checks, ${failed} failed`);
 process.exitCode = failed ? 1 : 0;

@@ -172,8 +172,6 @@ export struct ProfileTab {
               this.MenuRow('成绩查询', '课程成绩与学分', $r('app.media.campus_grades'), 'GradesPage')
               Divider().color(this.palette.outline)
               this.MenuRow('考试安排', '考试时间与考场', $r('app.media.campus_exams'), 'ExamsPage')
-              Divider().color(this.palette.outline)
-              this.MenuRow('培养方案', '查看现有教务培养信息', $r('app.media.campus_training'), 'TrainingPage')
             }
           }.width('100%')
           Column() {

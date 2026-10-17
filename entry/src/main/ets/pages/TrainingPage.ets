@@ -58,19 +58,19 @@ struct TrainingPage {
 
   build() {
     Stack() {
-    DetailScaffold({ title: '培养方案', subtitle: '学业与毕业信息，一处查看', busy: this.loading,
+    DetailScaffold({ title: '毕业完成情况', subtitle: '学业与毕业信息，一处查看', busy: this.loading,
       onBack: () => safeBack(this.getUIContext()), onAction: () => this.load(true) }) {
       if (!this.loaded && this.loading) {
-        PageState({ kind: 'loading', title: '正在获取培养方案', message: '马上就好，请稍候' })
+        PageState({ kind: 'loading', title: '正在获取毕业完成情况', message: '马上就好，请稍候' })
       } else if (!this.loaded && this.errorMsg.length > 0) {
-        PageState({ kind: 'error', schoolFeature: 'jw.training', title: '培养方案暂未更新', message: this.errorMsg,
+        PageState({ kind: 'error', schoolFeature: 'jw.training', title: '毕业完成情况暂未更新', message: this.errorMsg,
           action: '重新加载', onAction: () => this.load(true) })
       } else {
         if (this.errorMsg.length > 0) {
           RefreshNotice({ message: '更新失败，已保留上次数据', busy: this.loading, onRetry: () => this.load(true) })
         }
         if (this.items.length === 0) {
-          PageState({ title: '暂无培养方案', message: '教务系统尚未提供可显示的信息', action: '刷新看看', onAction: () => this.load(true) })
+          PageState({ title: '暂无毕业完成情况', message: '教务系统尚未提供可显示的信息', action: '刷新看看', onAction: () => this.load(true) })
         } else {
           List({ space: 14 }) {
             LazyForEach(this.rows, (item: TrainingItem) => {
