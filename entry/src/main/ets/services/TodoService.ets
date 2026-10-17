@@ -90,9 +90,12 @@ function getPrefs(): Promise<preferences.Preferences> | null {
   return prefsTask
 }
 
-function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = sessionVersion): Promise<TodoItem[]> {
+function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = sessionVersion, clearing: boolean = false): Promise<TodoItem[]> {
   const writeTask = persistenceTask.then(async (): Promise<TodoItem[]> => {
-    await loadTodos()
+    if (!clearing) await loadTodos()
+    else if (loadTask !== null) {
+      try { await loadTask } catch (_error) { /* Explicit clearing does not depend on readable old data. */ }
+    }
     if (version !== sessionVersion) throw new Error('待办会话已变化，请重新进入')
     const next = change(cloneItems(todoStore))
     const snapshot = JSON.stringify(next)
@@ -102,6 +105,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     todoStore = next
+    if (clearing) loaded = true
     await reconcileLiveState(version)
     if (todoContext !== null) {
       try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
@@ -255,7 +259,7 @@ export async function clearTodos(): Promise<void> {
   reminderStatus = '尚未登记任务提醒'
   liveCleanupStatus = ''
   if (todoContext === null) return
-  await mutate((_items: TodoItem[]): TodoItem[] => [])
+  await mutate((_items: TodoItem[]): TodoItem[] => [], sessionVersion, true)
 }
 export function countOpenTodos(items: TodoItem[]): number {
   return items.filter((item: TodoItem): boolean => !item.done).length

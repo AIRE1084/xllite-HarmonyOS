@@ -213,6 +213,10 @@ test('todo storage rejects malformed shapes and keeps valid rows',async()=>{
  }
  const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([null,{id:'x',title:'Task',note:'',dueText:'',done:false,createdAt:1,updatedAt:2}]));assert.equal((await f.todo.loadTodos())[0].title,'Task');
 });
+test('explicit logout clears malformed todo storage without requiring it to parse',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});await f.prefs('xjit_todos').put('items','[{"private":"broken"');
+ await f.todo.clearTodos();assert.equal(f.stores.get('xjit_todos').data.get('items'),'[]');assert.equal((await f.todo.loadTodos()).length,0);assert.equal(f.state.todoWidgets.at(-1).openCount,0);
+});
 test('malformed todo JSON stays untouched and blocks additions until repaired',async()=>{
  const f=fixture();const raw='[{"id":"unfinished"';await f.prefs('xjit_todos').put('items',raw);
  await assert.rejects(f.todo.loadTodos());await assert.rejects(f.todo.addTodo({title:'New',note:'',dueText:''}));assert.equal(f.stores.get('xjit_todos').data.get('items'),raw);
