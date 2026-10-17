@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:11:43.042Z",
+  "checkedAt": "2026-10-17T10:13:52.733Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 74,
+  "checks": 75,
   "failed": 0,
   "results": [
     {
@@ -119,6 +119,10 @@
     },
     {
       "name": "course reminder skips trigger that elapsed during native group query",
+      "ok": true
+    },
+    {
+      "name": "course reminder rechecks later items after slow native publication",
       "ok": true
     },
     {
