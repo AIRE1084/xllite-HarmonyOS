@@ -120,7 +120,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
         primary: { title: target.title.slice(0, 40), content: [{ text: target.extra.slice(0, 60) }],
           clickAction: action, aliveTime: Math.max(15, Math.min(28800, Math.ceil((target.endTime - Date.now()) / 1000))) },
         capsule: { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER, status: 1,
-          content: target.startTime > Date.now() ? '距上课' : '上课中', time: duration, isCountdown: true,
+          content: target.type === 'todo' ? '待办计时' : (target.startTime > Date.now() ? '距上课' : '上课中'), time: duration, isCountdown: true,
           backgroundColor: '#FF315FC4' },
       },
     }
