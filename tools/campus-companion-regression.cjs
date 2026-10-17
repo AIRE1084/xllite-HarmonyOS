@@ -26,7 +26,7 @@ function fixture() {
     openSync(p) { const fd = nextFile++; openFiles.set(fd,p); return {fd}; },
     writeSync(fd,s) {if(state.writeFail)throw Error('write failed');disks.set(openFiles.get(fd),s);}, closeSync() {state.closedFiles=(state.closedFiles||0)+1;},
     renameSync(a,b) {if(state.renameFail)throw Error('rename failed');disks.set(b,disks.get(a)); disks.delete(a);} };
-  const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){}, async isNotificationEnabled(){return state.notificationAllowed;}};
+  const notification = {SlotType:{SERVICE_INFORMATION:2}, async requestEnableNotification(){state.notificationRequests=(state.notificationRequests||0)+1;}, async isNotificationEnabled(){return state.notificationAllowed;}};
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
      async cancelReminder(id){state.reminders.delete(id);}, async publishReminder(request){
@@ -137,6 +137,10 @@ test('widget lesson state observes inclusive start and exclusive end boundaries'
  assert.equal(f.calendar.widgetData(data,new Date(2026,9,12,11,39,59)).status,'上课中');
  const ended=f.calendar.widgetData(data,new Date(2026,9,12,11,40));
  assert.equal(ended.status,'今日课程已结束');assert.equal(ended.courseRoom,'');assert.equal(ended.courseTime,'');
+});
+test('enabled notifications skip another permission request',async()=>{
+ const f=fixture(),core=await readyCourse(f);await core.setCampusOption('reminders',true);
+ assert.equal(f.state.notificationRequests||0,0);
 });
 test('notification denial leaves switch off with no published reminders',async()=>{
  const f=fixture(), core=await readyCourse(f); f.state.notificationAllowed=false;

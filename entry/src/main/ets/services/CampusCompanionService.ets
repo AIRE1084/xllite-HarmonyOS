@@ -232,8 +232,10 @@ export async function setCampusOption(option: string, enabled: boolean): Promise
   await readyTask
   if (option === 'reminders' && enabled) {
     if (context === null) throw new Error('提醒服务尚未初始化')
-    await notificationManager.requestEnableNotification(context)
-    if (!await notificationManager.isNotificationEnabled()) throw new Error('未允许通知，课程提醒保持关闭')
+    if (!await notificationManager.isNotificationEnabled()) {
+      await notificationManager.requestEnableNotification(context)
+      if (!await notificationManager.isNotificationEnabled()) throw new Error('未允许通知，课程提醒保持关闭')
+    }
   }
   if (option === 'live' && enabled && !await isLiveViewSupported()) throw new Error('系统实况窗暂不可用，请检查系统设置')
   const key = option === 'widget' ? 'campusWidgetEnabled' : option === 'reminders' ? 'courseReminderEnabled' : 'liveViewEnabled'
