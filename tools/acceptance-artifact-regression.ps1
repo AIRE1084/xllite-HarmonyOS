@@ -15,4 +15,22 @@ if (!$rejected) { throw 'Wrong target API was accepted' }
 $rejected = $false
 try { & $validator -HapPath $HapPath -ExpectedBundle 'com.xjit.app.wrong' } catch { if ($_.Exception.Message -ne 'Acceptance bundle identity mismatch') { throw }; $rejected = $true }
 if (!$rejected) { throw 'Wrong independent bundle identity was accepted' }
-Write-Output 'PASS signed acceptance identity, minimum/target API and four negative cases'
+$originalHash = (Get-FileHash -LiteralPath $HapPath -Algorithm SHA256).Hash
+$evidence = Join-Path $PSScriptRoot '..\.wolf\artifact-verification'
+$corrupt = Join-Path $evidence (([guid]::NewGuid().ToString('N')) + '-tampered.hap')
+Copy-Item -LiteralPath $HapPath -Destination $corrupt
+$archive = [IO.Compression.ZipFile]::Open($corrupt, [IO.Compression.ZipArchiveMode]::Update)
+try {
+  $entry = $archive.GetEntry('module.json')
+  $reader = [IO.StreamReader]::new($entry.Open())
+  try { $text = $reader.ReadToEnd() } finally { $reader.Dispose() }
+  $entry.Delete()
+  $writer = [IO.StreamWriter]::new($archive.CreateEntry('module.json').Open())
+  try { $writer.Write($text + ' ') } finally { $writer.Dispose() }
+} finally { $archive.Dispose() }
+$rejected = $false
+try { & $validator -HapPath $corrupt } catch { if ($_.Exception.Message -ne 'HAP signature verification failed') { throw }; $rejected = $true }
+if (!$rejected) { throw 'Tampered signature was accepted' }
+if ((Get-FileHash -LiteralPath $HapPath -Algorithm SHA256).Hash -ne $originalHash) { throw 'Original HAP changed' }
+$global:LASTEXITCODE = 0
+Write-Output 'PASS signed acceptance identity, API gates, four configuration negatives and tampered signature'
