@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T11:14:56.377Z",
+  "checkedAt": "2026-10-17T11:18:56.630Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 85,
+  "checks": 86,
   "failed": 0,
   "results": [
     {
@@ -339,6 +339,10 @@
     },
     {
       "name": "widget disk failure during logout does not leave course reminders registered",
+      "ok": true
+    },
+    {
+      "name": "combined logout failures still cancel reminders and recover on retry",
       "ok": true
     },
     {

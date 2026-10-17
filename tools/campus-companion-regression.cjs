@@ -576,6 +576,11 @@ test('widget disk failure during logout does not leave course reminders register
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('reminders',true);assert.equal(f.state.reminders.size,1);
  f.state.writeFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);f.state.writeFail=false;await core.clearCampusCompanion();assert.equal(f.disks.get('/data/campus_widget.json'),'null');
 });
+test('combined logout failures still cancel reminders and recover on retry',async()=>{
+ const f=fixture(),core=await readyCourse(f);await core.setCampusOption('reminders',true);f.state.now=new Date(2026,9,12,9,51).getTime();await core.setCampusOption('live',true);assert.equal(f.state.liveStarts.length,1);
+ f.state.stopFail=true;f.state.writeFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.values.get('liveViewEnabled'),false);
+ f.state.stopFail=false;f.state.writeFail=false;await core.clearCampusCompanion();assert.equal(f.disks.get('/data/campus_widget.json'),'null');assert.equal(f.state.liveStops.length,2);
+});
 test('failed LiveView stop reports logout failure after privacy and reminder cleanup',async()=>{
  const f=fixture();const core=await readyCourse(f);await core.setCampusOption('reminders',true);f.state.now=new Date(2026,9,12,9,51).getTime();await core.setCampusOption('live',true);assert.equal(f.state.liveStarts.length,1);
  f.state.stopFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);assert.equal(f.disks.get('/data/campus_widget.json'),'null');
