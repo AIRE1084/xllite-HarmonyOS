@@ -567,9 +567,10 @@ test('course LiveView changes timer at class start and stops on switch off',asyn
  await core.activateCampusCompanion('test-student');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.setCampusOption('live',false);assert.equal(f.state.liveStops.length,1);
 });
-test('failed LiveView stop cannot prevent logout privacy and reminder cleanup',async()=>{
- const f=fixture();f.state.now=new Date(2026,9,12,7,49).getTime();const core=await readyCourse(f);await core.setCampusOption('reminders',true);await core.setCampusOption('live',true);
- f.state.stopFail=true;await core.clearCampusCompanion();assert.equal(f.state.reminders.size,0);assert.equal(f.disks.get('/data/campus_widget.json'),'null');
+test('failed LiveView stop reports logout failure after privacy and reminder cleanup',async()=>{
+ const f=fixture();const core=await readyCourse(f);await core.setCampusOption('reminders',true);f.state.now=new Date(2026,9,12,9,51).getTime();await core.setCampusOption('live',true);assert.equal(f.state.liveStarts.length,1);
+ f.state.stopFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);assert.equal(f.disks.get('/data/campus_widget.json'),'null');
+ f.state.stopFail=false;await core.clearCampusCompanion();assert.equal(f.state.liveStops.length,2);
 });
 (async()=>{
  const results=[];for(const {name,run} of cases){try{await run();results.push({name,ok:true});console.log('PASS '+name);}catch(error){results.push({name,ok:false,error:error.message});console.error('FAIL '+name+'\n'+error.stack);}}
