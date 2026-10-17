@@ -57,6 +57,15 @@ test('electricity successful query remembers room while failed query preserves b
  const task=page.queryElectricity();state.requests[0].resolve({ok:true,data:{}});await task;assert.equal(state.room,'9#312');
  page.roomQuery='3#312';const fail=page.queryElectricity();state.requests[1].resolve({ok:false,error:'fixture'});await fail;assert.equal(state.room,'9#312');
 });
+test('electricity change room retires requests and keeps stored binding until success',()=>{
+ const {page,state}=fixture('ElectricityPage');page.alive=true;page.step=2;page.electricity={};state.room='9#312';
+ const version=page.requestVersion;page.changeRoom();assert.equal(page.step,1);assert.equal(page.electricity,null);assert.ok(page.requestVersion>version);assert.equal(state.room,'9#312');
+ page.paying=true;page.step=3;page.changeRoom();assert.equal(page.step,3);
+});
+test('electricity results offer refresh independently from change room',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/ElectricityPage.ets'),'utf8');
+ assert.match(source,/Button\(this.loading \? '刷新中…' : '刷新电量'\)/);assert.match(source,/Button\('更换宿舍'\)/);
+});
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
   const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;
