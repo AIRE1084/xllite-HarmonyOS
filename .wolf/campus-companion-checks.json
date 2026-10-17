@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T06:40:23.580Z",
+  "checkedAt": "2026-10-17T06:42:54.044Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 54,
+  "checks": 55,
   "failed": 0,
   "results": [
     {
@@ -27,6 +27,10 @@
     },
     {
       "name": "todo reminder service registers native todo routes and preserves courses",
+      "ok": true
+    },
+    {
+      "name": "todo reminder synchronization serializes overlapping replacement plans",
       "ok": true
     },
     {

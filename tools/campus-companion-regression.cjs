@@ -102,6 +102,16 @@ test('todo reminder service registers native todo routes and preserves courses',
  assert.equal(f.state.requests.at(-1).groupId,'campus_todos');assert.equal(f.state.requests.at(-1).wantAgent.parameters.campusRoute,'todo');assert.equal(f.state.reminders.has(9999),true);
  f.state.publishHook=async()=>{throw new Error('fixture publication failed')};await assert.rejects(service.syncTodoReminders([item],'com.xjit.app.acceptance'),/publication failed/);assert.equal(f.state.reminders.size,1);
 });
+test('todo reminder synchronization serializes overlapping replacement plans',async()=>{
+ const f=fixture(),service=f.get('services/TodoReminderService');let release,entered=false;
+ const gate=new Promise(r=>release=r);f.state.publishHook=async()=>{if(!entered){entered=true;await gate}};
+ const item=title=>({id:title,title,note:'',dueText:'',dueAt:f.clock.now()+3600000,done:false,createdAt:1,updatedAt:1});
+ const first=service.syncTodoReminders([item('First')],'com.xjit.app.acceptance');
+ for(let i=0;i<100&&!entered;i++)await Promise.resolve();assert.equal(entered,true);
+ const second=service.syncTodoReminders([item('Second')],'com.xjit.app.acceptance');
+ for(let i=0;i<20;i++)await Promise.resolve();release();await Promise.all([first,second]);
+ assert.equal(f.state.reminders.size,1);assert.ok([...f.state.reminders.values()][0].title.includes('Second'));
+});
 function course(extra={}) { return {day:'星期一',slot:'1-2节',title:'高等数学',teacher:'教师',weeks:'1-20周',sections:'1-2节',location:'教学楼A101',...extra}; }
 function snapshot(extra={}) { return {account:'test-student',term:'2026-2027-1',courses:[course()],currentWeek:6,totalWeeks:20,weekKnown:true,
   anchorDate:'2026-10-12',updatedAt:new Date(2026,9,12).getTime(),widgetEnabled:true,...extra}; }

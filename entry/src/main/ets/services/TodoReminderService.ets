@@ -4,7 +4,16 @@ import { TodoItem } from '../models/TodoTypes'
 import { buildTodoReminderPlans } from '../utils/TodoReminderPlan'
 import { cancelReminderGroup } from './ReminderGroups'
 
-export async function syncTodoReminders(items: TodoItem[], bundleName: string): Promise<number> {
+let reminderQueue: Promise<void> = Promise.resolve()
+
+export function syncTodoReminders(items: TodoItem[], bundleName: string): Promise<number> {
+  const snapshot = items.map((item: TodoItem): TodoItem => ({ id: item.id, title: item.title, note: '', dueText: '',
+    dueAt: item.dueAt, done: item.done, createdAt: item.createdAt, updatedAt: item.updatedAt }))
+  const task = reminderQueue.then(() => replaceTodoReminders(snapshot, bundleName))
+  reminderQueue = task.then(() => {}).catch((_error: Error) => {})
+  return task
+}
+async function replaceTodoReminders(items: TodoItem[], bundleName: string): Promise<number> {
   const plans = buildTodoReminderPlans(items)
   if (plans.length > 0 && !await notificationManager.isNotificationEnabled()) throw new Error('请允许通知后再登记待办提醒')
   await cancelReminderGroup('campus_todos')
