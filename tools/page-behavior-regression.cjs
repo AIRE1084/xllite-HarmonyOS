@@ -146,7 +146,8 @@ test('todo live cleanup retry refreshes visible failure status',async()=>{
 });
 test('todo initial read failure is contained and does not refresh empty widget',async()=>{
  const {page,state}=fixture('TodoPage');let reject;state.todoLoad=new Promise((_r,j)=>reject=j);const task=page.aboutToAppear();reject(Error('fixture read failure'));await task;
- assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);
+ assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);assert.ok(page.loadError.includes('读取未完成'));
+ state.todoLoad=null;page.titleInput='Keep draft';await page.handleReloadTodos();assert.equal(page.loadError,'');assert.equal(page.titleInput,'Keep draft');assert.equal(page.reloadBusy,false);
 });
 test('todo native picker callbacks ignore retired pages and accounts',()=>{
  for(const phase of ['date','time'])for(const mode of ['active','disappear','account']){
