@@ -123,16 +123,30 @@ struct TodoPage {
     }
   }
 
+  private isCurrentOperation(version: number, epoch: number, username: string): boolean {
+    return this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()
+  }
   private async handleToggle(item: TodoItem): Promise<void> {
-    try { this.todos = await toggleTodo(item.id) }
-    catch (_error) { safeToast(this.getUIContext(), '任务状态未保存，请重试') }
-    finally { this.reminderStatus = getTodoReminderStatus() }
+    await this.updateTask(item, false)
   }
 
   private async handleDelete(item: TodoItem): Promise<void> {
-    try { this.todos = await deleteTodo(item.id) }
-    catch (_error) { safeToast(this.getUIContext(), '任务删除未完成，请重试') }
-    finally { this.reminderStatus = getTodoReminderStatus() }
+    await this.updateTask(item, true)
+  }
+  private async updateTask(item: TodoItem, deleting: boolean): Promise<void> {
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
+    try {
+      const items = deleting ? await deleteTodo(item.id) : await toggleTodo(item.id)
+      if (this.isCurrentOperation(version, epoch, username)) this.todos = items
+    } catch (_error) {
+      if (this.isCurrentOperation(version, epoch, username)) {
+        safeToast(this.getUIContext(), deleting ? '任务删除未完成，请重试' : '任务状态未保存，请重试')
+      }
+    } finally {
+      if (this.isCurrentOperation(version, epoch, username)) this.reminderStatus = getTodoReminderStatus()
+    }
   }
 
   @State reminderBusy: boolean = false
