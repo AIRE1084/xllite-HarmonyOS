@@ -100,13 +100,18 @@ struct TodoPage {
   }
   clearDueTime(): void { this.dueAt = undefined; this.dueInput = '' }
   chooseDueTime(): void {
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
     const selected = this.dueAt === undefined ? new Date() : new Date(this.dueAt)
     this.getUIContext().showDatePickerDialog({ selected: selected,
       onAccept: (result: DatePickerResult) => {
+        if (!this.isCurrentOperation(version, epoch, username)) return
         if (result.year === undefined || result.month === undefined || result.day === undefined) return
         const date = new Date(result.year, result.month, result.day)
         this.getUIContext().showTimePickerDialog({ selected: selected, useMilitaryTime: true,
           onAccept: (time: TimePickerResult) => {
+            if (!this.isCurrentOperation(version, epoch, username)) return
             if (time.hour !== undefined && time.minute !== undefined) this.selectDueTime(date, time.hour, time.minute)
           } })
       } })
