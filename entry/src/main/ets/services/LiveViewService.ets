@@ -82,7 +82,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       } catch (error) { setReason(reasonFor(error as BusinessError)); return { ok: false, reason: supportReason } }
     }
     setReason('实况窗已显示')
-    return { ok: true, handle: currentHandle }
+    return { ok: true, handle: { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType } }
   }
   await stopCurrent()
   if (captured !== revision) return { ok: false, reason: '实况窗已关闭' }
@@ -120,7 +120,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       await stopCurrent(); return { ok: false, reason: '实况窗已关闭' }
     }
     setReason('实况窗已显示')
-    return { ok: true, handle: currentHandle }
+    return { ok: true, handle: { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType } }
   } catch (error) { setReason(reasonFor(error as BusinessError)); return { ok: false, reason: supportReason } }
 }
 export function startLiveView(target: LiveViewTarget): Promise<LiveViewResult> {
@@ -168,4 +168,7 @@ export function finishAllLiveViews(): Promise<void> {
   operation = task.catch((_e: Error) => {})
   return task
 }
-export function getCurrentHandle(): LiveViewHandle | null { return currentHandle }
+export function getCurrentHandle(): LiveViewHandle | null {
+  if (currentHandle === null) return null
+  return { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType }
+}
