@@ -95,6 +95,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo read started before logout never returns the retired private rows',async()=>{
+ const f=fixture(),gate=deferred();await f.prefs('xjit_todos').put('items',JSON.stringify([{id:'old',title:'Private',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]));let started=false;
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get'){started=true;await gate.promise}};
+ const read=f.todo.loadTodos(),observed=assert.rejects(read,/会话|清理/);await until(()=>started);const clear=f.todo.clearTodos();gate.resolve();await Promise.all([observed,clear]);assert.equal((await f.todo.loadTodos()).length,0);
+});
 test('failed logout clearing blocks old todo cache until explicit cleanup retry succeeds',async()=>{
  const f=fixture();await f.todo.addTodo({title:'Private old task',note:'',dueText:''});
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put')throw Error('fixture clear failure')};await assert.rejects(f.todo.clearTodos());
