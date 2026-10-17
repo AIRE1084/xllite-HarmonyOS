@@ -208,10 +208,17 @@ test('todo write failures reach caller and persistence queue recovers',async()=>
  assert.ok(JSON.parse(f.stores.get('xjit_todos').data.get('items')).some(x=>x.title==='Second'));
 });
 test('todo storage rejects malformed shapes and keeps valid rows',async()=>{
- for(const raw of ['{}','null','[null,3,"bad"]',JSON.stringify([{id:'x',title:'bad',note:'',dueText:'',done:'false',createdAt:1,updatedAt:1}])]){
+ for(const raw of ['[null,3,"bad"]',JSON.stringify([{id:'x',title:'bad',note:'',dueText:'',done:'false',createdAt:1,updatedAt:1}])]){
   const f=fixture();await f.prefs('xjit_todos').put('items',raw);assert.equal((await f.todo.loadTodos()).length,0);
  }
  const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([null,{id:'x',title:'Task',note:'',dueText:'',done:false,createdAt:1,updatedAt:2}]));assert.equal((await f.todo.loadTodos())[0].title,'Task');
+});
+test('non-array todo storage roots are preserved until explicit clearing',async()=>{
+ for(const raw of ['{}','null','42','"private"']){
+  const f=fixture();await f.prefs('xjit_todos').put('items',raw);await assert.rejects(f.todo.loadTodos(),/结构/);
+  await assert.rejects(f.todo.addTodo({title:'New',note:'',dueText:''}));assert.equal(f.stores.get('xjit_todos').data.get('items'),raw);
+  await f.todo.clearTodos();assert.equal(f.stores.get('xjit_todos').data.get('items'),'[]');
+ }
 });
 test('explicit logout clears malformed todo storage without requiring it to parse',async()=>{
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});await f.prefs('xjit_todos').put('items','[{"private":"broken"');

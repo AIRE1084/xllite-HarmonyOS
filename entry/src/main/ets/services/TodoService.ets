@@ -46,7 +46,7 @@ export function setTodoContext(ctx: common.UIAbilityContext): void {
 
 function parseItems(raw: string): TodoItem[] {
   const data = JSON.parse(raw) as Object
-  if (!Array.isArray(data)) return []
+  if (!Array.isArray(data)) throw new Error('待办存储结构异常，原数据已保留')
   const valid: TodoItem[] = []
   const ids: Set<string> = new Set<string>()
   for (const value of data as Object[]) {
