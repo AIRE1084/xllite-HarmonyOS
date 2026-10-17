@@ -16,6 +16,22 @@ export function setTodoContext(ctx: common.UIAbilityContext): void {
   todoContext = ctx
 }
 
+function parseItems(raw: string): TodoItem[] {
+  const data = JSON.parse(raw) as Object
+  if (!Array.isArray(data)) return []
+  const valid: TodoItem[] = []
+  for (const value of data as Object[]) {
+    if (value === null || typeof value !== 'object') continue
+    const item = value as TodoItem
+    if (typeof item.id !== 'string' || item.id.length === 0 ||
+      typeof item.title !== 'string' || item.title.trim().length === 0 ||
+      typeof item.note !== 'string' || typeof item.dueText !== 'string' || typeof item.done !== 'boolean' ||
+      !Number.isFinite(item.createdAt) || !Number.isFinite(item.updatedAt) ||
+      item.createdAt < 0 || item.updatedAt < item.createdAt) continue
+    valid.push(item)
+  }
+  return valid
+}
 function cloneItems(items: TodoItem[]): TodoItem[] {
   return items.map((item: TodoItem): TodoItem => {
     return {
@@ -62,7 +78,7 @@ export async function loadTodos(): Promise<TodoItem[]> {
         if (task === null) return
         const prefs = await task
         const raw = await prefs.get(KEY_ITEMS, '')
-        if (typeof raw === 'string' && raw.length > 0) todoStore = JSON.parse(raw) as TodoItem[]
+        if (typeof raw === 'string' && raw.length > 0) todoStore = parseItems(raw)
         loaded = true
       } catch (_e) { todoStore = [] }
     })()

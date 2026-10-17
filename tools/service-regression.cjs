@@ -92,6 +92,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo storage rejects malformed shapes and keeps valid rows',async()=>{
+ for(const raw of ['{}','null','[null,3,"bad"]',JSON.stringify([{id:'x',title:'bad',note:'',dueText:'',done:'false',createdAt:1,updatedAt:1}])]){
+  const f=fixture();await f.prefs('xjit_todos').put('items',raw);assert.equal((await f.todo.loadTodos()).length,0);
+ }
+ const f=fixture();await f.prefs('xjit_todos').put('items',JSON.stringify([null,{id:'x',title:'Task',note:'',dueText:'',done:false,createdAt:1,updatedAt:2}]));assert.equal((await f.todo.loadTodos())[0].title,'Task');
+});
 test('electricity binding persists in current session and logout clears it',async()=>{
  const f=fixture();await f.seedToken();await f.auth.saveElectricityRoom(' 9#312 ');
  assert.equal(await f.auth.loadElectricityRoom(),'9#312');
