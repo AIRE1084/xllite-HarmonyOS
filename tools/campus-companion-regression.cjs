@@ -111,6 +111,13 @@ test('todo reminder service registers native todo routes and preserves courses',
  assert.equal(f.state.requests.at(-1).groupId,'campus_todos');assert.equal(f.state.requests.at(-1).wantAgent.parameters.campusRoute,'todo');assert.equal(f.state.reminders.has(9999),true);
  f.state.publishHook=async()=>{throw new Error('fixture publication failed')};await assert.rejects(service.syncTodoReminders([item],'com.xjit.app.acceptance'),/publication failed/);assert.equal(f.state.reminders.size,1);
 });
+test('todo publication plus rollback failure retains both diagnostic causes',async()=>{
+ const f=fixture(),service=f.get('services/TodoReminderService'),due=f.clock.now()+3600000;
+ const item=id=>({id,title:id,note:'',dueText:'',dueAt:due,done:false,createdAt:1,updatedAt:1});let calls=0;
+ f.state.publishHook=async()=>{if(++calls===2){f.state.cancelReminderFail=true;throw Error('fixture publication failed')}};
+ await assert.rejects(service.syncTodoReminders([item('a'),item('b')],'com.xjit.app.acceptance'),error=>error.message.includes('publication failed')&&error.message.includes('清理未完成'));
+ f.state.cancelReminderFail=false;await service.clearTodoReminders();assert.equal(f.state.reminders.size,0);
+});
 test('todo reminders skip elapsed triggers after native query and earlier publication',async()=>{
  for(const stage of ['query','publish']){
   const f=fixture(),service=f.get('services/TodoReminderService'),due=f.clock.now()+3600000;

@@ -54,7 +54,10 @@ async function replaceTodoReminders(items: TodoItem[], bundleName: string, versi
       count++
     }
   } catch (error) {
-    await cancelReminderGroup('campus_todos')
+    try { await cancelReminderGroup('campus_todos') }
+    catch (cleanupError) {
+      throw new Error('提醒登记失败：' + (error as Error).message + '；清理未完成：' + (cleanupError as Error).message)
+    }
     throw error as Error
   }
   return count
