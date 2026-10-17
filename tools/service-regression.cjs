@@ -92,6 +92,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo write failures reach caller and persistence queue recovers',async()=>{
+ const f=fixture();f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put')throw new Error('fixture disk failure')};
+ await assert.rejects(f.todo.addTodo({title:'First',note:'',dueText:''}),/fixture disk failure/);
+ f.state.hook=null;await f.todo.addTodo({title:'Second',note:'',dueText:''});
+ assert.ok(JSON.parse(f.stores.get('xjit_todos').data.get('items')).some(x=>x.title==='Second'));
+});
 test('todo storage rejects malformed shapes and keeps valid rows',async()=>{
  for(const raw of ['{}','null','[null,3,"bad"]',JSON.stringify([{id:'x',title:'bad',note:'',dueText:'',done:'false',createdAt:1,updatedAt:1}])]){
   const f=fixture();await f.prefs('xjit_todos').put('items',raw);assert.equal((await f.todo.loadTodos()).length,0);
