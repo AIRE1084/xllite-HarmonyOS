@@ -144,6 +144,10 @@ test('todo live view thrown errors are contained only for active page',async()=>
 test('todo live cleanup retry refreshes visible failure status',async()=>{
  const {page,state}=fixture('TodoPage');state.liveCleanupStatus='未完成';page.liveCleanupStatus='未完成';await page.handleRetryLiveCleanup();assert.equal(page.liveCleanupStatus,'');assert.equal(page.liveCleanupBusy,false);
 });
+test('todo initial read failure is contained and does not refresh empty widget',async()=>{
+ const {page,state}=fixture('TodoPage');let reject;state.todoLoad=new Promise((_r,j)=>reject=j);const task=page.aboutToAppear();reject(Error('fixture read failure'));await task;
+ assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);
+});
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
   const f=fixture('ScheduleTab');f.page.currentWeek=7;f.page.totalWeeks=20;

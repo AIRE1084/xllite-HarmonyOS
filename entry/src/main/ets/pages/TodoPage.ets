@@ -58,7 +58,12 @@ struct TodoPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     this.palette = getColors(this.isDark)
-    const items = await loadTodos()
+    let items: TodoItem[] = []
+    try { items = await loadTodos() }
+    catch (_error) {
+      if (this.isCurrentOperation(version, epoch, username)) safeToast(this.getUIContext(), '任务读取未完成，请重新进入重试')
+      return
+    }
     if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
     this.todos = items
     await restoreTodoReminderStatus()
