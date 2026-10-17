@@ -103,8 +103,16 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
     const task = getPrefs()
     if (task === null) throw new Error('待办存储尚未初始化')
     const prefs = await task
+    if (clearing) {
+      await prefs.put('cleanup_pending', true)
+      await prefs.flush()
+    }
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
+    if (clearing) {
+      await prefs.put('cleanup_pending', false)
+      await prefs.flush()
+    }
     if (version !== sessionVersion) throw new Error('待办会话已变化，旧写入结果已失效')
     todoStore = next
     if (clearing) { loaded = true; cleanupPending = false }
@@ -138,6 +146,11 @@ export async function loadTodos(): Promise<TodoItem[]> {
       const task = getPrefs()
       if (task === null) return
       const prefs = await task
+      const pending = await prefs.get('cleanup_pending', false)
+      if (pending !== false) {
+        cleanupPending = true
+        throw new Error('上一会话待办清理未完成，请重试退出清理')
+      }
       const raw = await prefs.get(KEY_ITEMS, '')
       if (version !== sessionVersion || cleanupPending) throw new Error('待办会话已变化，旧读取已失效')
       if (typeof raw !== 'string') throw new Error('待办存储类型异常，原数据已保留')
