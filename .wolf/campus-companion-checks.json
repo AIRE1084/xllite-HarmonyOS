@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T07:22:02.635Z",
+  "checkedAt": "2026-10-17T07:26:45.754Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 56,
+  "checks": 57,
   "failed": 0,
   "results": [
     {
@@ -23,6 +23,10 @@
     },
     {
       "name": "course reminder reconciliation preserves todo reminders",
+      "ok": true
+    },
+    {
+      "name": "todo native reminder count reads only todo group without publishing",
       "ok": true
     },
     {
