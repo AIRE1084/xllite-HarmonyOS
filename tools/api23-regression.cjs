@@ -89,6 +89,11 @@ test('flowing dock has one shared noninteractive indicator and vertical labels',
  assert.match(source,/\.onAreaChange/); assert.match(source,/\.hitTestBehavior\(HitTestMode.None\)/);
  assert.match(source,/this.reduceMotion \? 0 :/); assert.ok(!source.includes('setTimeout')); assert.ok(!source.includes("'#D9E5EDFF'"));
 });
+test('dock selection uses a flat tint without decorative gradient border or shadow',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
+ assert.doesNotMatch(source,/\.linearGradient\(|\.shadow\(|\.border\(/);
+ assert.match(source,/\.backgroundColor\(this\.isDark \? '#263B59' : '#E5EDFF'\)/);
+});
 test('dock spring is bypassed rather than merely zero-duration under reduced motion',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
  assert.match(source,/this.reduceMotion \? Curve.Linear : curves.springMotion\(0.32, 0.86, 0.12\)/);
