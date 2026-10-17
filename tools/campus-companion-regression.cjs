@@ -30,7 +30,7 @@ function fixture() {
   const reminder = {ReminderType:{REMINDER_TYPE_CALENDAR:1}, async cancelAllReminders(){state.cancelAll++; state.reminders.clear();},
     async getAllValidReminders(){if(state.allValidHook)await state.allValidHook();if(state.allValidQueryFails)throw Error('query failed');return [...state.reminders].map(([reminderId,reminderReq])=>({reminderId,reminderReq}));},
     async getValidReminders(){if(state.validQueryFails)throw Error('query failed');return [...state.reminders.values()];},
-     async cancelReminder(id){state.reminders.delete(id);}, async publishReminder(request){
+     async cancelReminder(id){if(state.cancelReminderFail)throw Error('fixture reminder cancel failed');state.reminders.delete(id);}, async publishReminder(request){
       state.requests.push(request); if (state.publishHook) await state.publishHook(request);
       const id = nextReminder++; state.reminders.set(id,request); return id;
     }};
@@ -566,6 +566,11 @@ test('course LiveView changes timer at class start and stops on switch off',asyn
  assert.equal(f.state.liveUpdates[0].liveViewData.capsule.content,'上课中');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.activateCampusCompanion('test-student');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
  await core.setCampusOption('live',false);assert.equal(f.state.liveStops.length,1);
+});
+test('logout reminder cancellation failure keeps widget private and allows group-specific retry',async()=>{
+ const f=fixture(),core=await readyCourse(f);await core.setCampusOption('widget',true);await core.setCampusOption('reminders',true);f.state.reminders.set(9999,{groupId:'campus_todos'});
+ f.state.cancelReminderFail=true;await assert.rejects(core.clearCampusCompanion(),/reminder cancel failed/);assert.equal(f.disks.get('/data/campus_widget.json'),'null');assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.state.reminders.size,2);
+ f.state.cancelReminderFail=false;await core.clearCampusCompanion();assert.equal(f.state.reminders.size,1);assert.equal(f.state.reminders.get(9999).groupId,'campus_todos');
 });
 test('preference flush failure during logout still clears widget and reminders',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('widget',true);await core.setCampusOption('reminders',true);
