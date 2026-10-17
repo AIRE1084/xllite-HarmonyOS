@@ -7,6 +7,14 @@ import { cancelReminderGroup } from './ReminderGroups'
 let reminderQueue: Promise<void> = Promise.resolve()
 let reminderVersion: number = 0
 
+export function getTodoReminderCount(): Promise<number> {
+  const task = reminderQueue.then(async (): Promise<number> => {
+    const reminders = await reminderAgentManager.getAllValidReminders()
+    return reminders.filter((item: reminderAgentManager.ReminderInfo): boolean => item.reminderReq.groupId === 'campus_todos').length
+  })
+  reminderQueue = task.then(() => {}).catch((_error: Error) => {})
+  return task
+}
 export function clearTodoReminders(): Promise<void> {
   reminderVersion++
   const task = reminderQueue.then(() => cancelReminderGroup('campus_todos'))
