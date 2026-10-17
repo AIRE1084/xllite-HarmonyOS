@@ -1,6 +1,16 @@
 # 独立验收包刷新
 
-2026-10-17；应用源码基线81d6f2b。
+2026-10-17；最新应用源码基线10a1b5b（前版81d6f2b）。
+
+## 提醒发布时效修复刷新
+
+- 在前版基础上同步CampusCompanionService.ets与TodoReminderService.ets，逐文件SHA256匹配。
+- 课程、待办均在逐条系统发布前重新检查触发时间，跳过系统等待后已过期的提醒；不把模拟回归当作送达证据。
+- 独立工程assembleHap签名构建成功；签名配置前后SHA256不变。
+- 最新签名包SHA256：27263036016BE4E987BE78F7D8E617BC1E51DB0A0B45D7FA291C5FD540EEEB67。
+- HDC端口8710仍为[Empty]，未安装或启动，正式应用会话不动。
+
+## 前版记录
 
 - 既有独立工程：D:\XJITApp-api23-login-simulator；沿用原有独立签名配置，构建前后配置SHA256一致，未读取或导出签名密钥。
 - 对比既有基线a4be718，将entry/src下2个变化文件复制到独立工程，逐文件SHA256匹配：TodoPage.ets、TodoService.ets。
