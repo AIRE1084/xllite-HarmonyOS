@@ -61,7 +61,7 @@ function fixture() {
     const source = fs.readFileSync(full, 'utf8');
     const output = ts.transpileModule(source, { fileName: full.replace(/\.ets$/, '.ts'), compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
     const localRequire = spec => {
-      if (spec === './LiveViewService' && full.endsWith('TodoService.ets')) return {async reconcileTodoLiveView(items){state.liveTodoItems=items;if(state.liveTodoFailure)throw Error('fixture live failure')}};
+      if (spec === './LiveViewService' && full.endsWith('TodoService.ets')) return {async reconcileTodoLiveView(items){state.liveTodoItems=items;if(state.liveTodoPending)await state.liveTodoPending;if(state.liveTodoFailure)throw Error('fixture live failure')}};
       if (spec === './TodoReminderService') return {async getTodoReminderCount(){if(state.todoCountFailure)throw Error('fixture count failure');return state.todoNativeCount||0},async syncTodoReminders(items,bundle){state.todoSync={items,bundle};if(state.todoSyncPending)await state.todoSyncPending;if(state.todoSyncFailure)throw Error('fixture sync failure');return items.length},async clearTodoReminders(){state.todoReminderClears=(state.todoReminderClears||0)+1;if(state.todoClearPending)await state.todoClearPending;if(state.todoClearFailure)throw Error('fixture clear failure');}};
       if (spec === './WidgetService') return {async publishTodoWidgets(_ctx,data){state.todoWidgets=(state.todoWidgets||[]);state.todoWidgets.push(data);if(state.todoWidgetFailure)throw new Error('fixture widget failure')}};
       if (spec === '@ohos.data.preferences') return { default: preferences };
@@ -184,6 +184,11 @@ test('logout retires add paused before mutation enqueue',async()=>{
  const add=f.todo.addTodo({title:'Old account',note:'',dueText:''});const retired=assert.rejects(add,/会话/);
  await until(()=>entered);const clear=f.todo.clearTodos();gate.resolve();await Promise.all([retired,clear]);
  assert.equal((await f.todo.loadTodos()).length,0);assert.equal(f.state.todoWidgets.at(-1).openCount,0);
+});
+test('logout during live cleanup skips retired widget publication',async()=>{
+ const f=fixture(),gate=deferred();f.state.liveTodoPending=gate.promise;
+ const add=f.todo.addTodo({title:'Private retired',note:'',dueText:''}),observed=assert.rejects(add,/会话/);await until(()=>!!f.state.liveTodoItems);
+ const clear=f.todo.clearTodos();gate.resolve();await Promise.all([observed,clear]);assert.equal(f.state.todoWidgets.length,1);assert.equal(f.state.todoWidgets[0].openCount,0);
 });
 test('todo write finishing after logout never publishes retired private task data',async()=>{
  const f=fixture(),gate=deferred();let started=false;f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put'&&!started){started=true;await gate.promise}};
