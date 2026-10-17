@@ -1,6 +1,8 @@
 import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { TodoDraft, TodoItem } from '../models/TodoTypes'
+import { buildTodoWidgetData } from '../utils/TodoWidgetData'
+import { publishTodoWidgets } from './WidgetService'
 
 const PREFS_NAME: string = 'xjit_todos'
 const KEY_ITEMS: string = 'items'
@@ -73,6 +75,10 @@ function mutate(change: (items: TodoItem[]) => TodoItem[]): Promise<TodoItem[]> 
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     todoStore = next
+    if (todoContext !== null) {
+      try { await publishTodoWidgets(todoContext, buildTodoWidgetData(todoStore)) }
+      catch (_error) { console.warn('XJITTodo: task saved; widget refresh pending') }
+    }
     return cloneItems(todoStore)
   })
   persistenceTask = writeTask.then(() => {}).catch((_e: Error) => {})

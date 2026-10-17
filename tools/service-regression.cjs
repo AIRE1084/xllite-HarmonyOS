@@ -61,6 +61,7 @@ function fixture() {
     const source = fs.readFileSync(full, 'utf8');
     const output = ts.transpileModule(source, { fileName: full.replace(/\.ets$/, '.ts'), compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
     const localRequire = spec => {
+      if (spec === './WidgetService') return {async publishTodoWidgets(_ctx,data){state.todoWidgets=(state.todoWidgets||[]);state.todoWidgets.push(data);if(state.todoWidgetFailure)throw new Error('fixture widget failure')}};
       if (spec === '@ohos.data.preferences') return { default: preferences };
       if (spec === '@ohos.net.http') return { default: http };
       if (spec === '@ohos.app.ability.ConfigurationConstant') return {default:{ColorMode:{COLOR_MODE_DARK:0,COLOR_MODE_LIGHT:1,COLOR_MODE_NOT_SET:-1}}};
@@ -92,6 +93,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo commits publish real card data while widget failure does not undo saved task',async()=>{
+ const f=fixture();const rows=await f.todo.addTodo({title:'Study',note:'private',dueText:''});
+ assert.equal(f.state.todoWidgets.at(-1).firstTitle,'Study');f.state.todoWidgetFailure=true;
+ const done=await f.todo.toggleTodo(rows[0].id);assert.equal(done[0].done,true);assert.equal(f.state.todoWidgets.at(-1).openCount,0);
+ await f.todo.deleteTodo(rows[0].id);assert.equal((await f.todo.loadTodos()).length,0);
+});
 test('todo desktop card is registered with native route and empty synchronization state',()=>{
  const config=JSON.parse(fs.readFileSync(path.join(root,'entry/src/main/resources/base/profile/campus_form_config.json'),'utf8'));
  const card=config.forms.find(x=>x.name==='CampusTodoCard');assert.ok(card);assert.equal(card.isDefault,false);
