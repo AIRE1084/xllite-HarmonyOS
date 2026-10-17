@@ -13,6 +13,7 @@ let loaded: boolean = false
 let loadTask: Promise<void> | null = null
 let prefsTask: Promise<preferences.Preferences> | null = null
 let persistenceTask: Promise<void> = Promise.resolve()
+let sessionVersion: number = 0
 
 export function setTodoContext(ctx: common.UIAbilityContext): void {
   todoContext = ctx
@@ -64,9 +65,10 @@ function getPrefs(): Promise<preferences.Preferences> | null {
   return prefsTask
 }
 
-function mutate(change: (items: TodoItem[]) => TodoItem[]): Promise<TodoItem[]> {
+function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = sessionVersion): Promise<TodoItem[]> {
   const writeTask = persistenceTask.then(async (): Promise<TodoItem[]> => {
     await loadTodos()
+    if (version !== sessionVersion) throw new Error('待办会话已变化，请重新进入')
     const next = change(cloneItems(todoStore))
     const snapshot = JSON.stringify(next)
     const task = getPrefs()
@@ -108,6 +110,7 @@ export async function addTodo(draft: TodoDraft): Promise<TodoItem[]> {
   if (draft.dueAt !== undefined && (!Number.isSafeInteger(draft.dueAt) || draft.dueAt <= 0 || draft.dueAt > 8640000000000000)) {
     throw new Error('请选择有效的任务时间')
   }
+  const version = sessionVersion
   await loadTodos()
   const now = Date.now()
   const item: TodoItem = {
@@ -123,10 +126,11 @@ export async function addTodo(draft: TodoDraft): Promise<TodoItem[]> {
   if (item.title.length === 0) {
     return cloneItems(todoStore)
   }
-  return mutate((items: TodoItem[]): TodoItem[] => { items.unshift(item); return items })
+  return mutate((items: TodoItem[]): TodoItem[] => { items.unshift(item); return items }, version)
 }
 
 export async function toggleTodo(id: string): Promise<TodoItem[]> {
+  const version = sessionVersion
   await loadTodos()
   const now = Date.now()
   return mutate((items: TodoItem[]): TodoItem[] => items.map((item: TodoItem): TodoItem => {
@@ -143,15 +147,17 @@ export async function toggleTodo(id: string): Promise<TodoItem[]> {
       createdAt: item.createdAt,
       updatedAt: now,
     }
-  }))
+  }), version)
 }
 
 export async function deleteTodo(id: string): Promise<TodoItem[]> {
+  const version = sessionVersion
   await loadTodos()
-  return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id))
+  return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id), version)
 }
 
 export async function clearTodos(): Promise<void> {
+  sessionVersion++
   if (todoContext === null) return
   await mutate((_items: TodoItem[]): TodoItem[] => [])
 }
