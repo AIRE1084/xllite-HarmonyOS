@@ -170,6 +170,10 @@ test('todo draft survives same-account reentry but not another session',async()=
  page.aboutToDisappear();await page.aboutToAppear();assert.equal(page.titleInput,'Private');
  page.aboutToDisappear();state.username='other';state.epoch++;await page.aboutToAppear();assert.equal(page.titleInput,'');assert.equal(page.noteInput,'');assert.equal(page.dueAt,undefined);
 });
+test('todo stale controls stop after account switch without page reentry',async()=>{
+ const {page,state}=fixture('TodoPage');await page.aboutToAppear();page.titleInput='Old private';page.todos=[{id:'old'}];state.username='other';state.epoch++;
+ await page.handleReminders();assert.equal(state.todoRegisters||0,0);assert.equal(page.titleInput,'');assert.equal(page.todos.length,0);assert.ok(page.loadError.includes('重新进入'));
+});
 test('signed-out todo page clears private draft and stale companion labels',async()=>{
  const {page,state}=fixture('TodoPage');page.titleInput='Private';page.noteInput='Secret';page.dueInput='Tomorrow';page.dueAt=200000;page.reminderStatus='Old';page.liveCleanupStatus='Old';state.username='';
  await page.handleReloadTodos();assert.equal(page.titleInput,'');assert.equal(page.noteInput,'');assert.equal(page.dueInput,'');assert.equal(page.dueAt,undefined);assert.equal(page.liveCleanupStatus,'');assert.equal(page.reminderStatus,'登录后查看提醒状态');

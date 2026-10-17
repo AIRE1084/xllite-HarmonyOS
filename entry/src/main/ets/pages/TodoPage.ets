@@ -50,14 +50,16 @@ struct TodoPage {
   @State loadError: string = ''
   @State reloadBusy: boolean = false
   private hasAccount(): boolean {
-    if (getUsername().length > 0) return true
+    const username = getUsername()
+    const stale = this.pageEpoch !== -1 && (this.pageAccount !== username || this.pageEpoch !== getCacheEpoch())
+    if (username.length > 0 && !stale) return true
     this.todos = []
     this.titleInput = ''
     this.noteInput = ''
     this.clearDueTime()
     this.reminderStatus = '登录后查看提醒状态'
     this.liveCleanupStatus = ''
-    this.loadError = '请先登录后查看待办'
+    this.loadError = username.length === 0 ? '请先登录后查看待办' : '账号会话已变化，请重新进入待办页'
     return false
   }
   async handleReloadTodos(): Promise<void> {
