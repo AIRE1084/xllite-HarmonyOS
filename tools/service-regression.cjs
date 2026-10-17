@@ -96,6 +96,12 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('logout failure waits for other cleanup branches before allowing retry',async()=>{
+ const f=fixture(),gate=deferred();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});f.state.companionClearFailure=true;let entered=false,settled=false;
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put'){entered=true;await gate.promise}};
+ const logout=f.auth.clearSession().then(()=>{settled=true},()=>{settled=true});await until(()=>entered);for(let i=0;i<20;i++)await Promise.resolve();assert.equal(settled,false);
+ gate.resolve();await logout;assert.equal(settled,true);assert.equal(f.stores.get('xjit_todos').data.get('items'),'[]');
+});
 test('logout reports companion cleanup failure while still clearing private task and auth state',async()=>{
  const f=fixture();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});f.state.companionClearFailure=true;
  await assert.rejects(f.auth.clearSession(),/companion cleanup failed/);await until(()=>f.stores.get('xjit_todos').data.get('items')==='[]');assert.equal(f.auth.getUsername(),'');assert.equal(f.auth.getAccessToken(),'');assert.ok(f.state.todoReminderClears>0);
