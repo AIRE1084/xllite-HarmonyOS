@@ -145,6 +145,7 @@ async function syncReminders(): Promise<void> {
         '已登记未来 7 天 ' + ids.length + ' 条课前提醒')
     if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
   } catch (error) {
+    if (version !== revision) return
     lastPlan = ''
     const err = error as BusinessError
     AppStorage.setOrCreate<string>('courseReminderStatus', err.code === 401 ? '提醒参数无效（401），请同步课表后重试' :
@@ -241,13 +242,14 @@ export async function setCampusOption(option: string, enabled: boolean): Promise
   if (option === 'live' && enabled && !await isLiveViewSupported()) throw new Error('系统实况窗暂不可用，请检查系统设置')
   const key = option === 'widget' ? 'campusWidgetEnabled' : option === 'reminders' ? 'courseReminderEnabled' : 'liveViewEnabled'
   AppStorage.setOrCreate<boolean>(key, enabled); revision++
+  const optionVersion = revision
   let stopError: Error | null = null
   if (option === 'live' && !enabled) {
     try { await finishAllLiveViews() } catch (error) { stopError = error as Error }
   }
   await enqueue(async () => {
     try { await reconcile(option === 'reminders') } catch (error) {
-      if (option === 'reminders' && enabled) {
+      if (option === 'reminders' && enabled && optionVersion === revision) {
         AppStorage.setOrCreate<boolean>('courseReminderEnabled', false)
         await cancelReminderGroup('campus_courses')
         lastPlan = ''; await persist()
