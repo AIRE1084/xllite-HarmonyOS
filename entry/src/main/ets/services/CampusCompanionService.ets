@@ -297,7 +297,10 @@ export function clearCampusCompanion(): Promise<void> {
     AppStorage.setOrCreate<boolean>('courseReminderEnabled', false)
     AppStorage.setOrCreate<boolean>('liveViewEnabled', false)
     snapshot = null; activeAccount = ''
-    await persist(); await syncWidgets(); await syncReminders()
-    if (stopError !== null) throw stopError
+    let cleanupError: Error | null = stopError
+    try { await persist() } catch (error) { if (cleanupError === null) cleanupError = error as Error }
+    try { await syncWidgets() } catch (error) { if (cleanupError === null) cleanupError = error as Error }
+    try { await syncReminders() } catch (error) { if (cleanupError === null) cleanupError = error as Error }
+    if (cleanupError !== null) throw cleanupError
   })
 }
