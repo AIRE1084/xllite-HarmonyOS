@@ -133,8 +133,8 @@ async function syncReminders(): Promise<void> {
     if (capacityFull) {
       try {
         const registered = await reminderAgentManager.getValidReminders()
-        capacityDetail = '；系统登记数量 ' + registered.length + ' 条'
-      } catch (_error) { capacityDetail = '；系统登记数量读取失败' }
+        capacityDetail = '；本应用登记数量 ' + registered.length + ' 条'
+      } catch (_error) { capacityDetail = '；本应用登记数量读取失败' }
       if (version !== revision) return
     }
     lastPlan = capacityFull ? '' : plan
