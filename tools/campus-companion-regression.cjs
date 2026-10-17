@@ -443,6 +443,16 @@ test('minute-of-day values are rejected by real LiveView adapter',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const result=await f.get('services/LiveViewService').startCourseLiveView(course(),480,580);
  assert.equal(result.ok,false);assert.equal(f.state.liveStarts.length,0);
 });
+test('failed class-start transition remains retryable',async()=>{
+ for(const thrown of [false,true]){
+  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService'),start=f.clock.now()+60000,end=start+3600000;
+  await live.startCourseLiveView(course(),start,end);f.state.now=start+1000;
+  if(thrown)f.state.updateError={code:1003500003};else f.state.updateCode=4;
+  assert.equal((await live.startCourseLiveView(course(),start,end)).ok,false);
+  f.state.updateError=null;f.state.updateCode=0;
+  assert.equal((await live.startCourseLiveView(course(),start,end)).ok,true);assert.equal(f.state.liveUpdates.length,2);
+ }
+});
 test('course LiveView changes timer at class start and stops on switch off',async()=>{
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  f.state.now=new Date(2026,9,12,10,1).getTime();await core.activateCampusCompanion('test-student');assert.equal(f.state.liveUpdates.length,1);

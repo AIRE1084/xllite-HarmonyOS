@@ -72,14 +72,26 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
   const key = target.type + '|' + target.title + '|' + target.startTime
   if (currentKey === key && currentHandle !== null && currentView !== null) {
     if (target.startTime <= Date.now() && currentView.liveViewData.capsule?.content === '距上课') {
+      const previousTimer = currentView.timer
+      const previousCapsule = currentView.liveViewData.capsule
       currentView.sequence = (currentView.sequence ?? 0) + 1
       currentView.timer = { time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
       currentView.liveViewData.capsule = { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
         status: 1, content: '上课中', time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
       try {
         const result = await liveViewManager.updateLiveView(currentView)
-        if (result.resultCode !== 0) { setReason('实况窗更新失败（' + result.resultCode + '）'); return { ok: false, reason: supportReason } }
-      } catch (error) { setReason(reasonFor(error as BusinessError)); return { ok: false, reason: supportReason } }
+        if (result.resultCode !== 0) {
+          currentView.timer = previousTimer
+          currentView.liveViewData.capsule = previousCapsule
+          setReason('实况窗更新失败（' + result.resultCode + '）')
+          return { ok: false, reason: supportReason }
+        }
+      } catch (error) {
+        currentView.timer = previousTimer
+        currentView.liveViewData.capsule = previousCapsule
+        setReason(reasonFor(error as BusinessError))
+        return { ok: false, reason: supportReason }
+      }
     }
     setReason('实况窗已显示')
     return { ok: true, handle: { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType } }

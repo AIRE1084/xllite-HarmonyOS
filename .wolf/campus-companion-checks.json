@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T08:19:12.598Z",
+  "checkedAt": "2026-10-17T08:21:46.143Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 65,
+  "checks": 66,
   "failed": 0,
   "results": [
     {
@@ -255,6 +255,10 @@
     },
     {
       "name": "minute-of-day values are rejected by real LiveView adapter",
+      "ok": true
+    },
+    {
+      "name": "failed class-start transition remains retryable",
       "ok": true
     },
     {
