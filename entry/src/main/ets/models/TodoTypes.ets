@@ -3,6 +3,7 @@ export interface TodoItem {
   title: string
   note: string
   dueText: string
+  dueAt?: number
   done: boolean
   createdAt: number
   updatedAt: number
@@ -12,4 +13,5 @@ export interface TodoDraft {
   title: string
   note: string
   dueText: string
+  dueAt?: number
 }

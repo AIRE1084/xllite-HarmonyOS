@@ -104,6 +104,13 @@ test('todo storage deduplicates valid identities before toggle and delete',async
  const rows=await f.todo.loadTodos();assert.equal(rows.length,1);assert.equal(rows[0].title,'First');
  assert.equal((await f.todo.toggleTodo('same'))[0].done,true);assert.equal((await f.todo.deleteTodo('same')).length,0);
 });
+test('todo structured due timestamp survives add toggle and storage while invalid dates fail',async()=>{
+ const f=fixture(),due=Date.now()+3600000;
+ const rows=await f.todo.addTodo({title:'Study',note:'',dueText:'Tomorrow',dueAt:due});assert.equal(rows[0].dueAt,due);
+ assert.equal((await f.todo.toggleTodo(rows[0].id))[0].dueAt,due);
+ assert.equal(JSON.parse(f.stores.get('xjit_todos').data.get('items'))[0].dueAt,due);
+ for(const dueAt of [NaN,Infinity,-1,1.5,8640000000000001]) await assert.rejects(f.todo.addTodo({title:'Invalid',note:'',dueText:'',dueAt}));
+});
 test('electricity binding persists in current session and logout clears it',async()=>{
  const f=fixture();await f.seedToken();await f.auth.saveElectricityRoom(' 9#312 ');
  assert.equal(await f.auth.loadElectricityRoom(),'9#312');
