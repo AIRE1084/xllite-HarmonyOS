@@ -125,7 +125,9 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
 }
 export function startLiveView(target: LiveViewTarget): Promise<LiveViewResult> {
   const captured = revision
-  const task = operation.then(() => startTarget(target, captured))
+  const snapshot: LiveViewTarget = { type: target.type, title: target.title, text: target.text,
+    extra: target.extra, startTime: target.startTime, endTime: target.endTime }
+  const task = operation.then(() => startTarget(snapshot, captured))
   operation = task.then(() => {}).catch((_e: Error) => {})
   return task
 }

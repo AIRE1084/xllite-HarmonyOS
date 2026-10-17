@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T08:03:10.787Z",
+  "checkedAt": "2026-10-17T08:07:22.237Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 60,
+  "checks": 61,
   "failed": 0,
   "results": [
     {
@@ -211,6 +211,10 @@
     },
     {
       "name": "LiveView taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "queued live view target preserves caller snapshot",
       "ok": true
     },
     {
