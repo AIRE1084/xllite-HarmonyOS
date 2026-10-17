@@ -89,11 +89,13 @@ struct TodoPage {
   }
 
   private async handleToggle(item: TodoItem): Promise<void> {
-    this.todos = await toggleTodo(item.id)
+    try { this.todos = await toggleTodo(item.id) }
+    catch (_error) { safeToast(this.getUIContext(), '任务状态未保存，请重试') }
   }
 
   private async handleDelete(item: TodoItem): Promise<void> {
-    this.todos = await deleteTodo(item.id)
+    try { this.todos = await deleteTodo(item.id) }
+    catch (_error) { safeToast(this.getUIContext(), '任务删除未完成，请重试') }
   }
 
   private async handleLiveView(item: TodoItem): Promise<void> {
