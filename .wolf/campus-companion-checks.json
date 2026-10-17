@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T08:51:50.649Z",
+  "checkedAt": "2026-10-17T08:55:42.260Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 71,
+  "checks": 72,
   "failed": 0,
   "results": [
     {
@@ -211,6 +211,10 @@
     },
     {
       "name": "LiveView taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "changed live view deadline replaces the old timer",
       "ok": true
     },
     {
