@@ -34,6 +34,13 @@ export async function updateCampusWidgets(data: CampusWidgetData): Promise<void>
     }
   }
 }
+export function buildFormBinding(context: common.Context, formName: string): formBindingData.FormBindingData {
+  if (formName === 'CampusTodoCard') {
+    return formBindingData.createFormBindingData({ openCount: 0, overdueCount: 0,
+      firstTitle: '打开应用同步待办', secondTitle: '', thirdTitle: '' })
+  }
+  return buildWidgetBinding(context)
+}
 export function buildWidgetBinding(context: common.Context): formBindingData.FormBindingData {
   try {
     return formBindingData.createFormBindingData(widgetData(readWidgetSnapshot(context)))
