@@ -30,7 +30,7 @@ function fixture(name) {
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
-      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},deleteTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},getTodoLiveCleanupStatus:()=>state.liveCleanupStatus||'',retryTodoLiveCleanup:async()=>{state.liveCleanupStatus=''},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1;if(state.todoRefreshFailure)throw Error('fixture widget failure')},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
+      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},deleteTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true;if(state.reminderServicePending)await state.reminderServicePending},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;if(state.reminderServicePending)await state.reminderServicePending;return 2},getTodoLiveCleanupStatus:()=>state.liveCleanupStatus||'',retryTodoLiveCleanup:async()=>{state.liveCleanupStatus=''},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1;if(state.todoRefreshFailure)throw Error('fixture widget failure')},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
       if (spec.endsWith('/LiveViewService')) return {startTodoLiveView:async()=>state.livePending?await state.livePending:{ok:true}};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
@@ -185,6 +185,14 @@ test('signed-out todo controls never invoke reminder or live view services',asyn
 });
 test('todo empty state distinguishes read error from filtered and empty lists',()=>{
  const {page}=fixture('TodoPage');assert.equal(page.emptyTitle(),'暂无待办');page.filter=1;assert.equal(page.emptyTitle(),'暂无未完成任务');page.filter=2;assert.equal(page.emptyTitle(),'暂无已完成任务');page.loadError='failed';assert.equal(page.emptyTitle(),'任务读取未完成');
+});
+test('todo reminder service late success and failure never report to retired pages',async()=>{
+ for(const method of ['handleReminders','handleDisableReminders'])for(const mode of ['disappear','account'])for(const failure of [false,true]){
+  const {page,state}=fixture('TodoPage'),pending=gate();state.reminderServicePending=pending.promise;page.reminderStatus='original';const task=page[method]();
+  await until(()=>state.todoDisabled||state.todoRegisters);if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
+  if(failure)pending.reject(Error('fixture service failure'));else pending.resolve();await task;
+  assert.equal(state.toasts.length,0);assert.equal(page.reminderStatus,'original');
+ }
 });
 test('todo picker never opens for signed-out or stale account page',async()=>{
  for(const mode of ['signedout','stale']){
