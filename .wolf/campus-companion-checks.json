@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T08:16:26.813Z",
+  "checkedAt": "2026-10-17T08:19:12.598Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 64,
+  "checks": 65,
   "failed": 0,
   "results": [
     {
@@ -211,6 +211,10 @@
     },
     {
       "name": "LiveView taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "failed live view title update restores committed content and reports failure",
       "ok": true
     },
     {
