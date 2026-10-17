@@ -249,6 +249,12 @@ test('switching off during native publication cancels the late reminder',async()
  const disabled=core.setCampusOption('reminders',false);await until(()=>f.values.get('courseReminderEnabled')===false);gate.resolve();await Promise.all([enabled,disabled]);
  assert.equal(f.state.reminders.size,0);
 });
+test('retired course publication failure cannot disable a newer enable request',async()=>{
+ const f=fixture(),core=await readyCourse(f),gate=deferred();f.state.publishHook=async()=>{await gate.promise;throw Error('retired publication failure')};
+ const first=core.setCampusOption('reminders',true);await until(()=>f.state.requests.length===1);
+ const second=core.setCampusOption('reminders',true);await Promise.resolve();await Promise.resolve();f.state.publishHook=null;gate.resolve();
+ await Promise.allSettled([first,second]);assert.equal(f.values.get('courseReminderEnabled'),true);assert.equal(f.state.reminders.size,1);
+});
 test('logout cancels reminders, clears widget snapshot and rejects stale schedule',async()=>{
  const f=fixture(), core=await readyCourse(f);await core.setCampusOption('widget',true);await core.setCampusOption('reminders',true);
  const cache=f.get('services/MemoryCache');await cache.clearAllCachedValues();await core.clearCampusCompanion();

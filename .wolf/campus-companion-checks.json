@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:15:56.646Z",
+  "checkedAt": "2026-10-17T10:21:45.507Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 76,
+  "checks": 77,
   "failed": 0,
   "results": [
     {
@@ -135,6 +135,10 @@
     },
     {
       "name": "switching off during native publication cancels the late reminder",
+      "ok": true
+    },
+    {
+      "name": "retired course publication failure cannot disable a newer enable request",
       "ok": true
     },
     {
