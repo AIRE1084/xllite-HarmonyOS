@@ -169,7 +169,7 @@ export function clearAccessToken(epoch: number = getCacheEpoch()): Promise<void>
 }
 export async function clearSession(): Promise<void> {
   const cacheClearTask = clearAllCachedValues()
-  const companionTask = clearCampusCompanion().catch((_e: Error) => {})
+  const companionTask = clearCampusCompanion()
   savedUsername = ''; savedAccessToken = ''; savedTokenExpiresAt = 0; cardToken = ''; cardExpiresAt = 0; cardSessionEpoch++
   // School pages use the app's private incognito WebView store.
   try { webview.WebCookieManager.clearAllCookiesSync(true); webview.WebStorage.deleteAllData(true) } catch (_e) {}

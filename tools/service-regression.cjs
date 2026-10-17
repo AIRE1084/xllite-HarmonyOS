@@ -64,6 +64,7 @@ function fixture() {
       if (spec === './LiveViewService' && full.endsWith('TodoService.ets')) return {async reconcileTodoLiveView(items){state.liveTodoItems=items;if(state.liveTodoPending)await state.liveTodoPending;if(state.liveTodoFailure)throw Error('fixture live failure')}};
       if (spec === './TodoReminderService') return {async getTodoReminderCount(){if(state.todoCountFailure)throw Error('fixture count failure');return state.todoNativeCount||0},async syncTodoReminders(items,bundle){state.todoSync={items,bundle};if(state.todoSyncPending)await state.todoSyncPending;if(state.todoSyncFailure)throw Error('fixture sync failure');return items.length},async clearTodoReminders(){state.todoReminderClears=(state.todoReminderClears||0)+1;if(state.todoClearPending)await state.todoClearPending;if(state.todoClearFailure)throw Error('fixture clear failure');}};
       if (spec === './WidgetService') return {async publishTodoWidgets(_ctx,data){state.todoWidgets=(state.todoWidgets||[]);state.todoWidgets.push(data);if(state.todoWidgetPending)await state.todoWidgetPending;if(state.todoWidgetFailure)throw new Error('fixture widget failure')}};
+      if (spec === './CampusCompanionService' && full.endsWith('AuthManager.ets')) return {async clearCampusCompanion(){state.companionClears=(state.companionClears||0)+1;if(state.companionClearFailure)throw Error('fixture companion cleanup failed')}};
       if (spec === '@ohos.data.preferences') return { default: preferences };
       if (spec === '@ohos.net.http') return { default: http };
       if (spec === '@ohos.app.ability.ConfigurationConstant') return {default:{ColorMode:{COLOR_MODE_DARK:0,COLOR_MODE_LIGHT:1,COLOR_MODE_NOT_SET:-1}}};
@@ -95,6 +96,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('logout reports companion cleanup failure while still clearing private task and auth state',async()=>{
+ const f=fixture();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});f.state.companionClearFailure=true;
+ await assert.rejects(f.auth.clearSession(),/companion cleanup failed/);await until(()=>f.stores.get('xjit_todos').data.get('items')==='[]');assert.equal(f.auth.getUsername(),'');assert.equal(f.auth.getAccessToken(),'');assert.ok(f.state.todoReminderClears>0);
+ f.state.companionClearFailure=false;await f.auth.clearSession();assert.equal(f.state.companionClears,2);
+});
 test('todo read started before logout never returns the retired private rows',async()=>{
  const f=fixture(),gate=deferred();await f.prefs('xjit_todos').put('items',JSON.stringify([{id:'old',title:'Private',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]));let started=false;
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get'){started=true;await gate.promise}};
