@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T06:30:40.492Z",
+  "checkedAt": "2026-10-17T06:34:00.353Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 51,
+  "checks": 52,
   "failed": 0,
   "results": [
     {
@@ -15,6 +15,10 @@
     },
     {
       "name": "todo publication persists snapshot and refreshes only todo forms",
+      "ok": true
+    },
+    {
+      "name": "group reminder cancellation preserves unrelated reminders and surfaces query failure",
       "ok": true
     },
     {
