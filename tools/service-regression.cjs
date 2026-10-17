@@ -36,7 +36,7 @@ function fixture(sharedStores = new Map()) {
       async put(key, value) { store.writes++; if (state.hook) await state.hook(name, 'put', key); store.data.set(key, value); },
       async delete(key) { if (state.hook) await state.hook(name, 'delete', key); store.data.delete(key); },
       async clear() { store.data.clear(); },
-      async flush() { store.flushes++; if (state.hook) await state.hook(name, 'flush'); },
+      async flush() { store.flushes++; if (state.hook) await state.hook(name, 'flush'); store.durable = new Map(store.data); },
     };
   }
   const preferences = { async getPreferences(_ctx, name) { opens.set(name, (opens.get(name) || 0) + 1); return prefs(name); } };
@@ -106,6 +106,13 @@ test('actual failed cleanup persists marker before task deletion and survives se
  f.state.hook=async(name,op,key)=>{if(name==='xjit_todos'&&op==='put'&&key==='items')throw Error('fixture task deletion failed')};
  await assert.rejects(f.todo.clearTodos(),/task deletion failed/);assert.equal(f.stores.get('xjit_todos').data.get('items'),before);assert.equal(f.stores.get('xjit_todos').data.get('cleanup_pending'),true);
  const restarted=fixture(f.stores);await assert.rejects(restarted.todo.loadTodos(),/清理/);await restarted.todo.clearTodos();assert.equal((await fixture(f.stores).todo.loadTodos()).length,0);
+});
+test('cleanup crash recovery uses last successful flush rather than unflushed memory',async()=>{
+ const f=fixture();await f.todo.addTodo({title:'Private durable',note:'',dueText:''});const store=f.stores.get('xjit_todos');let flushes=0;
+ f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='flush'&&++flushes===2)throw Error('fixture task flush failed')};
+ await assert.rejects(f.todo.clearTodos(),/task flush failed/);assert.equal(store.durable.get('cleanup_pending'),true);assert.ok(store.durable.get('items').includes('Private durable'));
+ const disk=new Map([['xjit_todos',{data:new Map(store.durable),flushes:0,reads:0,writes:0}]]),restarted=fixture(disk);
+ await assert.rejects(restarted.todo.loadTodos(),/清理/);await restarted.todo.clearTodos();const saved=disk.get('xjit_todos').durable;assert.equal(saved.get('cleanup_pending'),false);assert.equal(saved.get('items'),'[]');
 });
 test('logout failure waits for other cleanup branches before allowing retry',async()=>{
  const f=fixture(),gate=deferred();await f.seedToken();await f.todo.addTodo({title:'Private',note:'',dueText:''});f.state.companionClearFailure=true;let entered=false,settled=false;
