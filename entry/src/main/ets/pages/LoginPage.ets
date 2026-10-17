@@ -12,6 +12,7 @@ struct LoginPage {
   @State username: string = ''
   @State password: string = ''
   @State captcha: string = ''
+  @State captchaRequired: boolean = false
   @State restoring: boolean = true
   @State loading: boolean = false
   @State forgotLoading: boolean = false
@@ -33,7 +34,7 @@ struct LoginPage {
       else this.restoring = false
     } catch (_e) { if (this.alive) { this.restoring = false; this.errorMsg = '登录状态读取失败，请重新认证' } }
   }
-  aboutToDisappear(): void { this.alive = false; this.password = ''; this.captcha = '' }
+  aboutToDisappear(): void { this.alive = false; this.password = ''; this.captcha = ''; this.captchaRequired = false }
   onThemeChange(): void { this.palette = getColors(this.isDark) }
   async handleLogin(): Promise<void> {
     if (this.loading || this.restoring || this.showForgot) return
@@ -50,7 +51,11 @@ struct LoginPage {
       const epoch: number = getCacheEpoch()
       const response = await gatewayLogin(username, password, captcha)
       if (!this.alive || epoch !== getCacheEpoch()) return
-      if (!response.ok) { this.errorMsg = response.error; return }
+      if (!response.ok) {
+        this.errorMsg = response.error
+        if (response.error.includes('验证码')) this.captchaRequired = true
+        return
+      }
       const saved = await acceptGatewayLogin(username, response.data, epoch)
       if (!this.alive || epoch !== getCacheEpoch()) return
       if (!saved.ok) { this.errorMsg = saved.error; return }
@@ -91,7 +96,7 @@ struct LoginPage {
                   .borderRadius(16).enabled(!this.loading)
                   .onChange((value: string): void => { this.password = value })
                   .accessibilityText('统一身份认证密码')
-                if (this.errorMsg.includes('验证码')) {
+                if (this.captchaRequired) {
                 TextInput({ placeholder: '验证码（仅在学校要求时填写）', text: this.captcha })
                   .height(48).fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
                   .backgroundColor(this.palette.surfaceVariant).borderRadius(16).enabled(!this.loading)
