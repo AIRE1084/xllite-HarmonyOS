@@ -149,6 +149,9 @@ test('todo initial read failure is contained and does not refresh empty widget',
  assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);assert.ok(page.loadError.includes('读取未完成'));
  state.todoLoad=null;page.titleInput='Keep draft';await page.handleReloadTodos();assert.equal(page.loadError,'');assert.equal(page.titleInput,'Keep draft');assert.equal(page.reloadBusy,false);assert.equal(state.todoRestores,1);assert.equal(state.todoRefreshes,1);
 });
+test('todo empty state distinguishes read error from filtered and empty lists',()=>{
+ const {page}=fixture('TodoPage');assert.equal(page.emptyTitle(),'暂无待办');page.filter=1;assert.equal(page.emptyTitle(),'暂无未完成任务');page.filter=2;assert.equal(page.emptyTitle(),'暂无已完成任务');page.loadError='failed';assert.equal(page.emptyTitle(),'任务读取未完成');
+});
 test('todo native picker callbacks ignore retired pages and accounts',()=>{
  for(const phase of ['date','time'])for(const mode of ['active','disappear','account']){
   const {page,state}=fixture('TodoPage');let dateOptions,timeOptions;

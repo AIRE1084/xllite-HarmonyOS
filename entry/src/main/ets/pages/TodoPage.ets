@@ -113,6 +113,12 @@ struct TodoPage {
     this.palette = getColors(this.isDark)
   }
 
+  private emptyTitle(): string {
+    if (this.loadError.length > 0) return '任务读取未完成'
+    if (this.filter === 1) return '暂无未完成任务'
+    if (this.filter === 2) return '暂无已完成任务'
+    return '暂无待办'
+  }
   private visibleTodos(): TodoItem[] {
     if (this.filter === 1) {
       return this.todos.filter((item: TodoItem): boolean => !item.done)
@@ -459,11 +465,11 @@ struct TodoPage {
             Column() {
               LiquidGlass({ contentPadding: 20, radius: 22, glassBlur: 42 }) {
                 Column() {
-                  Text('这里很干净')
+                  Text(this.emptyTitle())
                     .fontSize(18)
                     .fontWeight(FontWeight.Bold)
                     .fontColor(this.palette.onSurface)
-                  Text('把课程作业、社团事项和生活提醒放在这里。')
+                  Text(this.loadError.length > 0 ? '原数据保留，请使用上方重新读取。' : '把课程作业、社团事项和生活提醒放在这里。')
                     .fontSize(12)
                     .fontColor(this.palette.onSurfaceVariant)
                     .margin({ top: 8 })
