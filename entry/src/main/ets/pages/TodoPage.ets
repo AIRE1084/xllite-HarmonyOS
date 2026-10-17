@@ -4,7 +4,7 @@ import { DetailScaffold } from '../components/common/DetailScaffold'
 import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
 import { TodoItem } from '../models/TodoTypes'
-import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders } from '../services/TodoService'
+import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders, disableTodoReminders } from '../services/TodoService'
 import { startTodoLiveView } from '../services/LiveViewService'
 import { LiquidGlass } from '../components/LiquidGlass'
 import { getColors, ColorPalette } from '../theme/Colors'
@@ -103,6 +103,15 @@ struct TodoPage {
   }
 
   @State reminderBusy: boolean = false
+  async handleDisableReminders(): Promise<void> {
+    if (this.reminderBusy) return
+    this.reminderBusy = true
+    try {
+      await disableTodoReminders()
+      safeToast(this.getUIContext(), '已取消任务提醒，任务仍保留')
+    } catch (_error) { safeToast(this.getUIContext(), '自动同步已关闭，系统提醒取消未完成，请重试') }
+    finally { this.reminderBusy = false }
+  }
   async handleReminders(): Promise<void> {
     if (this.reminderBusy) return
     this.reminderBusy = true
@@ -285,6 +294,9 @@ struct TodoPage {
           Button(this.reminderBusy ? '登记中…' : '登记任务提醒').enabled(!this.reminderBusy)
             .fontSize(13).fontColor(this.palette.primary).backgroundColor(this.palette.primaryContainer)
             .margin({ left: 16, right: 16, top: 12 }).onClick(() => this.handleReminders())
+          Button('取消任务提醒').enabled(!this.reminderBusy).fontSize(12)
+            .fontColor(this.palette.onSurfaceVariant).backgroundColor(Color.Transparent)
+            .onClick(() => this.handleDisableReminders())
           Row() {
             this.FilterChip('全部', 0)
             this.FilterChip('未完成', 1)
