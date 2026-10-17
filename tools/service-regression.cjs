@@ -98,6 +98,13 @@ test('todo explicit reminder request uses initialized bundle and persisted tasks
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});await f.todo.addTodo({title:'Study',note:'',dueText:''});
  assert.equal(await f.todo.registerTodoReminders(),1);assert.equal(f.state.todoSync.bundle,'com.xjit.app.acceptance');assert.equal(f.state.todoSync.items[0].title,'Study');
 });
+test('todo changes resynchronize reminders only after explicit successful registration',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});
+ const rows=await f.todo.addTodo({title:'Study',note:'',dueText:''});assert.equal(f.state.todoSync,undefined);
+ await f.todo.registerTodoReminders();await f.todo.toggleTodo(rows[0].id);assert.equal(f.state.todoSync.items[0].done,true);
+ await f.todo.deleteTodo(rows[0].id);assert.equal(f.state.todoSync.items.length,0);
+ await f.todo.clearTodos();f.state.todoSync=undefined;await f.todo.addTodo({title:'New',note:'',dueText:''});assert.equal(f.state.todoSync,undefined);
+});
 test('logout starts reminder cleanup even when todo disk cleanup fails',async()=>{
  const f=fixture();await f.seedToken();f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put')throw Error('fixture todo clear failure')};
  await assert.rejects(f.auth.clearSession(),/todo clear failure/);assert.equal(f.state.todoReminderClears,1);assert.equal(f.auth.getUsername(),'');
