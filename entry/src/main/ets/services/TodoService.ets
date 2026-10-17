@@ -2,6 +2,7 @@ import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { TodoDraft, TodoItem } from '../models/TodoTypes'
 import { buildTodoWidgetData } from '../utils/TodoWidgetData'
+import { syncTodoReminders } from './TodoReminderService'
 import { publishTodoWidgets } from './WidgetService'
 
 const PREFS_NAME: string = 'xjit_todos'
@@ -156,6 +157,16 @@ export async function deleteTodo(id: string): Promise<TodoItem[]> {
   return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id), version)
 }
 
+export function registerTodoReminders(): Promise<number> {
+  const version = sessionVersion
+  const task = persistenceTask.then(async (): Promise<number> => {
+    await loadTodos()
+    if (version !== sessionVersion || todoContext === null) throw new Error('待办会话已变化，请重新进入')
+    return syncTodoReminders(cloneItems(todoStore), todoContext.abilityInfo.bundleName)
+  })
+  persistenceTask = task.then(() => {}).catch((_error: Error) => {})
+  return task
+}
 export function refreshTodoWidgets(): Promise<void> {
   const version = sessionVersion
   const refresh = persistenceTask.then(async () => {
