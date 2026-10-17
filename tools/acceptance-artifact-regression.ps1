@@ -9,4 +9,10 @@ if (!$rejected) { throw 'Wrong minimum API was accepted' }
 $rejected = $false
 try { & $validator -HapPath $HapPath -ExpectedBundle 'com.xjit.app' } catch { $rejected = $true }
 if (!$rejected) { throw 'Production bundle expectation was accepted' }
-Write-Output 'PASS signed acceptance identity, API gate and negative cases'
+$rejected = $false
+try { & $validator -HapPath $HapPath -ExpectedTargetApi 999 } catch { $rejected = $true }
+if (!$rejected) { throw 'Wrong target API was accepted' }
+$rejected = $false
+try { & $validator -HapPath $HapPath -ExpectedBundle 'com.xjit.app.wrong' } catch { $rejected = $true }
+if (!$rejected) { throw 'Wrong independent bundle identity was accepted' }
+Write-Output 'PASS signed acceptance identity, minimum/target API and four negative cases'
