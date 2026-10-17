@@ -30,7 +30,7 @@ function fixture(name) {
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, password, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
       if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
-      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},deleteTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},getTodoLiveCleanupStatus:()=>state.liveCleanupStatus||'',retryTodoLiveCleanup:async()=>{state.liveCleanupStatus=''},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
+      if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},deleteTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;return 2},getTodoLiveCleanupStatus:()=>state.liveCleanupStatus||'',retryTodoLiveCleanup:async()=>{state.liveCleanupStatus=''},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1;if(state.todoRefreshFailure)throw Error('fixture widget failure')},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
       if (spec.endsWith('/LiveViewService')) return {startTodoLiveView:async()=>state.livePending?await state.livePending:{ok:true}};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
       if (spec.endsWith('/MemoryCache')) return { getCacheEpoch: () => state.epoch };
@@ -148,6 +148,17 @@ test('todo initial read failure is contained and does not refresh empty widget',
  const {page,state}=fixture('TodoPage');let reject;state.todoLoad=new Promise((_r,j)=>reject=j);const task=page.aboutToAppear();reject(Error('fixture read failure'));await task;
  assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);assert.ok(page.loadError.includes('读取未完成'));
  state.todoLoad=null;page.titleInput='Keep draft';await page.handleReloadTodos();assert.equal(page.loadError,'');assert.equal(page.titleInput,'Keep draft');assert.equal(page.reloadBusy,false);assert.equal(state.todoRestores,1);assert.equal(state.todoRefreshes,1);
+});
+test('todo reload drops retired results without refreshing companion data',async()=>{
+ for(const mode of ['disappear','account']){
+  const {page,state}=fixture('TodoPage');let resolve;state.todoLoad=new Promise(r=>resolve=r);page.loadError='original error';const task=page.handleReloadTodos();
+  if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}resolve([{id:'private'}]);await task;
+  assert.equal(page.todos.length,0);assert.equal(page.loadError,'original error');assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);assert.equal(state.toasts.length,0);
+ }
+});
+test('todo reload widget failure never relabels successful task read as a failure',async()=>{
+ const {page,state}=fixture('TodoPage');state.todoRefreshFailure=true;page.loadError='old failure';await page.handleReloadTodos();
+ assert.equal(page.loadError,'');assert.equal(page.reloadBusy,false);assert.ok(state.toasts.at(-1).includes('卡片暂未刷新'));
 });
 test('todo empty state distinguishes read error from filtered and empty lists',()=>{
  const {page}=fixture('TodoPage');assert.equal(page.emptyTitle(),'暂无待办');page.filter=1;assert.equal(page.emptyTitle(),'暂无未完成任务');page.filter=2;assert.equal(page.emptyTitle(),'暂无已完成任务');page.loadError='failed';assert.equal(page.emptyTitle(),'任务读取未完成');
