@@ -1,12 +1,16 @@
 {
-  "checkedAt": "2026-10-17T06:11:17.748Z",
+  "checkedAt": "2026-10-17T06:13:46.711Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 49,
+  "checks": 50,
   "failed": 0,
   "results": [
     {
       "name": "form binding selects todo placeholder separately from schedule",
+      "ok": true
+    },
+    {
+      "name": "todo form snapshot roundtrips and corrupt counts fall back",
       "ok": true
     },
     {
