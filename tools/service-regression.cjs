@@ -61,7 +61,7 @@ function fixture() {
     const source = fs.readFileSync(full, 'utf8');
     const output = ts.transpileModule(source, { fileName: full.replace(/\.ets$/, '.ts'), compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
     const localRequire = spec => {
-      if (spec === './TodoReminderService') return {async syncTodoReminders(items,bundle){state.todoSync={items,bundle};if(state.todoSyncFailure)throw Error('fixture sync failure');return items.length},async clearTodoReminders(){state.todoReminderClears=(state.todoReminderClears||0)+1;}};
+      if (spec === './TodoReminderService') return {async syncTodoReminders(items,bundle){state.todoSync={items,bundle};if(state.todoSyncFailure)throw Error('fixture sync failure');return items.length},async clearTodoReminders(){state.todoReminderClears=(state.todoReminderClears||0)+1;if(state.todoClearFailure)throw Error('fixture clear failure');}};
       if (spec === './WidgetService') return {async publishTodoWidgets(_ctx,data){state.todoWidgets=(state.todoWidgets||[]);state.todoWidgets.push(data);if(state.todoWidgetFailure)throw new Error('fixture widget failure')}};
       if (spec === '@ohos.data.preferences') return { default: preferences };
       if (spec === '@ohos.net.http') return { default: http };
@@ -94,6 +94,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('explicit reminder failures replace stale success status',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});await f.todo.registerTodoReminders();
+ f.state.todoSyncFailure=true;await assert.rejects(f.todo.registerTodoReminders());assert.ok(f.todo.getTodoReminderStatus().includes('登记未完成'));
+ f.state.todoClearFailure=true;await assert.rejects(f.todo.disableTodoReminders());assert.ok(f.todo.getTodoReminderStatus().includes('取消未完成'));
+});
 test('todo reminder failure state is visible while saved task change remains committed',async()=>{
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const rows=await f.todo.addTodo({title:'Study',note:'',dueText:''});
  await f.todo.registerTodoReminders();assert.ok(f.todo.getTodoReminderStatus().includes('1'));
