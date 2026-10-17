@@ -33,6 +33,7 @@ struct TodoPage {
   aboutToDisappear(): void { this.alive = false; this.loadVersion++ }
   async aboutToAppear(): Promise<void> {
     this.alive = true
+    this.saving = false
     const version = ++this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
@@ -96,19 +97,30 @@ struct TodoPage {
       return
     }
     this.saving = true
+    const version = this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
     try {
-      this.todos = await addTodo({
+      const items = await addTodo({
         title: this.titleInput,
         note: this.noteInput,
         dueText: this.dueInput,
         dueAt: this.dueAt,
       })
+      if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
+      this.todos = items
       this.titleInput = ''
       this.noteInput = ''
       this.clearDueTime()
     } catch (_error) {
-      safeToast(this.getUIContext(), '任务保存未完成，请重试')
-    } finally { this.saving = false; this.reminderStatus = getTodoReminderStatus() }
+      if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
+        safeToast(this.getUIContext(), '任务保存未完成，请重试')
+      }
+    } finally {
+      if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
+        this.saving = false; this.reminderStatus = getTodoReminderStatus()
+      }
+    }
   }
 
   private async handleToggle(item: TodoItem): Promise<void> {
