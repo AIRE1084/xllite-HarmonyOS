@@ -63,6 +63,12 @@ function fixture() {
   return {state,values,disks,stores,get,clock:Clock,calendar:get('utils/CourseCalendar'), layout:get('utils/ScheduleLayout'),time:get('utils/ClassTime'),weeks:get('utils/WeekParser'),
     async boot(){const core=get('services/CampusCompanionService');await core.initCampusCompanion({filesDir:'/data',abilityInfo:{bundleName:state.bundleName}});return core;}};
 }
+test('form binding selects todo placeholder separately from schedule',()=>{
+ const f=fixture(),service=f.get('services/WidgetService');
+ const todo=service.buildFormBinding({filesDir:'/data'},'CampusTodoCard').data;
+ assert.equal(todo.firstTitle,'打开应用同步待办');assert.equal(todo.courseTitle,undefined);
+ const schedule=service.buildFormBinding({filesDir:'/data'},'CampusScheduleCard').data;assert.ok(schedule.courseTitle);assert.equal(schedule.firstTitle,undefined);
+});
 function course(extra={}) { return {day:'星期一',slot:'1-2节',title:'高等数学',teacher:'教师',weeks:'1-20周',sections:'1-2节',location:'教学楼A101',...extra}; }
 function snapshot(extra={}) { return {account:'test-student',term:'2026-2027-1',courses:[course()],currentWeek:6,totalWeeks:20,weekKnown:true,
   anchorDate:'2026-10-12',updatedAt:new Date(2026,9,12).getTime(),widgetEnabled:true,...extra}; }
