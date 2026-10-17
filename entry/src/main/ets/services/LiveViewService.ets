@@ -143,11 +143,12 @@ function matchesCurrentHandle(handle: LiveViewHandle): boolean {
     handle.startTime === currentHandle.startTime && handle.targetType === currentHandle.targetType
 }
 export async function updateLiveView(handle: LiveViewHandle, course: Course, now: number): Promise<void> {
+  const title = course.title.slice(0, 40)
   const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
   const task = operation.then(async () => {
     if (currentView === null || !matchesCurrentHandle(snapshot)) return
     currentView.sequence = (currentView.sequence ?? 0) + 1
-    currentView.liveViewData.primary.title = course.title.slice(0, 40)
+    currentView.liveViewData.primary.title = title
     const result = await liveViewManager.updateLiveView(currentView)
     if (result.resultCode !== 0) setReason('实况窗更新失败（' + result.resultCode + '）')
   })
