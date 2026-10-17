@@ -62,16 +62,20 @@ function getPrefs(): Promise<preferences.Preferences> | null {
   return prefsTask
 }
 
-function persist(): Promise<void> {
-  const snapshot = JSON.stringify(todoStore)
-  const writeTask = persistenceTask.then(async () => {
+function mutate(change: (items: TodoItem[]) => TodoItem[]): Promise<TodoItem[]> {
+  const writeTask = persistenceTask.then(async (): Promise<TodoItem[]> => {
+    await loadTodos()
+    const next = change(cloneItems(todoStore))
+    const snapshot = JSON.stringify(next)
     const task = getPrefs()
     if (task === null) throw new Error('待办存储尚未初始化')
     const prefs = await task
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
+    todoStore = next
+    return cloneItems(todoStore)
   })
-  persistenceTask = writeTask.catch((_e: Error) => {})
+  persistenceTask = writeTask.then(() => {}).catch((_e: Error) => {})
   return writeTask
 }
 
@@ -113,15 +117,13 @@ export async function addTodo(draft: TodoDraft): Promise<TodoItem[]> {
   if (item.title.length === 0) {
     return cloneItems(todoStore)
   }
-  todoStore.unshift(item)
-  await persist()
-  return cloneItems(todoStore)
+  return mutate((items: TodoItem[]): TodoItem[] => { items.unshift(item); return items })
 }
 
 export async function toggleTodo(id: string): Promise<TodoItem[]> {
   await loadTodos()
   const now = Date.now()
-  todoStore = todoStore.map((item: TodoItem): TodoItem => {
+  return mutate((items: TodoItem[]): TodoItem[] => items.map((item: TodoItem): TodoItem => {
     if (item.id !== id) {
       return item
     }
@@ -135,16 +137,12 @@ export async function toggleTodo(id: string): Promise<TodoItem[]> {
       createdAt: item.createdAt,
       updatedAt: now,
     }
-  })
-  await persist()
-  return cloneItems(todoStore)
+  }))
 }
 
 export async function deleteTodo(id: string): Promise<TodoItem[]> {
   await loadTodos()
-  todoStore = todoStore.filter((item: TodoItem): boolean => item.id !== id)
-  await persist()
-  return cloneItems(todoStore)
+  return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id))
 }
 
 export function countOpenTodos(items: TodoItem[]): number {
