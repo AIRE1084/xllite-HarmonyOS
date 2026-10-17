@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T10:29:58.873Z",
+  "checkedAt": "2026-10-17T10:32:42.234Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 80,
+  "checks": 81,
   "failed": 0,
   "results": [
     {
@@ -115,6 +115,10 @@
     },
     {
       "name": "logout during live view preflight cannot reenable live switch",
+      "ok": true
+    },
+    {
+      "name": "closing reminders during permission dialog wins over late grant or denial",
       "ok": true
     },
     {
