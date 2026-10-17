@@ -4,7 +4,7 @@ import { DetailScaffold } from '../components/common/DetailScaffold'
 import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
 import { TodoItem } from '../models/TodoTypes'
-import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders, disableTodoReminders } from '../services/TodoService'
+import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders, disableTodoReminders, getTodoReminderStatus } from '../services/TodoService'
 import { startTodoLiveView } from '../services/LiveViewService'
 import { LiquidGlass } from '../components/LiquidGlass'
 import { getColors, ColorPalette } from '../theme/Colors'
@@ -22,12 +22,14 @@ struct TodoPage {
   @State dueInput: string = ''
   @State dueAt: number | undefined = undefined
   @State filter: number = 0
+  @State reminderStatus: string = '尚未登记任务提醒'
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
 
   async aboutToAppear(): Promise<void> {
     this.palette = getColors(this.isDark)
     this.todos = await loadTodos()
+    this.reminderStatus = getTodoReminderStatus()
     try { await refreshTodoWidgets() }
     catch (_error) { safeToast(this.getUIContext(), '任务已读取，桌面卡片暂未刷新') }
   }
@@ -89,17 +91,19 @@ struct TodoPage {
       this.clearDueTime()
     } catch (_error) {
       safeToast(this.getUIContext(), '任务保存未完成，请重试')
-    } finally { this.saving = false }
+    } finally { this.saving = false; this.reminderStatus = getTodoReminderStatus() }
   }
 
   private async handleToggle(item: TodoItem): Promise<void> {
     try { this.todos = await toggleTodo(item.id) }
     catch (_error) { safeToast(this.getUIContext(), '任务状态未保存，请重试') }
+    finally { this.reminderStatus = getTodoReminderStatus() }
   }
 
   private async handleDelete(item: TodoItem): Promise<void> {
     try { this.todos = await deleteTodo(item.id) }
     catch (_error) { safeToast(this.getUIContext(), '任务删除未完成，请重试') }
+    finally { this.reminderStatus = getTodoReminderStatus() }
   }
 
   @State reminderBusy: boolean = false
@@ -110,7 +114,7 @@ struct TodoPage {
       await disableTodoReminders()
       safeToast(this.getUIContext(), '已取消任务提醒，任务仍保留')
     } catch (_error) { safeToast(this.getUIContext(), '自动同步已关闭，系统提醒取消未完成，请重试') }
-    finally { this.reminderBusy = false }
+    finally { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
   }
   async handleReminders(): Promise<void> {
     if (this.reminderBusy) return
@@ -122,7 +126,7 @@ struct TodoPage {
       const count = await registerTodoReminders()
       safeToast(this.getUIContext(), '已登记 ' + count + ' 条任务提醒；本次会话内随任务变更同步')
     } catch (_error) { safeToast(this.getUIContext(), '任务保留，提醒登记未完成，请检查通知设置后重试') }
-    finally { this.reminderBusy = false }
+    finally { this.reminderBusy = false; this.reminderStatus = getTodoReminderStatus() }
   }
   private async handleLiveView(item: TodoItem): Promise<void> {
     const result = await startTodoLiveView(item)
@@ -294,6 +298,8 @@ struct TodoPage {
           Button(this.reminderBusy ? '登记中…' : '登记任务提醒').enabled(!this.reminderBusy)
             .fontSize(13).fontColor(this.palette.primary).backgroundColor(this.palette.primaryContainer)
             .margin({ left: 16, right: 16, top: 12 }).onClick(() => this.handleReminders())
+          Text(this.reminderStatus).fontSize(12).fontColor(this.palette.onSurfaceVariant)
+            .margin({ left: 16, right: 16, top: 8 })
           Button('取消任务提醒').enabled(!this.reminderBusy).fontSize(12)
             .fontColor(this.palette.onSurfaceVariant).backgroundColor(Color.Transparent)
             .onClick(() => this.handleDisableReminders())
