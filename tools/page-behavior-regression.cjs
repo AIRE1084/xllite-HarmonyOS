@@ -37,6 +37,7 @@ function fixture(name) {
       if (spec.endsWith('/SemesterService')) return {getTerm:()=> 'fixture-term'};
       if (spec.endsWith('/UiStateCache')) return { loadUiState() { return state.savedUi || null; }, saveUiState() {}, clearUiState() {} };
       if (spec.endsWith('/ListDataSource')) return rowsModule.exports;
+      if (spec.endsWith('/XlliteGateway')) return {async logoutGatewayAccount(){state.logouts=(state.logouts||0)+1;if(state.logoutFailure)throw Error('fixture cleanup failed')}};
       if (spec.endsWith('/RouterHelper')) return { safeBack() {} };
       if (spec.endsWith('/ToastHelper')) return { safeToast(_ctx, text) { state.toasts.push(text); } };
       if (spec === '@ohos.notificationManager') return {default:{isNotificationEnabled:async()=>state.notificationPending?await state.notificationPending:true,requestEnableNotification:async()=>{}}};
@@ -49,6 +50,10 @@ function fixture(name) {
   const page = new module.exports[name](); page.getUIContext = () => ({}); if(name==='TodoPage')page.alive=true;
   return { page, state };
 }
+test('profile logout cleanup failure is visible and leaves retry enabled',async()=>{
+ const {page,state}=fixture('ProfileTab');page.alive=true;state.logoutFailure=true;await page.handleLogout();assert.equal(page.loggingOut,false);assert.ok(state.toasts.at(-1).includes('清理未完成'));await page.handleLogout();assert.equal(state.logouts,2);
+ page.alive=false;await page.handleLogout();assert.equal(state.toasts.length,2);
+});
 test('electricity restores saved room and queries without rebinding',async()=>{
  const {page,state}=fixture('ElectricityPage');state.room='9#312';
  const task=page.aboutToAppear();for(let i=0;i<20&&state.requests.length===0;i++)await Promise.resolve();
