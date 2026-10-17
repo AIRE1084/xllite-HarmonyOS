@@ -45,7 +45,7 @@ function fixture(name) {
     },
   };
   vm.runInNewContext(ts.transpileModule(source, { fileName: name + '.ts', compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, context);
-  const page = new module.exports[name](); page.getUIContext = () => ({});
+  const page = new module.exports[name](); page.getUIContext = () => ({}); if(name==='TodoPage')page.alive=true;
   return { page, state };
 }
 test('electricity restores saved room and queries without rebinding',async()=>{
@@ -106,6 +106,10 @@ test('todo initial load ignores results after disappearance or account change',a
   if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   resolve([{id:'old',title:'Private'}]);await task;assert.equal(page.todos.length,0);assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);
  }
+});
+test('todo add completion does not clear form after page disappearance',async()=>{
+ const {page,state}=fixture('TodoPage');page.alive=true;page.titleInput='Study';let resolve;state.todoPending=new Promise(r=>resolve=r);
+ const task=page.handleAdd();page.aboutToDisappear();resolve();await task;assert.equal(page.titleInput,'Study');assert.equal(state.toasts.length,0);
 });
 test('schedule restoration ignores fractional nonfinite and out-of-term weeks',()=>{
  for(const week of [1.5,NaN,Infinity,-1,0,21,999]){
