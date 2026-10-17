@@ -169,14 +169,16 @@ export async function deleteTodo(id: string): Promise<TodoItem[]> {
 }
 
 export function disableTodoReminders(): Promise<void> {
+  const version = sessionVersion
   remindersEnabled = false
   const task = persistenceTask.then(async () => {
+    if (version !== sessionVersion) return
     remindersEnabled = false
     try {
       await clearTodoReminders()
-      reminderStatus = '任务提醒已取消'
+      if (version === sessionVersion) reminderStatus = '任务提醒已取消'
     } catch (error) {
-      reminderStatus = '自动同步已关闭，系统提醒取消未完成，请重试'
+      if (version === sessionVersion) reminderStatus = '自动同步已关闭，系统提醒取消未完成，请重试'
       throw error as Error
     }
   })
