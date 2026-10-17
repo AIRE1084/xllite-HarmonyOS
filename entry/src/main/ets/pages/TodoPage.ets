@@ -86,6 +86,8 @@ struct TodoPage {
       if (this.isCurrentOperation(version, epoch, username)) this.reloadBusy = false
     }
   }
+  private pageAccount: string = ''
+  private pageEpoch: number = -1
   private alive: boolean = false
   private loadVersion: number = 0
   aboutToDisappear(): void { this.alive = false; this.loadVersion++ }
@@ -99,6 +101,16 @@ struct TodoPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     this.palette = getColors(this.isDark)
+    if (this.pageEpoch !== -1 && (this.pageAccount !== username || this.pageEpoch !== epoch)) {
+      this.todos = []
+      this.titleInput = ''
+      this.noteInput = ''
+      this.clearDueTime()
+      this.reminderStatus = '正在核对提醒状态'
+      this.liveCleanupStatus = ''
+    }
+    this.pageAccount = username
+    this.pageEpoch = epoch
     if (!this.hasAccount()) return
     let items: TodoItem[] = []
     try { items = await loadTodos() }
