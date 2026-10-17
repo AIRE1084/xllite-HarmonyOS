@@ -127,7 +127,10 @@ export function startLiveView(target: LiveViewTarget): Promise<LiveViewResult> {
 export function startCourseLiveView(course: Course, startTime: number, endTime: number): Promise<LiveViewResult> {
   return startLiveView(buildCourseLiveTarget(course, startTime, endTime))
 }
-export function startTodoLiveView(todo: TodoItem): Promise<LiveViewResult> { return startLiveView(buildTodoLiveTarget(todo)) }
+export function startTodoLiveView(todo: TodoItem): Promise<LiveViewResult> {
+  if (todo.done) return Promise.resolve<LiveViewResult>({ ok: false, reason: '任务已完成，无需启动实况窗' })
+  return startLiveView(buildTodoLiveTarget(todo))
+}
 export async function updateLiveView(_handle: LiveViewHandle, course: Course, now: number): Promise<void> {
   const task = operation.then(async () => {
     if (currentView === null) return

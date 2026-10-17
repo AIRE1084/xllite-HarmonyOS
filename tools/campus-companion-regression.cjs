@@ -379,6 +379,11 @@ test('LiveView taps return to the running app bundle and course schedule',async(
  const f=fixture();f.state.bundleName='com.xjit.app.acceptance';f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const action=f.state.liveStarts[0].liveViewData.primary.clickAction.options.wants[0];assert.equal(action.bundleName,f.state.bundleName);assert.equal(action.abilityName,'EntryAbility');assert.equal(action.parameters.campusRoute,'schedule');
 });
+test('completed todo cannot start a native live view',async()=>{
+ const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');
+ const result=await live.startTodoLiveView({id:'done',title:'Finished',note:'',dueText:'',done:true,createdAt:1,updatedAt:1});
+ assert.equal(result.ok,false);assert.ok(result.reason.includes('已完成'));assert.equal(f.state.liveStarts.length,0);
+});
 test('LiveView permission denial is reported and never presented as success',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);f.state.liveError={code:1003500005};const live=f.get('services/LiveViewService');
  const result=await live.startCourseLiveView(course(),f.state.now+60000,f.state.now+3600000);
