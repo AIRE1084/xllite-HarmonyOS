@@ -2,7 +2,7 @@ import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { TodoDraft, TodoItem } from '../models/TodoTypes'
 import { buildTodoWidgetData } from '../utils/TodoWidgetData'
-import { syncTodoReminders } from './TodoReminderService'
+import { syncTodoReminders, clearTodoReminders } from './TodoReminderService'
 import { publishTodoWidgets } from './WidgetService'
 
 const PREFS_NAME: string = 'xjit_todos'
@@ -162,6 +162,15 @@ export async function deleteTodo(id: string): Promise<TodoItem[]> {
   return mutate((items: TodoItem[]): TodoItem[] => items.filter((item: TodoItem): boolean => item.id !== id), version)
 }
 
+export function disableTodoReminders(): Promise<void> {
+  remindersEnabled = false
+  const task = persistenceTask.then(async () => {
+    remindersEnabled = false
+    await clearTodoReminders()
+  })
+  persistenceTask = task.catch((_error: Error) => {})
+  return task
+}
 export function registerTodoReminders(): Promise<number> {
   const version = sessionVersion
   const task = persistenceTask.then(async (): Promise<number> => {

@@ -94,6 +94,11 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo reminder opt-out cancels system group and preserves tasks without later auto sync',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const rows=await f.todo.addTodo({title:'Study',note:'',dueText:''});
+ await f.todo.registerTodoReminders();await f.todo.disableTodoReminders();assert.equal(f.state.todoReminderClears,1);assert.equal((await f.todo.loadTodos()).length,1);
+ f.state.todoSync=undefined;await f.todo.toggleTodo(rows[0].id);assert.equal(f.state.todoSync,undefined);
+});
 test('todo explicit reminder request uses initialized bundle and persisted tasks',async()=>{
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});await f.todo.addTodo({title:'Study',note:'',dueText:''});
  assert.equal(await f.todo.registerTodoReminders(),1);assert.equal(f.state.todoSync.bundle,'com.xjit.app.acceptance');assert.equal(f.state.todoSync.items[0].title,'Study');
