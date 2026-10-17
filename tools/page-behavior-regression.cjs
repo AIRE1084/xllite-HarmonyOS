@@ -165,6 +165,11 @@ test('todo direct entry without account never loads private tasks or companion s
  page.titleInput='Private';await page.handleAdd();assert.equal(state.todoAdds||0,0);
  await page.handleReloadTodos();assert.ok(page.loadError.includes('登录'));
 });
+test('signed-out todo controls never invoke reminder or live view services',async()=>{
+ const {page,state}=fixture('TodoPage');state.username='';state.liveCleanupStatus='pending';
+ await page.handleReminders();await page.handleDisableReminders();await page.handleRetryLiveCleanup();await page.handleToggle({id:'old'});await page.handleDelete({id:'old'});await page.handleLiveView({id:'old'});
+ assert.equal(state.todoRegisters||0,0);assert.equal(state.todoDisabled,undefined);assert.equal(state.liveCleanupStatus,'pending');assert.equal(state.toasts.length,0);assert.ok(page.loadError.includes('登录'));
+});
 test('todo empty state distinguishes read error from filtered and empty lists',()=>{
  const {page}=fixture('TodoPage');assert.equal(page.emptyTitle(),'暂无待办');page.filter=1;assert.equal(page.emptyTitle(),'暂无未完成任务');page.filter=2;assert.equal(page.emptyTitle(),'暂无已完成任务');page.loadError='failed';assert.equal(page.emptyTitle(),'任务读取未完成');
 });

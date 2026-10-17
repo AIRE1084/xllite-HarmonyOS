@@ -28,6 +28,7 @@ struct TodoPage {
   @State liveCleanupStatus: string = ''
   @State liveCleanupBusy: boolean = false
   async handleRetryLiveCleanup(): Promise<void> {
+    if (!this.hasAccount()) return
     if (this.liveCleanupBusy) return
     this.liveCleanupBusy = true
     const version = this.loadVersion
@@ -211,6 +212,7 @@ struct TodoPage {
     await this.updateTask(item, true)
   }
   private async updateTask(item: TodoItem, deleting: boolean): Promise<void> {
+    if (!this.hasAccount()) return
     const version = this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
@@ -230,6 +232,7 @@ struct TodoPage {
 
   @State reminderBusy: boolean = false
   async handleDisableReminders(): Promise<void> {
+    if (!this.hasAccount()) return
     if (this.reminderBusy) return
     this.reminderBusy = true
     const version = this.loadVersion
@@ -245,6 +248,7 @@ struct TodoPage {
     }
   }
   async handleReminders(): Promise<void> {
+    if (!this.hasAccount()) return
     if (this.reminderBusy) return
     this.reminderBusy = true
     const version = this.loadVersion
@@ -266,6 +270,7 @@ struct TodoPage {
     }
   }
   private async handleLiveView(item: TodoItem): Promise<void> {
+    if (!this.hasAccount()) return
     const version = this.loadVersion
     const epoch = getCacheEpoch()
     const username = getUsername()
