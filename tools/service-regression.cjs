@@ -92,6 +92,14 @@ function fixture() {
     async runTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); await until(() => stores.get('xjit_http_cache')?.flushes > 0); },
   };
 }
+test('todo card projection sorts timed open tasks without mutating source',()=>{
+ const f=fixture(),project=f.load('entry/src/main/ets/utils/TodoWidgetData.ets').buildTodoWidgetData;
+ const item=(id,dueAt,done=false)=>({id,title:id,note:'private note',dueText:'',dueAt,done,createdAt:1,updatedAt:1});
+ const rows=[item('untimed'),item('late',300),item('done',50,true),item('early',100),item('middle',200)];
+ const data=project(rows,150);assert.equal(data.openCount,4);assert.equal(data.overdueCount,1);
+ assert.equal(data.firstTitle,'early');assert.equal(data.secondTitle,'middle');assert.equal(data.thirdTitle,'late');assert.equal(rows[0].id,'untimed');assert.equal(JSON.stringify(data).includes('private note'),false);
+ assert.equal(project([],150).firstTitle,'暂无待办');
+});
 test('todo write failures reach caller and persistence queue recovers',async()=>{
  const f=fixture();f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='put')throw new Error('fixture disk failure')};
  await assert.rejects(f.todo.addTodo({title:'First',note:'',dueText:''}),/fixture disk failure/);
