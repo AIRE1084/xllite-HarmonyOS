@@ -2,7 +2,7 @@ import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { TodoDraft, TodoItem } from '../models/TodoTypes'
 import { buildTodoWidgetData } from '../utils/TodoWidgetData'
-import { syncTodoReminders, clearTodoReminders } from './TodoReminderService'
+import { syncTodoReminders, clearTodoReminders, getTodoReminderCount } from './TodoReminderService'
 import { publishTodoWidgets } from './WidgetService'
 
 const PREFS_NAME: string = 'xjit_todos'
@@ -202,6 +202,21 @@ export function registerTodoReminders(): Promise<number> {
     }
   })
   persistenceTask = task.then(() => {}).catch((_error: Error) => {})
+  return task
+}
+export function restoreTodoReminderStatus(): Promise<void> {
+  const version = sessionVersion
+  const task = persistenceTask.then(async () => {
+    if (version !== sessionVersion) return
+    try {
+      const count = await getTodoReminderCount()
+      if (version === sessionVersion) reminderStatus = '系统现有 ' + count + ' 条任务提醒；' +
+        (remindersEnabled ? '本次会话自动同步已开启' : '自动同步未开启，可重新登记')
+    } catch (_error) {
+      if (version === sessionVersion) reminderStatus = '系统任务提醒状态未知，请重试查询或重新登记'
+    }
+  })
+  persistenceTask = task.catch((_error: Error) => {})
   return task
 }
 export function refreshTodoWidgets(): Promise<void> {
