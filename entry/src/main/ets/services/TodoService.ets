@@ -29,6 +29,7 @@ function parseItems(raw: string): TodoItem[] {
       typeof item.note !== 'string' || typeof item.dueText !== 'string' || typeof item.done !== 'boolean' ||
       !Number.isFinite(item.createdAt) || !Number.isFinite(item.updatedAt) ||
       item.createdAt < 0 || item.updatedAt < item.createdAt) continue
+    if (item.dueAt !== undefined && (!Number.isSafeInteger(item.dueAt) || item.dueAt <= 0 || item.dueAt > 8640000000000000)) item.dueAt = undefined
     if (ids.has(item.id)) continue
     ids.add(item.id)
     valid.push(item)
@@ -42,6 +43,7 @@ function cloneItems(items: TodoItem[]): TodoItem[] {
       title: item.title,
       note: item.note,
       dueText: item.dueText,
+      dueAt: item.dueAt,
       done: item.done,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -92,6 +94,9 @@ export async function loadTodos(): Promise<TodoItem[]> {
 }
 
 export async function addTodo(draft: TodoDraft): Promise<TodoItem[]> {
+  if (draft.dueAt !== undefined && (!Number.isSafeInteger(draft.dueAt) || draft.dueAt <= 0 || draft.dueAt > 8640000000000000)) {
+    throw new Error('请选择有效的任务时间')
+  }
   await loadTodos()
   const now = Date.now()
   const item: TodoItem = {
@@ -99,6 +104,7 @@ export async function addTodo(draft: TodoDraft): Promise<TodoItem[]> {
     title: draft.title.trim(),
     note: draft.note.trim(),
     dueText: draft.dueText.trim(),
+    dueAt: draft.dueAt,
     done: false,
     createdAt: now,
     updatedAt: now,
@@ -123,6 +129,7 @@ export async function toggleTodo(id: string): Promise<TodoItem[]> {
       title: item.title,
       note: item.note,
       dueText: item.dueText,
+      dueAt: item.dueAt,
       done: !item.done,
       createdAt: item.createdAt,
       updatedAt: now,
