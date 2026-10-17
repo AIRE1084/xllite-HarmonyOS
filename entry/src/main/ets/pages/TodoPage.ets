@@ -1,3 +1,5 @@
+import { getUsername } from '../services/AuthManager'
+import { getCacheEpoch } from '../services/MemoryCache'
 import notificationManager from '@ohos.notificationManager'
 import common from '@ohos.app.ability.common'
 import { DetailScaffold } from '../components/common/DetailScaffold'
@@ -26,13 +28,27 @@ struct TodoPage {
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
 
+  private alive: boolean = false
+  private loadVersion: number = 0
+  aboutToDisappear(): void { this.alive = false; this.loadVersion++ }
   async aboutToAppear(): Promise<void> {
+    this.alive = true
+    const version = ++this.loadVersion
+    const epoch = getCacheEpoch()
+    const username = getUsername()
     this.palette = getColors(this.isDark)
-    this.todos = await loadTodos()
+    const items = await loadTodos()
+    if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
+    this.todos = items
     await restoreTodoReminderStatus()
+    if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
     this.reminderStatus = getTodoReminderStatus()
     try { await refreshTodoWidgets() }
-    catch (_error) { safeToast(this.getUIContext(), '任务已读取，桌面卡片暂未刷新') }
+    catch (_error) {
+      if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
+        safeToast(this.getUIContext(), '任务已读取，桌面卡片暂未刷新')
+      }
+    }
   }
 
   onThemeChange(): void {
