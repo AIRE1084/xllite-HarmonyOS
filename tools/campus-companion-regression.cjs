@@ -393,7 +393,7 @@ test('quota status uses native reminder count without assuming zero on query fai
   const f=fixture(),core=await readyCourse(f);f.state.validQueryFails=fails;
   f.state.publishHook=async()=>{throw {code:1700002};};
   await core.setCampusOption('reminders',true);
-  assert.ok(f.values.get('courseReminderStatus').includes(fails?'系统登记数量读取失败':'系统登记数量 0 条'));
+  assert.ok(f.values.get('courseReminderStatus').includes(fails?'本应用登记数量读取失败':'本应用登记数量 0 条'));
  }
 });
 test('returning to app retries a quota-limited plan after capacity recovers',async()=>{
