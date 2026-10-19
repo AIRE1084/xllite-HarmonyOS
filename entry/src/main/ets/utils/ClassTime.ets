@@ -1,7 +1,7 @@
 /**
- * 节次 → 时段映射(已确认的2026秋季校历，Asia/Shanghai)
+ * 节次 → 时段映射(已确认 2026 秋季作息，Asia/Shanghai，2026-10-19 用户确认)
  *
- * 大节(中文) → 索引 0-9
+ * 大节(中文) → 索引 0-7
  * "1-2节"     → 时段 [startMinutes, endMinutes]
  */
 
@@ -18,10 +18,8 @@ const TIMES: ClassTime[] = [
   { startMinutes: 775, endMinutes: 820, label: '12:55 - 13:40' },
   { startMinutes: 960, endMinutes: 1005, label: '16:00 - 16:45' },
   { startMinutes: 1015, endMinutes: 1060, label: '16:55 - 17:40' },
-  { startMinutes: 1080, endMinutes: 1125, label: '18:00 - 18:45' },
-  { startMinutes: 1135, endMinutes: 1180, label: '18:55 - 19:40' },
-  { startMinutes: 1230, endMinutes: 1275, label: '20:30 - 21:15' },
-  { startMinutes: 1285, endMinutes: 1330, label: '21:25 - 22:10' },
+  { startMinutes: 1110, endMinutes: 1155, label: '18:30 - 19:15' },
+  { startMinutes: 1165, endMinutes: 1210, label: '19:25 - 20:10' },
 ]
 
 /**
@@ -31,7 +29,7 @@ const TIMES: ClassTime[] = [
 export function slotIndex(slot: string): number {
   const cnMap: Record<string, number> = {
     '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
-    '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
+    '六': 6, '七': 7, '八': 8,
   }
   for (const cn of Object.keys(cnMap)) {
     if (slot.indexOf(cn) >= 0) {
