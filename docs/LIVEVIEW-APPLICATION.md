@@ -32,6 +32,16 @@
 4. 艾哥审阅申请内容和开发者身份信息后，在对应后台提交。当前没有调用任何提交工具，也没有取得受理编号。
 5. 获批后核对错误1003500005是否消失，并验收胶囊创建/更新/关闭、课程结束、退出登录、进程终止等行为。
 
+## 已知失败分支（排查后补充记录，2026-10-19）
+
+排查“无法调用灵动岛”反馈，本地实现与调用链路无代码级 bug，当前阻塞点集中在场景权限与设备开关两个系统条件：
+
+- **场景权限未获批（错误码 1003500005）**：`LiveViewService.ets` 使用 `event: 'TIMER'` 计时场景，`@hms.core.liveview.liveViewManager.d.ts` 官方声明中 `startLiveView` 明确列 `1003500005 - The right of liveView is not enabled`，即应用必须先在华为开发者后台获批对应场景权益，否则即便系统开关已开，调用仍会被拒绝。这是当前最可能的失败根因。
+- **系统开关未开（错误码 1003500004 / `isLiveViewEnabled()` 返回 false）**：`LiveViewService.isLiveViewSupported()` 会先调用 `liveViewManager.isLiveViewEnabled()` 检查本应用实况窗开关，未开启时直接短路返回 `系统实况窗未开启`，不再走 `startLiveView`。
+- **设备不支持或无法连接实况窗服务（错误码 801 / 1003500003）**：老机型或 LiveView Kit 服务不可用时命中此分支，提示设备能力问题而非权限问题。
+- **API23 兼容性结论**：`build-profile.json5` 设 `compatibleSdkVersion = 6.1.0(23)`、`compileSdkVersion = 26.0.0`。本机 SDK 官方声明显示 `liveViewManager` 各 API（`isLiveViewEnabled` / `startLiveView` / `updateLiveView` / `stopLiveView` / `LiveView` 基础字段）自 API11 起即存在，项目 `@kit.LiveViewKit` 导入路径在本机 SDK（`sdk/default/hms/ets/build-tools/ets-loader/kit_configs/@kit.LiveViewKit.json`）有明确映射，构建可解析，无证据表明 API23 最低版本会因 LiveView 导入本身失败；但以下字段有版本门槛，API23 运行时可能不支持或降级：`LiveView.lifeCycleMode`（since 26.0.0，API23 运行时该字段不生效，默认 `STOP_BY_APP`，不影响创建但生命周期与 `AUTO_STOP_WHEN_APP_TERMINATE` 语义有差异）、`PrimaryData.aliveTime`（since 6.1.1(24)，API23 运行时该字段被忽略）、`subEvent`/`shareUrl`（since 26.0.0，当前代码未使用）。因此若目标设备真机为 API23，需在真实运行阶段确认系统是否自动忽略高版本字段而非报错；当前无证据表明 API23 会导致 `startLiveView` 直接失败，该风险记录在案，不作为本轮代码修改范围。
+- **生命周期清理失败分支**：`LiveViewService.stopCurrent()` 在 `stopLiveView` 返回非 0 时抛出 `系统结束实况窗失败（<code>）`；`CampusCompanionService.clearCampusCompanion()` 捕获后写 `liveViewStatus = '系统实况窗结束失败，请检查系统设置'` 并保留错误，不静默吞掉。若用户在关闭或退出流程中反复看到该提示，指向 `stopLiveView` 返回 `1003500008`（同秒创建数超限）或 `1003500011`（sequence 冲突）等系统侧限制，需结合具体错误码进一步定位。
+
 ## 本轮可审核代码
 
 - [LiveViewService](../entry/src/main/ets/services/LiveViewService.ets)：start/update/stop，TIMER payload，权限/部分失败处理。

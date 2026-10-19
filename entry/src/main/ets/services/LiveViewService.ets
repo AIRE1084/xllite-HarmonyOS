@@ -25,9 +25,9 @@ export function setLiveViewBundleName(bundleName: string): void {
 }
 
 function reasonFor(error: BusinessError): string {
-  if (error.code === 1003500005) return '应用尚未获批华为实况窗 TIMER 场景权限'
-  if (error.code === 1003500004) return '请在系统设置中允许新理工显示实况窗'
-  if (error.code === 801 || error.code === 1003500003) return '当前设备不支持或无法连接实况窗服务'
+  if (error.code === 1003500005) return '应用尚未获批华为实况窗 TIMER 场景权限（1003500005）'
+  if (error.code === 1003500004) return '请在系统设置中允许新理工显示实况窗（1003500004）'
+  if (error.code === 801 || error.code === 1003500003) return '当前设备不支持或无法连接实况窗服务（801 / 1003500003）'
   return '实况窗暂不可用（' + error.code + '）'
 }
 function setReason(reason: string): void {
@@ -61,7 +61,7 @@ async function stopCurrent(): Promise<void> {
   view.liveViewData.primary.keepTime = 0
   try {
     const result = await liveViewManager.stopLiveView(view)
-    if (result.resultCode !== 0) throw new Error('系统结束实况窗失败：' + result.resultCode)
+    if (result.resultCode !== 0) throw new Error('系统结束实况窗失败（' + result.resultCode + '）')
   } catch (error) {
     const code = (error as BusinessError).code
     if (code !== 1003500009 && code !== 1003500010) {
