@@ -248,7 +248,8 @@ export struct HomeTab {
   }
 
   private quickFeatures(): FeatureDef[] {
-    return [FEATURES[5], FEATURES[6], FEATURES[7], FEATURES[4], FEATURES[3], FEATURES[2], FEATURES[9], FEATURES[10]]
+    // 宿舍绑定（电费查询）置顶首屏，登录态首页无需展开即可见；其余常用服务保持原相对顺序。
+    return [FEATURES[4], FEATURES[5], FEATURES[6], FEATURES[7], FEATURES[3], FEATURES[2], FEATURES[9], FEATURES[10]]
   }
 
   private featureIcon(item: FeatureDef): ResourceStr {
