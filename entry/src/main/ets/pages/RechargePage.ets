@@ -96,6 +96,10 @@ struct RechargePage {
         } else {
           safeToast(this.getUIContext(), '支付页面打开失败，请稍后重试')
         }
+      } else if (order.payResult.officialTransferUrl && order.payResult.officialTransferUrl.length > 0) {
+        this.payContent = order.payResult.officialTransferUrl
+        this.payContentType = 'url'
+        this.step = 3
       } else if (order.payResult.h5Url && order.payResult.h5Url.length > 0) {
         this.payContent = order.payResult.h5Url
         this.payContentType = 'url'
