@@ -111,10 +111,23 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
   await stopCurrent()
   if (captured !== revision) return { ok: false, reason: '实况窗已关闭' }
   try {
-    const action = await wantAgent.getWantAgent({ wants: [{ bundleName: applicationBundleName, abilityName: 'EntryAbility',
-      parameters: { campusRoute: target.type === 'course' ? 'schedule' : 'todo' } }],
-      operationType: wantAgent.OperationType.START_ABILITY, requestCode: 8201,
-      wantAgentFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG] })
+    let action: object | null = null
+    try {
+      action = await wantAgent.getWantAgent({ wants: [{ bundleName: applicationBundleName, abilityName: 'EntryAbility',
+        parameters: { campusRoute: target.type === 'course' ? 'schedule' : 'todo' } }],
+        operationType: wantAgent.OperationType.START_ABILITY, requestCode: 8201,
+        wantAgentFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG] })
+    } catch (error) {
+      const code = (error as BusinessError).code
+      if (code === 401 || code === 403 || code === 201 || code === 1003500004 || code === 1003500005) {
+        setReason('实况窗返回点击未开放（' + code + '）')
+        return { ok: false, reason: supportReason }
+      }
+      setReason(reasonFor(error as BusinessError))
+      return { ok: false, reason: supportReason }
+    }
+    if (action === null) return { ok: false, reason: '实况窗返回入口获取失败' }
+    const clickAction: object = action
     const deadline = target.startTime > Date.now() ? target.startTime : target.endTime
     const duration = Math.max(0, deadline - Date.now())
     const view: liveViewManager.LiveView = {
@@ -123,7 +136,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       timer: { time: duration, isCountdown: true },
       liveViewData: {
         primary: { title: target.title.slice(0, 40), content: [{ text: target.extra.slice(0, 60) }],
-          clickAction: action, aliveTime: Math.max(15, Math.min(28800, Math.ceil((target.endTime - Date.now()) / 1000))) },
+          clickAction: clickAction, aliveTime: Math.max(15, Math.min(28800, Math.ceil((target.endTime - Date.now()) / 1000))) },
         capsule: { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER, status: 1,
           content: target.type === 'todo' ? '待办计时' : (target.startTime > Date.now() ? '距上课' : '上课中'), time: duration, isCountdown: true,
           backgroundColor: '#FF315FC4' },
