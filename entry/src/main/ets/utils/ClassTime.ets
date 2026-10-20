@@ -1,8 +1,9 @@
 /**
- * 节次 → 时段映射(已确认 2026 秋季作息，Asia/Shanghai，2026-10-20 用户更正下午时段)
+ * 节次 → 时段映射(已确认 2026 秋季作息，Asia/Shanghai，2026-10-21 用户确认含晚自习)
  *
- * 上午 10:00-13:40、下午 16:00-19:40，两段同构：45 分钟一节，小节间小课间 10 分钟，
- * 第 2 小节后大课间 20 分钟。节次索引 0-7；"1-2节" → 时段 [startMinutes, endMinutes]。
+ * 上午 10:00-13:40、下午 16:00-19:40、晚自习 20:30-22:10，三段同构：
+ * 45 分钟一节，小节间小课间 10 分钟，大节间休息 20 分钟(午间、傍晚另计)。
+ * 节次索引 0-9，前八小节为四个大节，第九、十小节为第五大节晚自习。
  */
 
 export interface ClassTime {
@@ -20,6 +21,8 @@ const TIMES: ClassTime[] = [
   { startMinutes: 1015, endMinutes: 1060, label: '16:55 - 17:40' },
   { startMinutes: 1080, endMinutes: 1125, label: '18:00 - 18:45' },
   { startMinutes: 1135, endMinutes: 1180, label: '18:55 - 19:40' },
+  { startMinutes: 1230, endMinutes: 1275, label: '20:30 - 21:15' },
+  { startMinutes: 1285, endMinutes: 1330, label: '21:25 - 22:10' },
 ]
 
 /**
@@ -29,7 +32,7 @@ const TIMES: ClassTime[] = [
 export function slotIndex(slot: string): number {
   const cnMap: Record<string, number> = {
     '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
-    '六': 6, '七': 7, '八': 8,
+    '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
   }
   for (const cn of Object.keys(cnMap)) {
     if (slot.indexOf(cn) >= 0) {
