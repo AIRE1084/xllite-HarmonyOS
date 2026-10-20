@@ -9,14 +9,17 @@ export struct DetailHeader {
   @Prop subtitle: string = ''
   @Prop action: string = ''
   @Prop busy: boolean = false
+  @Prop showBack: boolean = true
   onBack: () => void = () => {}
   onAction: () => void = () => {}
   build() {
     Column({ space: 16 }) {
       Row() {
-        Button('‹ 返回').height(44).padding({ left: 14, right: 14 }).fontSize(Typography.label.fontSize)
-          .fontColor(getColors(this.isDark).onSurface).backgroundColor(getColors(this.isDark).surface)
-          .borderRadius(16).accessibilityText('返回上一页').onClick(() => this.onBack())
+        if (this.showBack) {
+          Button('‹ 返回').height(44).padding({ left: 14, right: 14 }).fontSize(Typography.label.fontSize)
+            .fontColor(getColors(this.isDark).onSurface).backgroundColor(getColors(this.isDark).surface)
+            .borderRadius(16).accessibilityText('返回上一页').onClick(() => this.onBack())
+        }
         Blank()
         if (this.action.length > 0) {
           Button(this.busy ? '更新中' : this.action).height(44).padding({ left: 16, right: 16 })

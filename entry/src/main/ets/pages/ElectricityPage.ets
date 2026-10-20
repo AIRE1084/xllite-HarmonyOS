@@ -1,4 +1,6 @@
-import { DetailScaffold } from '../components/common/DetailScaffold'
+import { DetailHeader } from '../components/common/DetailHeader'
+import { AmbientBackground } from '../components/AmbientBackground'
+import { ThemeWash } from '../components/common/ThemeWash'
 import { getCacheEpoch } from '../services/MemoryCache'
 import { getColors } from '../theme/Colors'
 import { safeBack } from '../utils/RouterHelper'
@@ -174,8 +176,10 @@ struct ElectricityPage {
 
   build() {
     Stack() {
-      DetailScaffold({ title: this.step === 4 ? '充值完成' : '电费服务', subtitle: '查询宿舍电量与充值', action: '',
-        onBack: () => this.back() }) {
+      AmbientBackground()
+      Column() {
+        DetailHeader({ title: this.step === 4 ? '充值完成' : '电费服务', subtitle: '查询宿舍电量与充值', action: '',
+          showBack: false, onBack: () => {}, onAction: () => {} })
         Scroll() {
           Column() {
       if (this.step === 1) {
@@ -319,7 +323,8 @@ struct ElectricityPage {
 
           }.width('100%').padding({ bottom: 28 })
         }.width('100%').layoutWeight(1).scrollBar(BarState.Off)
-      }
+      }.width('100%').height('100%').padding({ bottom: this.safeAreaBottom })
+      ThemeWash()
     }.width('100%').height('100%')
   }
 

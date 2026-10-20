@@ -15,13 +15,14 @@ import { Typography } from '../theme/Typography'
 import { getUsername, getPassword, isGatewayAuth } from '../services/AuthManager'
 import { callFeature, CallResult } from '../services/ApiService'
 import { loadTodos } from '../services/TodoService'
-import { getCourseMinutes, formatMinutes, nextClassIndex } from '../utils/ClassTime'
+import { getCourseMinutes, formatMinutes, nextClassIndex, sectionsResolved, courseTimeText } from '../utils/ClassTime'
 import { isCourseInWeek } from '../utils/WeekParser'
 
 interface TodayCourseItem {
   course: Course
   startMinutes: number
   endMinutes: number
+  resolved: boolean
 }
 
 interface NextCourseItem {
@@ -73,7 +74,6 @@ export struct HomeTab {
   @StorageLink('appActive') @Watch('onActivityChange') appActive: boolean = true
   @StorageLink('mainPageActive') @Watch('onActivityChange') mainPageActive: boolean = true
   @StorageLink('safeAreaBottom') safeAreaBottom: number = 0
-  @State serviceExpanded: boolean = false
   @State todayCount: number = 0
   @State weekCount: number = 0
   @State openTodoItems: TodoItem[] = []
@@ -201,9 +201,10 @@ export struct HomeTab {
       .filter((c: Course): boolean => c.day === today)
       .map((c: Course): TodayCourseItem => {
         const se: number[] = getCourseMinutes(c.sections)
-        return { course: c, startMinutes: se[0], endMinutes: se[1] }
+        return { course: c, startMinutes: se[0], endMinutes: se[1], resolved: sectionsResolved(c.sections) }
       })
-      .sort((a: TodayCourseItem, b: TodayCourseItem): number => a.startMinutes - b.startMinutes)
+      .sort((a: TodayCourseItem, b: TodayCourseItem): number =>
+        a.resolved === b.resolved ? a.startMinutes - b.startMinutes : (a.resolved ? -1 : 1))
   }
 
   private nextCourse(): NextCourseItem {
@@ -216,25 +217,35 @@ export struct HomeTab {
     }
     if (!this.weekKnown) return { title: '请确认当前教学周', meta: '进入课表，按学校校历校准本周', time: '待确认' }
     const today = this.todayItems()
-    const idx = nextClassIndex(today)
+    const resolvedToday = today.filter((item: TodayCourseItem): boolean => item.resolved)
+    const pending = today.filter((item: TodayCourseItem): boolean => !item.resolved)
+    const idx = nextClassIndex(resolvedToday)
     if (idx < 0) {
+      // 节次无法解析时不能声称“已结束”：给出明确待确认提示，而不是静默当无课。
+      if (pending.length > 0) {
+        return {
+          title: '节次待确认的课程',
+          meta: pending.map((item: TodayCourseItem): string => item.course.title).join('、') + ' · 进入课表查看',
+          time: '待确认',
+        }
+      }
       return {
         title: today.length === 0 ? '今天没有课' : '今日课程已结束',
         meta: today.length === 0 ? '可以安排作业、运动或自己的计划' : '查看明天的安排，提前准备好',
         time: today.length === 0 ? '无课' : '已结束',
       }
     }
-    const item = today[idx]
+    const item = resolvedToday[idx]
     return {
       title: item.course.title,
       meta: item.course.location + ' · ' + item.course.teacher,
-      time: formatMinutes(item.startMinutes),
+      time: courseTimeText(item.course.sections),
     }
   }
 
   private courseLabel(): string {
     if (!this.scheduleReady || !this.weekKnown) return '今日安排'
-    const today = this.todayItems()
+    const today = this.todayItems().filter((item: TodayCourseItem): boolean => item.resolved)
     const index = nextClassIndex(today)
     if (index < 0) return '今日安排'
     const now = new Date()
@@ -248,8 +259,8 @@ export struct HomeTab {
   }
 
   private quickFeatures(): FeatureDef[] {
-    // 宿舍绑定（电费查询）置顶首屏，登录态首页无需展开即可见；其余常用服务保持原相对顺序。
-    return [FEATURES[4], FEATURES[5], FEATURES[6], FEATURES[7], FEATURES[3], FEATURES[2], FEATURES[9], FEATURES[10]]
+    // 8 项常用服务全部平铺可见，不再折叠：电费查询与一卡通充值排前两位。
+    return [FEATURES[4], FEATURES[3], FEATURES[5], FEATURES[6], FEATURES[7], FEATURES[2], FEATURES[9], FEATURES[10]]
   }
 
   private featureIcon(item: FeatureDef): ResourceStr {
@@ -386,10 +397,6 @@ export struct HomeTab {
           Column() {
             Row() {
               Text('常用服务').fontSize(17).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface).layoutWeight(1)
-              Button(this.serviceExpanded ? '收起服务' : '全部服务 ›').height(44).fontSize(12)
-                .fontColor(this.palette.primary).backgroundColor(Color.Transparent).padding({ left: 8, right: 0 })
-                .accessibilityText(this.serviceExpanded ? '收起全部服务' : '展开全部校园服务')
-                .onClick(() => { this.serviceExpanded = !this.serviceExpanded })
             }.width('100%').margin({ bottom: 4 })
             CampusCard({ contentPadding: 10 }) {
               Column({ space: 10 }) {
@@ -397,13 +404,11 @@ export struct HomeTab {
                   ForEach(this.quickFeatures().slice(0, 4), (item: FeatureDef) => { this.QuickAction(item) },
                     (item: FeatureDef): string => item.name)
                 }.width('100%')
-                if (this.serviceExpanded) {
-                  Divider().color(this.palette.outline)
-                  Row() {
-                    ForEach(this.quickFeatures().slice(4, 8), (item: FeatureDef) => { this.QuickAction(item) },
-                      (item: FeatureDef): string => item.name)
-                  }.width('100%')
-                }
+                Divider().color(this.palette.outline)
+                Row() {
+                  ForEach(this.quickFeatures().slice(4, 8), (item: FeatureDef) => { this.QuickAction(item) },
+                    (item: FeatureDef): string => item.name)
+                }.width('100%')
               }.width('100%')
             }
           }.width('100%')
