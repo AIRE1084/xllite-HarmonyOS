@@ -78,9 +78,9 @@ struct LoginPage {
         }
       } else if (!this.showForgot) {
         Scroll() {
-          Column({ space: 32 }) {
+          Column({ space: 22 }) {
             Column({ space: 12 }) {
-              Image($r('app.media.icon')).width(72).height(72).borderRadius(20)
+              Image($r('app.media.icon')).width(60).height(60).borderRadius(18)
                 .accessibilityText('新理之山，山脊与书页')
               Text('掌上新理工').fontSize(30).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface)
             }.width('100%').alignItems(HorizontalAlign.Center)
@@ -119,9 +119,9 @@ struct LoginPage {
               Text('登录数据将通过 HTTPS 提交至 https://xllite.sayqz.com 网关，由网关连接学校服务。服务器可能为续登保留凭据；保存期限与删除方式尚待服务运营方确认。密码不保存在本机，不代表服务器不处理或保留密码。')
                 .fontSize(12).fontColor(this.palette.onSurfaceVariant).lineHeight(20).width('100%')
             }
-          }.width('100%').padding({ left: 24, right: 24, top: this.safeAreaTop + 64, bottom: this.safeAreaBottom + 32 })
+          }.width('100%').padding({ left: 24, right: 24, top: this.safeAreaTop + 28, bottom: this.safeAreaBottom + 24 })
             .constraintSize({ maxWidth: 520 })
-        }.width('100%').height('100%').scrollBar(BarState.Off)
+        }.width('100%').height('100%').align(Alignment.Center).scrollBar(BarState.Off)
       } else {
         Column({ space: 20 }) {
           Text('找回密码').fontSize(20).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface)
@@ -130,7 +130,7 @@ struct LoginPage {
           Button('返回登录').width('100%').height(44).backgroundColor(Color.Transparent)
             .fontColor(this.palette.onSurfaceVariant).fontSize(14)
             .onClick((): void => { this.showForgot = false; this.forgotLoading = false })
-        }.width('100%').padding({ left: 24, right: 24, top: this.safeAreaTop + 96, bottom: this.safeAreaBottom + 48 })
+        }.width('100%').padding({ left: 24, right: 24, top: this.safeAreaTop + 48, bottom: this.safeAreaBottom + 32 })
           .constraintSize({ maxWidth: 460 }).alignItems(HorizontalAlign.Center)
       }
       ThemeWash()
