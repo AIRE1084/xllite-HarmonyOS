@@ -311,7 +311,7 @@ struct ElectricityPage {
           Text(this.resultMsg)
             .fontSize(18).fontWeight(FontWeight.Bold).fontColor(getColors(this.isDark).success)
             .margin({ top: 60 })
-          Button('返回首页')
+          Button('回到首页')
             .width('90%').height(48).backgroundColor(getColors(this.isDark).primary).borderRadius(16)
             .fontColor(getColors(this.isDark).onPrimary)
             .margin({ top: 32 })

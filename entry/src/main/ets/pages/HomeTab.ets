@@ -383,7 +383,7 @@ export struct HomeTab {
   build() {
     Column() {
       CampusHeader({
-        title: '掌上新理工', subtitle: this.dateLabel(), action: '刷新', loading: this.loadingBrief,
+        title: '', subtitle: this.dateLabel(), action: '刷新', loading: this.loadingBrief,
         onAction: () => { this.loadBrief(true) },
       })
       Scroll() {

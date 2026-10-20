@@ -17,18 +17,25 @@ export struct CampusHeader {
           Text(this.subtitle).fontSize(Typography.bodySm.fontSize).fontColor(getColors(this.isDark).onSurfaceVariant)
             .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
         }
-        Text(this.title).fontSize(25).fontWeight(FontWeight.Bold)
-          .fontColor(getColors(this.isDark).onSurface)
+        if (this.title.length > 0) {
+          Text(this.title).fontSize(25).fontWeight(FontWeight.Bold)
+            .fontColor(getColors(this.isDark).onSurface)
+        }
       }.alignItems(HorizontalAlign.Start).layoutWeight(1)
       if (this.action.length > 0) {
-        Button({ type: ButtonType.Normal }) {
-          Row({ space: 6 }) {
-            if (this.loading) { LoadingProgress().width(16).height(16).color(getColors(this.isDark).primary) }
-            Text(this.loading ? '更新中' : this.action).fontSize(Typography.label.fontSize).fontWeight(FontWeight.Medium)
-              .fontColor(getColors(this.isDark).primary)
+        Button({ type: ButtonType.Circle }) {
+          if (this.loading) {
+            LoadingProgress().width(20).height(20).color(getColors(this.isDark).primary)
+          } else {
+            // 缺口圆环，形状即“转圈”语义，点击后换成真实旋转进度
+            Progress({ value: 78, total: 100, type: ProgressType.Ring })
+              .width(20).height(20).color(getColors(this.isDark).primary)
+              .style({ strokeWidth: 2.4 })
           }
-        }.height(44).padding({ left: 14, right: 14 }).backgroundColor(getColors(this.isDark).primaryContainer)
-          .borderRadius(16).enabled(!this.loading).onClick(() => this.onAction())
+        }
+        .width(40).height(40).backgroundColor(getColors(this.isDark).primaryContainer)
+        .enabled(!this.loading).accessibilityText(this.loading ? '正在刷新' : '刷新')
+        .onClick(() => this.onAction())
       }
     }.width('100%').padding({ left: 20, right: 20, top: this.safeAreaTop + 12, bottom: 16 })
   }
