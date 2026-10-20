@@ -1,6 +1,13 @@
 import { getColors, ColorPalette } from '../../theme/Colors'
 
-/** 正文卡片以可读性为主，系统原生材质由导航容器负责。 */
+/**
+ * Body card built as a liquid-glass surface.
+ *
+ * The blur is real backdrop sampling, not a flat fill: `saturation` above 1 is
+ * what makes Apple's Liquid Glass read as glass instead of fog, so it lifts the
+ * ambient blooms behind the card. The tint layer stays high-alpha on purpose so
+ * dense content (grade tables, transaction lists) keeps its contrast.
+ */
 @Component
 export struct CampusCard {
   @Prop contentPadding: number = 18
@@ -16,8 +23,14 @@ export struct CampusCard {
     Column() { this.content() }
       .width('100%')
       .padding(this.contentPadding)
-      .backgroundColor(this.palette.surface)
       .borderRadius(this.radius)
+      .backgroundEffect({
+        radius: 42,
+        saturation: this.isDark ? 1.55 : 1.85,
+        brightness: this.isDark ? 0.95 : 1.06,
+        color: this.isDark ? '#B8121B2C' : '#C7FFFFFF',
+        adaptiveColor: AdaptiveColor.AVERAGE,
+      })
       .border({ width: 0.5, color: this.palette.outline })
   }
 }
