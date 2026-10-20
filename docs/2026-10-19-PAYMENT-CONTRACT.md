@@ -36,3 +36,17 @@
 
 - 若真实运行发现 `payResult` 的 `h5Url`/`htmlPost` 缺省或格式变化（例如服务端改走 `officialTransferUrl` 或 `daLianPayInfo` 新字段），需先取回服务端契约证据再调整页面加载逻辑，不预先补未证实分支。
 - 若要在 App 内闭环微信 JSAPI 支付（不跳 WebView），需服务端先提供 JSAPI 签名（`wechatJsapi` 完整字段）及 App 侧可用的调起通道；当前网关响应示例里 `wechatJsapi` 为 null，尚无该能力契约，暂不实现。
+
+## 2026-10-20 模拟器实测：链路通，受充值营业时间限制
+
+在 `com.xjit.app.acceptance` 上走通了「充值页 → 选金额/支付方式 → 点支付」的完整端侧路径，实测证据：
+
+- `newcard.recharge.config` 正常返回，页面上渲染出 `01 支付宝`、`02 微信` 两个选项，`payMethods` 动态渲染链路成立。
+- 点「支付 ¥50」后按钮进入「正在支付…」，`POST` 到网关 `/api/v1/run` 实际发出，`LogHttpInfo` 记录 `response_code: 400`、`total_time` 约 1–2.4 秒。
+- 服务端 400 的业务文案为 **「充值开放时间为每日 01:30-23:30 请稍后再试」**。实测时刻为 23:38，在关闭窗口内，因此**下单被拒是营业时间所致，不是契约不符或端侧缺陷**。
+- 结论：端侧支付的发送链路已通，`payResult` 与 Web 收银台需要**在 01:30–23:30 窗口内**才能验证。尚未取得任何 `payResult` 实测样本，故不声称微信/支付宝已能被调起。
+
+同一轮补的两处端侧缺陷（与营业时间无关、独立成立）：
+
+- `RechargePage.ets` 的 `Web` 组件缺少 `onLoadIntercept`。收银台 H5 里点微信/支付宝产生 `weixin://`、`alipays://` 等 scheme 时，Web 内核只会当成打不开的链接，不会交给系统，表现为点了没反应。现已按 `isExternalScheme` 判定、`startAbility({ uri })` 交给系统，跳不起来时提示缺哪个应用。
+- 支付失败原因原先只有一闪而过的 Toast。现落盘到 `payError` 并在支付按钮上方常显，用户能读到服务端原话（本次正是靠它才看清「01:30-23:30」这条规则）。

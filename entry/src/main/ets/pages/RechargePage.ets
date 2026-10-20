@@ -8,10 +8,34 @@ import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
 import webview from '@ohos.web.webview'
 import util from '@ohos.util'
+import common from '@ohos.app.ability.common'
+import { BusinessError } from '@kit.BasicServicesKit'
 import { callFeature, CallResult } from '../services/ApiService'
 import { getUsername, getPassword } from '../services/AuthManager'
 import { AmountOption, PayMethod, RechargeOrderResult } from '../models/CardTypes'
 import { Motion, motionDuration } from '../theme/Motion'
+
+/**
+ * 收银台 H5 里点微信/支付宝，浏览器内核只会当成"打不开的链接"，
+ * 必须由我们自己交给系统。这里判定是否为需要外部应用承接的 scheme。
+ * http/https/data/about/javascript/blob/file 一律留在 Web 内处理。
+ */
+function isExternalScheme(url: string): boolean {
+  const lower: string = url.toLowerCase()
+  if (lower.length === 0) return false
+  if (lower.startsWith('http://') || lower.startsWith('https://')) return false
+  if (lower.startsWith('data:') || lower.startsWith('about:') || lower.startsWith('javascript:')) return false
+  if (lower.startsWith('blob:') || lower.startsWith('file:')) return false
+  return lower.indexOf('://') > 0
+}
+
+function schemeAppName(url: string): string {
+  const lower: string = url.toLowerCase()
+  if (lower.indexOf('alipay') >= 0) return '支付宝'
+  if (lower.indexOf('weixin') >= 0 || lower.indexOf('wechat') >= 0) return '微信'
+  if (lower.indexOf('unionpay') >= 0 || lower.indexOf('uppay') >= 0) return '云闪付'
+  return '支付应用'
+}
 
 @Entry
 @Component
@@ -30,6 +54,7 @@ struct RechargePage {
   @State errorMsg: string = ''
   @State payContent: string = ''
   @State payContentType: 'url' | 'html' = 'url'
+  @State payError: string = ''
   private alive: boolean = false
   private configVersion: number = 0
   private webController: webview.WebviewController = new webview.WebviewController()
@@ -75,6 +100,7 @@ struct RechargePage {
   async handlePay(): Promise<void> {
     if (this.paying || !this.alive || this.loading || this.selectedAmount.length === 0 || this.selectedPayCode.length === 0) return
     this.paying = true
+    this.payError = ''
     const params: Record<string, Object> = {
       'amount': this.selectedAmount,
       'payCode': this.selectedPayCode,
@@ -105,19 +131,40 @@ struct RechargePage {
         this.payContentType = 'url'
         this.step = 3
       } else {
+        this.payError = '订单已创建，但服务端没有返回支付入口，请到一卡通账户查询结果'
         safeToast(this.getUIContext(), '订单已创建，请到一卡通账户查询充值结果')
       }
     } else {
+      this.payError = res.error
       safeToast(this.getUIContext(), res.error)
     }
     } catch (_error) {
-      if (this.alive && epoch === getCacheEpoch() && username === getUsername()) safeToast(this.getUIContext(), '支付请求未完成，请先查询充值结果再尝试')
+      if (this.alive && epoch === getCacheEpoch() && username === getUsername()) {
+        this.payError = '支付请求未完成，请先查询充值结果再尝试'
+        safeToast(this.getUIContext(), '支付请求未完成，请先查询充值结果再尝试')
+      }
     } finally { this.paying = false }
   }
 
   cancelPay(): void {
     this.payContent = ''
     this.step = 1
+  }
+
+  /** 把 weixin:// alipays:// 交给系统；跳不起来说明设备上没装对应应用，给出准确名字 */
+  private openExternalScheme(url: string): void {
+    const host = this.getUIContext().getHostContext()
+    const ctx: common.UIAbilityContext | undefined = host as common.UIAbilityContext
+    if (!ctx) {
+      safeToast(this.getUIContext(), '支付跳转未就绪，请重试')
+      return
+    }
+    const appName: string = schemeAppName(url)
+    ctx.startAbility({ uri: url }, (err: BusinessError): void => {
+      if (!err || err.code === undefined || err.code === 0) return
+      if (!this.alive) return
+      safeToast(this.getUIContext(), '未安装' + appName + '，无法跳转完成支付')
+    })
   }
 
   build() {
@@ -128,6 +175,12 @@ struct RechargePage {
         onAction: () => { if (this.step === 3) this.cancelPay(); else this.loadConfig(true) } }) {
         if (this.step === 3) {
           Web({ src: this.payContent, controller: this.webController }).width('100%').layoutWeight(1)
+            .onLoadIntercept((event: OnLoadInterceptEvent): boolean => {
+              const target: string = event.data.getRequestUrl()
+              if (!isExternalScheme(target)) return false
+              this.openExternalScheme(target)
+              return true
+            })
         } else if (this.loading && this.amountOptions.length === 0) {
           PageState({ kind: 'loading', title: '正在获取充值信息', message: '正在同步金额与支付方式' })
         } else if (this.errorMsg.length > 0 && this.amountOptions.length === 0) {
@@ -166,6 +219,10 @@ struct RechargePage {
                     }.width('100%').constraintSize({ minHeight: 48 }).onClick(() => { this.selectedPayCode = m.code })
                   }, (m: PayMethod): string => m.code)
                 }.width('100%')
+              }
+              if (this.payError.length > 0) {
+                Text(this.payError).fontSize(13).lineHeight(20).fontColor(getColors(this.isDark).error)
+                  .width('100%').textAlign(TextAlign.Center).padding({ left: 4, right: 4 })
               }
               Button(this.paying ? '正在支付…' : (this.selectedAmount.length > 0 ? '支付 ¥' + this.selectedAmount : '请选择金额'))
                 .width('100%').height(52).borderRadius(18).fontSize(16).fontWeight(FontWeight.Medium)
