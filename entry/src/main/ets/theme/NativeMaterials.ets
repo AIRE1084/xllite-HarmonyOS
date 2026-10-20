@@ -10,11 +10,11 @@ export function createNativeMaterial(isDark: boolean, interactive: boolean, prom
   const cached = materials.get(key)
   if (cached !== undefined) return cached
   const material = new uiMaterial.ImmersiveMaterial({
-    style: prominent ? uiMaterial.ImmersiveStyle.REGULAR : uiMaterial.ImmersiveStyle.THIN,
-    materialColor: isDark ? '#18203450' : '#18FFFFFF',
-    applyShadow: false,
+    style: prominent ? uiMaterial.ImmersiveStyle.THICK : uiMaterial.ImmersiveStyle.REGULAR,
+    materialColor: isDark ? '#33142033' : '#33FFFFFF',
+    applyShadow: prominent,
     interactive: interactive,
-    lightEffect: interactive ? { color: isDark ? '#A9C4FF' : '#FFFFFF' } : null,
+    lightEffect: { color: isDark ? '#80A9C4FF' : '#CCFFFFFF' },
   })
   materials.set(key, material)
   hilog.info(0x0000, 'XJITMaterial', 'Native material created')

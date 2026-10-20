@@ -27,10 +27,12 @@ export struct NativeGlass {
       } else {
         Column() { this.content() }
           .width('100%').padding(this.contentPadding).borderRadius(this.radius)
-          .backgroundColor(this.isDark ? '#8019283D' : '#B3F7FAFF')
-          .backgroundBlurStyle(BlurStyle.COMPONENT_REGULAR, {
-            colorMode: this.isDark ? ThemeColorMode.DARK : ThemeColorMode.LIGHT,
-            adaptiveColor: AdaptiveColor.DEFAULT,
+          .backgroundEffect({
+            radius: this.prominent ? 54 : 40,
+            saturation: this.prominent ? 2.2 : 1.85,
+            brightness: this.isDark ? 0.92 : 1.08,
+            color: this.isDark ? '#45121B2C' : '#4DF3F8FF',
+            adaptiveColor: AdaptiveColor.AVERAGE,
           })
       }
       Row().width('78%').height(1)
@@ -41,8 +43,8 @@ export struct NativeGlass {
     }.width('100%').borderRadius(this.radius)
       // A separate shell keeps the native material node free of custom backgrounds.
       .linearGradient({ angle: 145, colors: this.isDark
-        ? [['#702B4668', 0], ['#30142135', 0.55], ['#50284252', 1]]
-        : [['#D9FFFFFF', 0], ['#72F5F9FF', 0.55], ['#AAF2FBF9', 1]] })
+        ? [['#33161F30', 0], ['#1F0D1520', 0.55], ['#2A1A2733', 1]]
+        : [['#4DFFFFFF', 0], ['#1FF5F9FF', 0.55], ['#33F2FBF9', 1]] })
       .border({ width: 1, color: this.isDark ? '#507F9BBE' : '#E8FFFFFF' })
       .shadow({ radius: this.prominent ? 20 : 12, color: this.isDark ? '#28000000' : '#18364F78', offsetY: 8 })
   }
