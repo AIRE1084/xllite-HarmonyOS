@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-17T11:51:41.268Z",
+  "checkedAt": "2026-10-20T13:53:45.806Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 89,
+  "checks": 90,
   "failed": 0,
   "results": [
     {
@@ -55,6 +55,10 @@
     },
     {
       "name": "verified XJIT section clock matches confirmed 2026 autumn calendar",
+      "ok": true
+    },
+    {
+      "name": "unresolvable sections stay visible instead of disappearing silently",
       "ok": true
     },
     {

@@ -14,7 +14,8 @@ import { CampusCard } from '../components/common/CampusCard'
 import { CampusHeader } from '../components/common/CampusHeader'
 import { navToMap } from '../utils/MapDeepLink'
 import { safePush } from '../utils/RouterHelper'
-import { getCourseMinutes, formatMinutes, classStatus } from '../utils/ClassTime'
+import { getCourseMinutes, formatMinutes, classStatus, sectionsResolved, courseTimeText } from '../utils/ClassTime'
+import { unresolvedCourses } from '../utils/CourseCalendar'
 import { Radius } from '../theme/Radius'
 import { safeToast } from '../utils/ToastHelper'
 import { startCourseLiveView } from '../services/LiveViewService'
@@ -23,6 +24,7 @@ interface TodayCourseItem {
   course: Course
   startMinutes: number
   endMinutes: number
+  resolved: boolean
 }
 
 function readNumber(data: Record<string, Object>, keys: string[], fallback: number): number {
@@ -47,6 +49,7 @@ export struct ScheduleTab {
   @StorageLink('safeAreaBottom') safeAreaBottom: number = 0
   @State filteredCourses: Course[] = []
   @State sortedToday: TodayCourseItem[] = []
+  @State unresolvedThisWeek: Course[] = []
   private alive: boolean = false
   private requestBusy: boolean = false
   private hasLoaded: boolean = false
@@ -96,8 +99,10 @@ export struct ScheduleTab {
     this.sortedToday = this.filteredCourses.filter((c: Course): boolean => c.day === today)
       .map((c: Course): TodayCourseItem => {
         const range = getCourseMinutes(c.sections)
-        return { course: c, startMinutes: range[0], endMinutes: range[1] }
-      }).sort((a: TodayCourseItem, b: TodayCourseItem): number => a.startMinutes - b.startMinutes)
+        return { course: c, startMinutes: range[0], endMinutes: range[1], resolved: sectionsResolved(c.sections) }
+      }).sort((a: TodayCourseItem, b: TodayCourseItem): number =>
+        a.resolved === b.resolved ? a.startMinutes - b.startMinutes : (a.resolved ? -1 : 1))
+    this.unresolvedThisWeek = unresolvedCourses(this.allCourses, this.selectedWeek, this.totalWeeks)
     this.saveUi()
   }
   saveUi(): void {
@@ -156,6 +161,10 @@ export struct ScheduleTab {
     return `第 ${this.selectedWeek} 周 · 当天 ${todayCount} 门 · 本周 ${weekCount} 门`
   }
 
+  private unresolvedListText(): string {
+    return this.unresolvedThisWeek.map((c: Course): string => c.day + ' ' + c.sections + ' ' + c.title).join('；')
+  }
+
   private openCourseLocation(course: Course): void {
     this.getUIContext().getPromptAction().showDialog({ title: course.title,
       message: course.day + ' · ' + course.sections + '\n' + course.weeks + '\n' + course.location + '\n' + course.teacher,
@@ -167,10 +176,9 @@ export struct ScheduleTab {
     const names: string[] = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
     const courses = this.filteredCourses.filter((course: Course): boolean => course.day === names[day])
       .sort((a: Course, b: Course): number => getCourseMinutes(a.sections)[0] - getCourseMinutes(b.sections)[0])
-    const message = courses.length === 0 ? '这一天没有课程，可以安排自己的计划。' : courses.map((course: Course): string => {
-      const time = getCourseMinutes(course.sections)
-      return formatMinutes(time[0]) + '–' + formatMinutes(time[1]) + '  ' + course.title + '\n' + course.location + ' · ' + course.teacher + '\n' + course.sections
-    }).join('\n\n')
+    const message = courses.length === 0 ? '这一天没有课程，可以安排自己的计划。' : courses.map((course: Course): string =>
+      courseTimeText(course.sections) + '  ' + course.title + '\n' + course.location + ' · ' + course.teacher + '\n' + course.sections
+    ).join('\n\n')
     this.getUIContext().getPromptAction().showDialog({ title: '第 ' + this.selectedWeek + ' 周 · ' + names[day], message,
       buttons: [{ text: '关闭', color: this.palette.primary }] }).catch((_e: Error) => {})
   }
@@ -260,14 +268,21 @@ export struct ScheduleTab {
         ForEach(this.todayItems(), (item: TodayCourseItem, index: number) => {
           Row() {
             Column() {
-              Text(formatMinutes(item.startMinutes))
-                .fontSize(13)
-                .fontWeight(FontWeight.Bold)
-                .fontColor(this.palette.onSurface)
-              Text(formatMinutes(item.endMinutes))
-                .fontSize(11)
-                .fontColor(this.palette.onSurfaceVariant)
-                .margin({ top: 2 })
+              if (item.resolved) {
+                Text(formatMinutes(item.startMinutes))
+                  .fontSize(13)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(this.palette.onSurface)
+                Text(formatMinutes(item.endMinutes))
+                  .fontSize(11)
+                  .fontColor(this.palette.onSurfaceVariant)
+                  .margin({ top: 2 })
+              } else {
+                Text('待确认')
+                  .fontSize(11)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor(this.palette.onSurfaceVariant)
+              }
             }
             .width(56)
             .alignItems(HorizontalAlign.Start)
@@ -297,7 +312,7 @@ export struct ScheduleTab {
                       .maxLines(2)
                       .textOverflow({ overflow: TextOverflow.Ellipsis })
                       .layoutWeight(1)
-                    Text(!this.weekKnown ? '周次待确认' : (this.selectedWeek === this.currentWeek ? this.statusLabel(this.timelineStatus(item)) : '第 ' + this.selectedWeek.toString() + ' 周'))
+                    Text(!item.resolved ? '节次待确认' : (!this.weekKnown ? '周次待确认' : (this.selectedWeek === this.currentWeek ? this.statusLabel(this.timelineStatus(item)) : '第 ' + this.selectedWeek.toString() + ' 周')))
                       .fontSize(11)
                       .fontColor(this.statusColor(this.timelineStatus(item)))
                       .padding({ left: 8, right: 8, top: 3, bottom: 3 })
@@ -318,7 +333,7 @@ export struct ScheduleTab {
                       .fontSize(11)
                       .fontColor(this.palette.onSurfaceVariant)
                       .layoutWeight(1)
-                    if (this.weekKnown && this.selectedWeek === this.currentWeek && this.liveEnabled && this.timelineStatus(item) !== 2) {
+                    if (item.resolved && this.weekKnown && this.selectedWeek === this.currentWeek && this.liveEnabled && this.timelineStatus(item) !== 2) {
                     Text('实况窗')
                       .fontSize(12)
                       .fontColor(this.palette.accent)
@@ -437,6 +452,14 @@ export struct ScheduleTab {
             this.TodayTimeline()
           } else {
             Column({ space: 12 }) {
+              if (this.unresolvedThisWeek.length > 0) {
+                Column({ space: 4 }) {
+                  Text('有 ' + this.unresolvedThisWeek.length + ' 门课的节次不在当前作息表中，未排进时间轴')
+                    .fontSize(12).fontWeight(FontWeight.Bold).fontColor(this.palette.error).width('100%')
+                  Text(this.unresolvedListText()).fontSize(11).fontColor(this.palette.onSurfaceVariant).width('100%')
+                }
+                .padding(12).width('100%').borderRadius(Radius.sm).backgroundColor(this.palette.surfaceVariant)
+              }
               Row({ space: 8 }) {
                 Text('第 ' + this.selectedWeek + ' 周').fontSize(16).fontWeight(FontWeight.Bold)
                   .fontColor(this.palette.onSurface).layoutWeight(1)

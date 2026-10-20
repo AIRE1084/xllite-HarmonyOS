@@ -134,3 +134,29 @@
 - API26 clean构建成功，75项ArkTS警告、0错误、正式未签名；133输入0漂移。HAP 2089333bytes，SHA256 160A294DE6F265F0D25D7AD511B50F7B2A8D4EDE51A5A82FE841824A2C213AF7；证据.wolf/project-audit-20261016，stage D:/XJITApp-organize-20261016-build。
 - 实际ApiService按会话来源整条分流，非逐功能直连优先自动兜底；网关专属回归/卡token门禁链路与在线验证待做。原生仅3项适配，另10项未完成；真实登录业务、签名发布、真机视觉性能待验收。
 - 补充Git行尾与通用依赖/环境忽略规则，不搬动源码、SDK或证据，不操作附属服务数据库，不配置远端或推送。
+
+## 2026-10-20 ArkTS 警告归因与基线
+
+- API26 clean 构建实际为 132 条 ArkTS 警告（不是 131，日志换行导致此前少算一条）。归因：syscap 87（LiveViewService 80、CryptoUtil 7）、sdk-version 17（NativeMaterials 16、NativeGlass 1）、may-throw 28。
+- 修为 123 条：CryptoUtil 解密 try/catch 并带阶段信息（-5）；CampusCompanionService.persist 让 filesDir 快照与 preferences 开关各自失败隔离、仍以首个错误 reject（-4）。WidgetService.buildFormBinding 增加“待同步”兜底，属健壮性补丁，未减少警告数，不当作警告修复计入。
+- 余 104 条（syscap 87 + sdk-version 17）由 compatibleSdkVersion=23 与 compileSdkVersion=26 的组合决定，代码层不动：canIUse 包裹只会改变提示、不改变行为；提到 26 则放弃 API23 支持，属产品决策。19 条 may-throw 中 WidgetService 12 条是刻意抛出，回归用 assert.throws 固定契约。
+- 新增 tools/arkts-warnings.cjs 与 npm run check:warnings：解析 UTF-16LE+ANSI 日志、重组断行、按“文件|类别|消息”计数，与 .wolf/arkts-warnings-baseline.json 比对，新增即退出码 1；已验失败路径。默认取 .wolf 与其 review 子目录中最新的构建日志。
+- 全量回归：services 82、pages 84、campus 89、ui-structure 17、contrast 38、api23 24、gateway 18、login 7、brand 全过，npm test 退出码 0。构建 BUILD SUCCESSFUL 0 错误，HAP SHA256 F7AF1E55D4E346A97BE267EF82BE30FC7233625FB415B1A7A670C017C655E52A。未安装设备，未验证 API23 设备上的能力落回。
+- 用户确认后修正过期断言：a907929 已按 2026 秋季 8 大节作息改 ClassTime，campus 回归仍断言 9-10 节为 [1230,1330]。现改为钉住 8 大节全部时段并要求 9-10 节解析为 [0,0]（比原断言更严），未放宽任何旧断言。
+- 补充支付入口优先级回归：officialTransferUrl 优先于 h5Url、空串时回落 h5Url、两者皆空时停留表单并提示。htmlPost 分支在该套件里仍不可测（@ohos.util 为替身，htmlToDataUrl 必失败），html 优先级的直接证据仍只能在真机/WebView 验收。
+
+## 2026-10-20 节次无法解析的课程不再静默消失
+
+- 真实课表是否仍存在 9/10 节 **未确认**：仓库内唯一出现 `9-10节` 的是演示数据 tools/design-preview-data.cjs；docs/2026-10-20-SIM-VERIFY.md 证明模拟器因登录墙未取到真实课表。要确认必须真实登录同步一次。
+- 行为修正：新增 ClassTime.sectionsResolved / courseTimeText（无法解析返回 '节次待确认'，不再把 00:00 当上课时间）、CourseCalendar.unresolvedCourses（本周内节次无法解析的课程）。ScheduleTab 今日列显示“待确认”、状态章显示“节次待确认”、隐藏实况窗入口、整周视图顶部逐条列出“星期 + 原始节次 + 课名”、日详情对话框改 courseTimeText；HomeTab 下一节只用可解析课程，全是待确认课时不再声称“今日课程已结束”；NextClassCard 过滤不可解析课。时间型功能（提醒/桌面/实况窗）仍不登记无有效节次的课，与 CAMPUS-COMPANION.md 既有策略一致。
+- 回归：campus 90（新增 1 项五断言用例）、ui-structure 18（新增 1 项源码约束）、npm test 退出码 0。
+- 构建：工作区当前被其他进程的未完成改动（LiveViewService 用不存在的 wantAgent.WantAgent、ElectricityPage 引用未导入的 DetailHeader）弄成编译失败，非本任务改动；用 git archive HEAD + 本任务 8 个 .ets 的隔离树构建成功，123 条警告、基线新增 0。
+- tools/arkts-warnings.cjs 增补：日志含 BUILD FAILED / COMPILE RESULT:FAIL 时先报前几条 ERROR 并返回退出码 3，避免基线全绿掩盖编译失败；当前工作区日志即处于退出码 3 状态。
+
+## 2026-10-20 下午作息更正（用户确认）
+
+- 真实作息：上午 10:00–13:40、下午 16:00–19:40，两段同构——45 分钟一节、小节间小课间 10 分钟、第 2 小节后大课间 20 分钟。
+- 因此第 7/8 节由 `18:30-19:15 / 19:25-20:10` 改为 **18:00-18:45 / 18:55-19:40**；1-6 节不变。
+- 全部消费方（时间轴行、今日清单、下一节卡片、提醒、桌面卡片、实况窗）都从 `ALL_TIMES` 派生，只改 ClassTime 一处即可。
+- 回归：campus 用例改为逐条钉住 8 个 label（原断言把错时段写死），先红后绿；npm test 退出码 0（82/84/90/18/38/24/18/7）。
+- 工作区构建仍失败（ElectricityPage 引用未导入的 DetailHeader，属并发改动），check:warnings 退出码 3 正确反映；ClassTime 改动本身已由回归通过真实 .ets 加载验证。

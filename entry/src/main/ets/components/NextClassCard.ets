@@ -1,7 +1,7 @@
 import { getColors, ColorPalette } from '../theme/Colors'
 import { CampusCard } from './common/CampusCard'
 import { Course } from '../models/JwTypes'
-import { getCourseMinutes, nextClassIndex } from '../utils/ClassTime'
+import { getCourseMinutes, nextClassIndex, sectionsResolved } from '../utils/ClassTime'
 import { Radius } from '../theme/Radius'
 
 interface EnrichedItem {
@@ -50,10 +50,12 @@ export struct NextClassCard {
     this.timerId = setInterval(() => { this.refresh() }, 1000)
   }
   onCoursesChange(): void {
-    this.enriched = this.courses.map((c: Course): EnrichedItem => {
-      const range = getCourseMinutes(c.sections)
-      return { startMinutes: range[0], endMinutes: range[1], course: c }
-    }).sort((a: EnrichedItem, b: EnrichedItem): number => a.startMinutes - b.startMinutes)
+    this.enriched = this.courses
+      .filter((c: Course): boolean => sectionsResolved(c.sections))
+      .map((c: Course): EnrichedItem => {
+        const range = getCourseMinutes(c.sections)
+        return { startMinutes: range[0], endMinutes: range[1], course: c }
+      }).sort((a: EnrichedItem, b: EnrichedItem): number => a.startMinutes - b.startMinutes)
     this.refresh()
   }
 

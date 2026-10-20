@@ -155,9 +155,34 @@ async function readyCourse(f, courses=[course()], data={}) {
 }
 
 test('verified XJIT section clock matches confirmed 2026 autumn calendar',()=>{
- const f=fixture(); assert.deepEqual(plain(f.time.parseSections('1-2节')),[600,700]);
- assert.deepEqual(plain(f.time.parseSections('9-10节')),[1230,1330]);
+ const f=fixture();
+ assert.deepEqual(plain(f.time.parseSections('1-2节')),[600,700]);
+ assert.deepEqual(plain(f.time.parseSections('3-4节')),[720,820]);
+ assert.deepEqual(plain(f.time.parseSections('5-6节')),[960,1060]);
+ assert.deepEqual(plain(f.time.parseSections('7-8节')),[1080,1180]);
+ assert.equal(f.time.ALL_TIMES.length,8);
+ // 下午与上午同构：45 分一节、小课间 10 分、大课间 20 分，末节 13:40 / 19:40 下课
+ assert.deepEqual(plain(f.time.ALL_TIMES.map(t=>t.label)),['10:00 - 10:45','10:55 - 11:40','12:00 - 12:45','12:55 - 13:40',
+  '16:00 - 16:45','16:55 - 17:40','18:00 - 18:45','18:55 - 19:40']);
  assert.equal(f.time.ALL_TIMES[4].label,'16:00 - 16:45');
+ assert.equal(f.time.ALL_TIMES[7].label,'18:55 - 19:40');
+ assert.equal(f.time.courseTimeText('3-4节'),'12:00 – 13:40');
+ assert.equal(f.time.courseTimeText('7-8节'),'18:00 – 19:40');
+ // a907929 起按确认的 8 大节作息，9-10 节不再存在：必须解析失败而不是沿用旧时段
+ assert.deepEqual(plain(f.time.parseSections('9-10节')),[0,0]);
+});
+test('unresolvable sections stay visible instead of disappearing silently',()=>{
+ const f=fixture();
+ assert.equal(f.time.sectionsResolved('1-2节'),true);
+ assert.equal(f.time.sectionsResolved('9-10节'),false);
+ assert.equal(f.time.courseTimeText('1-2节'),'10:00 – 11:40');
+ assert.equal(f.time.courseTimeText('9-10节'),'节次待确认');
+ const legacy=course({day:'星期五',slot:'9-10节',title:'算法设计与分析',sections:'9-10节',weeks:'2-20周(双)'});
+ const normal=course({weeks:'1-20周'});
+ assert.deepEqual(plain(f.calendar.unresolvedCourses([normal,legacy],6,20).map(c=>c.title)),['算法设计与分析']);
+ assert.deepEqual(plain(f.calendar.unresolvedCourses([normal,legacy],7,20).map(c=>c.title)),[]);
+ // 时间型功能（今日清单/提醒/桌面/实况窗）仍不登记无法解析的节次，但课本身不会被删掉
+ assert.deepEqual(plain(f.calendar.buildOccurrences(snapshot({courses:[legacy]}),new Date(2026,9,16),1)),[]);
 });
 test('invalid and out-of-range sections never crash or create false times',()=>{
  const f=fixture(); for(const text of ['12-13节','0-2节','1-a节','', '99999999-1']) assert.deepEqual(plain(f.time.parseSections(text)),[0,0]);
