@@ -170,7 +170,8 @@ struct RechargePage {
   build() {
     Stack() {
       DetailScaffold({ title: this.step === 3 ? '正在支付' : '一卡通充值', subtitle: '选择金额与支付方式',
-        action: this.step === 3 ? '取消' : '刷新', busy: this.loading || this.paying,
+        action: this.step === 3 ? '取消支付' : '刷新', actionGlyph: this.step === 3 ? '×' : '',
+        busy: this.loading || this.paying,
         onBack: () => { if (this.step === 3) this.cancelPay(); else safeBack(this.getUIContext()) },
         onAction: () => { if (this.step === 3) this.cancelPay(); else this.loadConfig(true) } }) {
         if (this.step === 3) {

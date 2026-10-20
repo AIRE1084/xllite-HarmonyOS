@@ -127,7 +127,7 @@ struct LoginPage {
           Text('找回密码').fontSize(20).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface)
           Text('密码由学校统一身份认证平台管理。请联系学校信息服务部门重置密码，完成后在这里重新登录。')
             .fontSize(13).fontColor(this.palette.onSurfaceVariant).lineHeight(22)
-          Button('返回登录').width('100%').height(44).backgroundColor(Color.Transparent)
+          Button('重新登录').width('100%').height(44).backgroundColor(Color.Transparent)
             .fontColor(this.palette.onSurfaceVariant).fontSize(14)
             .onClick((): void => { this.showForgot = false; this.forgotLoading = false })
         }.width('100%').padding({ left: 24, right: 24, top: this.safeAreaTop + 48, bottom: this.safeAreaBottom + 32 })

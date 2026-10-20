@@ -8,6 +8,7 @@ export struct DetailScaffold {
   @Prop title: string = ''
   @Prop subtitle: string = ''
   @Prop action: string = '刷新'
+  @Prop actionGlyph: string = ''
   @Prop busy: boolean = false
   onBack: () => void = () => {}
   onAction: () => void = () => {}
@@ -16,7 +17,8 @@ export struct DetailScaffold {
     Stack() {
       AmbientBackground()
       Column() {
-        DetailHeader({ title: this.title, subtitle: this.subtitle, action: this.action, busy: this.busy,
+        DetailHeader({ title: this.title, subtitle: this.subtitle, action: this.action,
+          actionGlyph: this.actionGlyph, busy: this.busy,
           onBack: () => this.onBack(), onAction: () => this.onAction() })
         this.content()
       }.width('100%').height('100%').padding({ bottom: this.safeAreaBottom })

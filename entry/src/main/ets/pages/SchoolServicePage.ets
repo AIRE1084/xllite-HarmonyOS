@@ -91,8 +91,12 @@ struct SchoolServicePage {
   build() {
     Column() {
       Row({ space: 12 }) {
-        Button('返回').height(44).fontSize(14).fontColor(getColors(this.isDark).primary)
-          .backgroundColor(Color.Transparent).onClick(() => safeBack(this.getUIContext()))
+        Button({ type: ButtonType.Circle }) {
+          Text('‹').fontSize(26).fontWeight(FontWeight.Medium)
+            .fontColor(getColors(this.isDark).primary).offset({ y: -1 })
+        }
+        .width(40).height(44).backgroundColor(Color.Transparent)
+        .accessibilityText('返回上一页').onClick(() => safeBack(this.getUIContext()))
         Column({ space: 3 }) {
           Text(this.title).fontSize(16).fontWeight(FontWeight.Medium).fontColor(getColors(this.isDark).onSurface)
           Text(this.loginMode ? '新疆理工学院 · 统一认证' : '新疆理工学院 · 学校服务')

@@ -306,14 +306,17 @@ struct TodoPage {
 
   @Builder
   BackButton() {
-    Text('返回')
-      .fontSize(13)
-      .fontWeight(FontWeight.Medium)
-      .fontColor(this.palette.primary)
-      .padding({ left: 12, right: 12, top: 7, bottom: 7 })
-      .backgroundColor(this.palette.primaryContainer)
-      .borderRadius(Radius.sm)
-      .onClick(() => { safeBack(this.getUIContext()) })
+    Button({ type: ButtonType.Circle }) {
+      Text('‹')
+        .fontSize(24)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(this.palette.primary)
+        .offset({ y: -1 })
+    }
+    .width(36).height(36)
+    .backgroundColor(this.palette.primaryContainer)
+    .accessibilityText('返回上一页')
+    .onClick(() => { safeBack(this.getUIContext()) })
   }
 
   @Builder
