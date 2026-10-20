@@ -29,10 +29,10 @@ export struct NativeGlass {
           .width('100%').padding(this.contentPadding).borderRadius(this.radius)
           .backgroundEffect({
             radius: this.prominent ? 54 : 40,
-            saturation: this.prominent ? 2.2 : 1.85,
-            brightness: this.isDark ? 0.92 : 1.08,
-            color: this.isDark ? '#45121B2C' : '#4DF3F8FF',
-            adaptiveColor: AdaptiveColor.AVERAGE,
+            saturation: this.prominent ? 1.7 : 1.5,
+            brightness: this.isDark ? 1.3 : 1.1,
+            color: this.isDark ? '#3DFFFFFF' : '#CCFFFFFF',
+            adaptiveColor: AdaptiveColor.DEFAULT,
           })
       }
       Row().width('78%').height(1)

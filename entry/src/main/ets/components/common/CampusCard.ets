@@ -26,10 +26,10 @@ export struct CampusCard {
       .borderRadius(this.radius)
       .backgroundEffect({
         radius: 42,
-        saturation: this.isDark ? 1.55 : 1.85,
-        brightness: this.isDark ? 0.95 : 1.06,
-        color: this.isDark ? '#B8121B2C' : '#C7FFFFFF',
-        adaptiveColor: AdaptiveColor.AVERAGE,
+        saturation: this.isDark ? 1.5 : 1.9,
+        brightness: 1.0,
+        color: this.isDark ? '#2EFFFFFF' : '#B8FFFFFF',
+        adaptiveColor: AdaptiveColor.DEFAULT,
       })
       .border({ width: 0.5, color: this.palette.outline })
   }
