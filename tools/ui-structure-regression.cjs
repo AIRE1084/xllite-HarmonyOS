@@ -32,5 +32,15 @@ check('profile does not advertise graduation results as a training plan', () => 
   assert.doesNotMatch(training, /培养方案/);
   assert.match(training, /title: '毕业完成情况'/);
 });
+check('unresolved course sections are labelled instead of rendered as 00:00', () => {
+  const schedule = fs.readFileSync(path.join(pages, 'ScheduleTab.ets'), 'utf8');
+  assert.match(schedule, /resolved: sectionsResolved\(/, 'ScheduleTab must carry a resolved flag per course');
+  assert.match(schedule, /courseTimeText\(/, 'ScheduleTab must label courses whose section time cannot be resolved');
+  assert.match(schedule, /item\.resolved/, 'ScheduleTab must branch on the resolved flag when rendering times');
+  assert.match(schedule, /if \(item\.resolved[^\n]*this\.liveEnabled/, 'live view must not be offered for unresolvable sections');
+  const home = fs.readFileSync(path.join(pages, 'HomeTab.ets'), 'utf8');
+  assert.match(home, /resolved: sectionsResolved\(/, 'HomeTab must carry a resolved flag per course');
+  assert.match(home, /courseTimeText\(/, 'HomeTab must label unresolved courses instead of a midnight time');
+});
 console.log(`${checks} UI structure checks, ${failed} failed`);
 process.exitCode = failed ? 1 : 0;

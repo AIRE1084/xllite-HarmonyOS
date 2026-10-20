@@ -60,11 +60,22 @@ function publishWeek(): void {
 async function persist(): Promise<void> {
   if (context === null || prefs === null) return
   if (snapshot !== null) snapshot.widgetEnabled = AppStorage.get<boolean>('campusWidgetEnabled') === true
-  saveWidgetSnapshot(context, snapshot)
-  await prefs.put('widget', AppStorage.get<boolean>('campusWidgetEnabled') === true)
-  await prefs.put('reminders', AppStorage.get<boolean>('courseReminderEnabled') === true)
-  await prefs.put('live', AppStorage.get<boolean>('liveViewEnabled') === true)
-  await prefs.flush()
+  // 快照在 filesDir、开关在 preferences；一侧失败不应阻止另一侧落盘，错误仍需上抛。
+  let failure: Error | null = null
+  try {
+    saveWidgetSnapshot(context, snapshot)
+  } catch (error) {
+    failure = error as Error
+  }
+  try {
+    await prefs.put('widget', AppStorage.get<boolean>('campusWidgetEnabled') === true)
+    await prefs.put('reminders', AppStorage.get<boolean>('courseReminderEnabled') === true)
+    await prefs.put('live', AppStorage.get<boolean>('liveViewEnabled') === true)
+    await prefs.flush()
+  } catch (error) {
+    if (failure === null) failure = error as Error
+  }
+  if (failure !== null) throw failure
 }
 async function syncWidgets(): Promise<void> {
   if (context === null) return

@@ -61,10 +61,16 @@ export async function updateCampusWidgets(data: CampusWidgetData): Promise<void>
   }
 }
 export function buildFormBinding(context: common.Context, formName: string): formBindingData.FormBindingData {
-  if (formName === 'CampusTodoCard') {
-    return formBindingData.createFormBindingData(readTodoWidgetSnapshot(context))
+  try {
+    if (formName === 'CampusTodoCard') {
+      return formBindingData.createFormBindingData(readTodoWidgetSnapshot(context))
+    }
+    return buildWidgetBinding(context)
+  } catch (_error) {
+    // Binding construction must never fail form creation; fall back to the pending-state card.
+    const fallback: formBindingData.FormBindingData = { data: widgetData(null) }
+    return fallback
   }
-  return buildWidgetBinding(context)
 }
 export function buildWidgetBinding(context: common.Context): formBindingData.FormBindingData {
   try {

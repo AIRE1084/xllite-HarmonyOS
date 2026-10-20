@@ -329,6 +329,30 @@ test('recharge configuration retry resets unavailable selected options', async (
   const pending = page.loadConfig(true); state.requests[0].resolve({ ok: true, data: { balance: '12.00', amountOptions: [{ id: '1', amount: '50', name: '50元' }], payMethods: [{ code: '06', name: '示例' }] } }); await pending;
   assert.equal(page.loading, false); assert.equal(page.selectedAmount, ''); assert.equal(page.selectedPayCode, '');
 });
+test('recharge prefers official transfer link over h5 and keeps a fallback', async () => {
+  const official = fixture('RechargePage'); official.page.alive = true; official.page.loading = false;
+  official.page.selectedAmount = '50'; official.page.selectedPayCode = '06';
+  const pending = official.page.handlePay();
+  official.state.requests[0].resolve({ ok: true, data: { payResult: { h5Url: 'https://h5.invalid', officialTransferUrl: 'https://transfer.invalid' } } });
+  await pending;
+  assert.equal(official.page.step, 3); assert.equal(official.page.payContentType, 'url');
+  assert.equal(official.page.payContent, 'https://transfer.invalid');
+
+  const fallback = fixture('RechargePage'); fallback.page.alive = true; fallback.page.loading = false;
+  fallback.page.selectedAmount = '50'; fallback.page.selectedPayCode = '06';
+  const second = fallback.page.handlePay();
+  fallback.state.requests[0].resolve({ ok: true, data: { payResult: { officialTransferUrl: '', h5Url: 'https://h5.invalid' } } });
+  await second;
+  assert.equal(fallback.page.step, 3); assert.equal(fallback.page.payContent, 'https://h5.invalid');
+
+  const empty = fixture('RechargePage'); empty.page.alive = true; empty.page.loading = false;
+  empty.page.selectedAmount = '50'; empty.page.selectedPayCode = '06';
+  const third = empty.page.handlePay();
+  empty.state.requests[0].resolve({ ok: true, data: { payResult: {} } });
+  await third;
+  assert.equal(empty.page.step, 1); assert.equal(empty.page.payContent, '');
+  assert.ok(empty.state.toasts.at(-1).includes('一卡通'));
+});
 test('recharge explicit payment deduplicates and rejects late account results', async () => {
   const { page, state } = fixture('RechargePage'); page.alive = true; page.loading = false; page.selectedAmount = '50'; page.selectedPayCode = '06';
   const pending = page.handlePay(); await page.handlePay(); assert.equal(state.requests.length, 1); state.epoch++;

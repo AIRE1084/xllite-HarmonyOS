@@ -1,8 +1,8 @@
 /**
- * 节次 → 时段映射(已确认 2026 秋季作息，Asia/Shanghai，2026-10-19 用户确认)
+ * 节次 → 时段映射(已确认 2026 秋季作息，Asia/Shanghai，2026-10-20 用户更正下午时段)
  *
- * 大节(中文) → 索引 0-7
- * "1-2节"     → 时段 [startMinutes, endMinutes]
+ * 上午 10:00-13:40、下午 16:00-19:40，两段同构：45 分钟一节，小节间小课间 10 分钟，
+ * 第 2 小节后大课间 20 分钟。节次索引 0-7；"1-2节" → 时段 [startMinutes, endMinutes]。
  */
 
 export interface ClassTime {
@@ -18,8 +18,8 @@ const TIMES: ClassTime[] = [
   { startMinutes: 775, endMinutes: 820, label: '12:55 - 13:40' },
   { startMinutes: 960, endMinutes: 1005, label: '16:00 - 16:45' },
   { startMinutes: 1015, endMinutes: 1060, label: '16:55 - 17:40' },
-  { startMinutes: 1110, endMinutes: 1155, label: '18:30 - 19:15' },
-  { startMinutes: 1165, endMinutes: 1210, label: '19:25 - 20:10' },
+  { startMinutes: 1080, endMinutes: 1125, label: '18:00 - 18:45' },
+  { startMinutes: 1135, endMinutes: 1180, label: '18:55 - 19:40' },
 ]
 
 /**
@@ -75,6 +75,18 @@ export function parseSections(sections: string): [number, number] {
  */
 export function getCourseMinutes(sections: string): [number, number] {
   return parseSections(sections)
+}
+
+/** 节次能否映射到当前作息表;例如 8 大节之外的 "9-10节" 返回 false */
+export function sectionsResolved(sections: string): boolean {
+  return sectionNumbers(sections).length > 0
+}
+
+/** "1-2节" → "10:00 – 11:40";无法解析时明确标注,不把 00:00 当成上课时间 */
+export function courseTimeText(sections: string): string {
+  const range = parseSections(sections)
+  if (range[0] === 0 && range[1] === 0) return '节次待确认'
+  return formatMinutes(range[0]) + ' – ' + formatMinutes(range[1])
 }
 
 /**

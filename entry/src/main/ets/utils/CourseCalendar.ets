@@ -41,6 +41,12 @@ export function courseSectionGroups(course: Course): number[][] {
   }
   return groups
 }
+// 节次无法解析的课程不能进入时间轴/提醒/实况窗，但也不能静默消失：由界面单独列出。
+export function unresolvedCourses(courses: Course[], week: number, total: number): Course[] {
+  return courses.filter((course: Course): boolean =>
+    weekdayIndex(course.day) >= 0 && isCourseInWeek(course.weeks, week, total) &&
+    sectionNumbers(course.sections).length === 0)
+}
 export function buildOccurrences(snapshot: ScheduleSnapshot, now: Date = new Date(), days: number = 7): CourseOccurrence[] {
   const result: CourseOccurrence[] = []
   const keys: string[] = []

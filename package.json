@@ -13,6 +13,7 @@
     "test:api23": "node tools/api23-regression.cjs && node tools/material-loading-regression.cjs",
     "test:gateway": "node tools/gateway-regression.cjs",
     "test:login": "node tools/login-regression.cjs",
-    "test:brand": "node tools/brand-regression.cjs"
+    "test:brand": "node tools/brand-regression.cjs",
+    "check:warnings": "node tools/arkts-warnings.cjs"
   }
 }
