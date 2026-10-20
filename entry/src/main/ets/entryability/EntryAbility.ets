@@ -3,6 +3,7 @@ import { Configuration as AbilityConfiguration } from '@ohos.app.ability.Configu
 import ConfigurationConstant from '@ohos.app.ability.ConfigurationConstant'
 import resourceManager from '@ohos.resourceManager'
 import window from '@ohos.window'
+import { KeyboardAvoidMode } from '@ohos.arkui.UIContext'
 import hilog from '@ohos.hilog'
 import Want from '@ohos.app.ability.Want'
 import { initCampusCompanion, setCompanionForeground } from '../services/CampusCompanionService'
@@ -61,6 +62,8 @@ export default class EntryAbility extends UIAbility {
     windowStage.getMainWindow().then(async (mainWindow: window.Window) => {
       this.mainWindow = mainWindow
       await mainWindow.setWindowLayoutFullScreen(true)
+      // 显式固定为 RESIZE：键盘弹出时缩短页面交给 Scroll 处理，而不是整页 OFFSET 上移把底部按钮推出可视区。
+      mainWindow.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE)
       this.updateSafeArea()
       this.avoidListener = (_options: window.AvoidAreaOptions) => { this.updateSafeArea() }
       mainWindow.on('avoidAreaChange', this.avoidListener)
@@ -74,7 +77,12 @@ export default class EntryAbility extends UIAbility {
   }
   onWindowStageDestroy(): void {
     setNativeThemeReady(false)
-    if (this.mainWindow !== null && this.avoidListener !== null) this.mainWindow.off('avoidAreaChange', this.avoidListener)
+    // 窗口可能已先于本回调销毁，此时 off() 抛 1300002 "window is not created or destroyed"，需兜底。
+    try {
+      if (this.mainWindow !== null && this.avoidListener !== null) this.mainWindow.off('avoidAreaChange', this.avoidListener)
+    } catch (_e) {
+      hilog.warn(0, TAG, 'Avoid area detach skipped')
+    }
     observeTheme(null)
     this.mainWindow = null
     this.avoidListener = null

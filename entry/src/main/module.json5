@@ -29,6 +29,9 @@
         "startWindowIcon": "$media:icon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
+        "supportWindowMode": [
+          "fullscreen"
+        ],
         "skills": [
           {
             "entities": [
