@@ -60,7 +60,9 @@ export const LightColors: ColorPalette = {
   error: '#BA2A3B',
   info: '#3B82F6',
 
-  courseColors: ['#315EDA', '#007570', '#A55F05', '#BE286E', '#7443D6'],
+  // 第三个课色原先 #A55F05，在周视图的半透明底上只有 4.12:1，低于 4.5 门槛；
+  // 加深到 #8B4E04 后是 5.34:1，白底上 6.59:1，色相仍是橙棕。
+  courseColors: ['#315EDA', '#007570', '#8B4E04', '#BE286E', '#7443D6'],
 }
 
 export const DarkColors: ColorPalette = {

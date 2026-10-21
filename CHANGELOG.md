@@ -58,6 +58,13 @@
 - **外部 scheme 改为白名单。** 收银台 H5 由服务端返回，原先只要形如 `xxx://` 就交给系统 `startAbility`，响应若被污染即可拉起任意应用。现只放行微信、支付宝、云闪付的已知 scheme，其余一律留在 Web 内。
 - **充值金额补客户端前置校验。** 档位来自服务端配置，此前原样透传；现按契约要求校验"大于 0 且最多两位小数"，非法档位直接拦截、不发请求。
 
+### 一致性收敛
+
+- **首页入口改为按功能名查找。** 原先 7 处用 `FEATURES[4]`、`FEATURES[10]` 这类下标取功能定义，调整数组顺序或插入新项就会静默打开错误页面（"课表"打开成绩）。现在统一走 `featureByName(name)`，找不到时落到学校服务页而不是抛错。
+- **周视图配色并入主题色板。** `WeekOverview` 原先自己硬编码 16 个色值（浅深各 8 个，取模基数是 4），而日视图用 `courseColors`（5 色），同一门课在两个视图里颜色和序号都对不上。现在两边共用一个 `stableHash` 和一份 `courseColors`，周视图背景由同色降透明度派生，主题调色只需改一处。
+- **第三个课色加深。** 浅色 `#A55F05` 在半透明底上只有 4.12:1，低于 4.5 门槛；改为 `#8B4E04` 后 5.34:1，白底 6.59:1，色相仍是橙棕。周视图背景透明度同时由 0.14 降到 0.10，最小对比度回到 4.82:1。
+- **"今日课程"过滤改用容错解析。** `HomeTab` 与 `ScheduleTab` 原先各自用"星期X"字符串精确比较，课表里出现「周一」「Mon」「1」这类写法时，那门课会在今日列表里消失；现在统一用 `weekdayIndex`，与网格、提醒、实况窗共用同一套解析。
+
 ### 死代码清理
 
 - **删除 17 个零引用文件、891 行。** 这批文件是早期重构残留，全都不在 `main_pages.json` 的 15 条路由内，且互不引用之外无人使用：`HomePage`、`HomePageV2`、`MainTabsV2`、`PlaceholderTab`、`CountUp`、`PageHeader`、`ThemeProvider`、`AppButton`、`AppCard`、`BottomNavigation`、`AppTheme`、`Spacing`、`PushService`、`ReminderScheduler`、`NotificationHelper`、`NetworkHelper`、`PerformanceMonitor`。

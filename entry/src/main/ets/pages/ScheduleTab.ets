@@ -15,7 +15,7 @@ import { CampusHeader } from '../components/common/CampusHeader'
 import { navToMap } from '../utils/MapDeepLink'
 import { safePush } from '../utils/RouterHelper'
 import { getCourseMinutes, formatMinutes, classStatus, sectionsResolved, courseTimeText } from '../utils/ClassTime'
-import { unresolvedCourses } from '../utils/CourseCalendar'
+import { unresolvedCourses, weekdayIndex } from '../utils/CourseCalendar'
 import { Radius } from '../theme/Radius'
 import { safeToast } from '../utils/ToastHelper'
 import { startCourseLiveView } from '../services/LiveViewService'
@@ -95,8 +95,8 @@ export struct ScheduleTab {
   updateDerived(): void {
     this.filteredCourses = this.allCourses.filter((c: Course): boolean =>
       isCourseInWeek(c.weeks, this.selectedWeek, this.totalWeeks))
-    const today = this.todayName()
-    this.sortedToday = this.filteredCourses.filter((c: Course): boolean => c.day === today)
+    const todayIndex: number = (new Date().getDay() + 6) % 7
+    this.sortedToday = this.filteredCourses.filter((c: Course): boolean => weekdayIndex(c.day) === todayIndex)
       .map((c: Course): TodayCourseItem => {
         const range = getCourseMinutes(c.sections)
         return { course: c, startMinutes: range[0], endMinutes: range[1], resolved: sectionsResolved(c.sections) }

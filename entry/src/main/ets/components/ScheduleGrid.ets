@@ -3,6 +3,7 @@ import { Course } from '../models/JwTypes'
 import { ALL_TIMES, ClassTime, classStatus } from '../utils/ClassTime'
 import { scheduleBlocks, ScheduleBlock } from '../utils/ScheduleLayout'
 import { localDateText } from '../utils/CourseCalendar'
+import { stableHash } from '../utils/Hash'
 
 @Component
 export struct ScheduleGrid {
@@ -28,9 +29,7 @@ export struct ScheduleGrid {
     return this.isToday(block.day) ? classStatus(ALL_TIMES[block.first - 1].startMinutes, ALL_TIMES[block.last - 1].endMinutes) : 0
   }
   private color(course: Course): string {
-    let hash = 0
-    for (let i = 0; i < course.title.length; i++) hash = (hash * 31 + course.title.charCodeAt(i)) | 0
-    return this.palette.courseColors[Math.abs(hash) % this.palette.courseColors.length]
+    return this.palette.courseColors[stableHash(course.title) % this.palette.courseColors.length]
   }
   private dayDate(day: number): string {
     if (!this.weekKnown) return ''

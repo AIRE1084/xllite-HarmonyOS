@@ -1,6 +1,7 @@
 import { hasNativeAdapter } from '../utils/SchoolRoutes'
 import { safePush } from '../utils/RouterHelper'
-import { FEATURES } from '../utils/Constants'
+import { featureByName } from '../utils/Constants'
+import { weekdayIndex } from '../utils/CourseCalendar'
 import { FeatureDef } from '../models/Types'
 import { Course } from '../models/JwTypes'
 import { AccountBalance } from '../models/CardTypes'
@@ -196,9 +197,11 @@ export struct HomeTab {
   }
 
   private todayItems(): TodayCourseItem[] {
-    const today = this.todayName()
+    // 用 weekdayIndex 容错解析而不是"星期X"字符串精确比较：
+    // 课表里可能出现「周一」「Mon」「1」等写法，精确比较会让这些课在今日列表里消失。
+    const todayIndex: number = (new Date().getDay() + 6) % 7
     return this.weekCourses()
-      .filter((c: Course): boolean => c.day === today)
+      .filter((c: Course): boolean => weekdayIndex(c.day) === todayIndex)
       .map((c: Course): TodayCourseItem => {
         const se: number[] = getCourseMinutes(c.sections)
         return { course: c, startMinutes: se[0], endMinutes: se[1], resolved: sectionsResolved(c.sections) }
@@ -260,7 +263,9 @@ export struct HomeTab {
 
   private quickFeatures(): FeatureDef[] {
     // 8 项常用服务全部平铺可见，不再折叠：电费查询与一卡通充值排前两位。
-    return [FEATURES[4], FEATURES[3], FEATURES[5], FEATURES[6], FEATURES[7], FEATURES[2], FEATURES[9], FEATURES[10]]
+    return [featureByName('newcard.electricity.account'), featureByName('newcard.recharge.config'),
+      featureByName('jw.schedule'), featureByName('jw.grades'), featureByName('jw.exams'),
+      featureByName('newcard.transactions'), featureByName('jw.training'), featureByName('local.todos')]
   }
 
   private featureIcon(item: FeatureDef): ResourceStr {
@@ -336,7 +341,7 @@ export struct HomeTab {
             .backgroundColor(this.isDark ? '#70223A60' : '#A8FFFFFF').borderRadius(16)
         }.width('100%')
       }.alignItems(HorizontalAlign.Start).width('100%')
-        .onClick(() => this.openFeature(FEATURES[5]))
+        .onClick(() => this.openFeature(featureByName('jw.schedule')))
         .accessibilityGroup(true).accessibilityText('今日安排，' + this.courseSummary.title + '，' + this.courseSummary.meta)
         .accessibilityDescription('点击查看完整课表')
     }
@@ -353,10 +358,10 @@ export struct HomeTab {
             Text(this.balanceText).fontSize(23).fontWeight(FontWeight.Bold).fontColor(this.palette.onSurface)
           }.layoutWeight(1).alignItems(HorizontalAlign.Start)
             .accessibilityGroup(true).accessibilityText('校园卡可用余额，' + this.balanceText + '，查看余额详情')
-            .onClick(() => this.openFeature(FEATURES[1]))
+            .onClick(() => this.openFeature(featureByName('newcard.balance')))
           Button('付款码').height(46).padding({ left: 18, right: 18 }).fontSize(14).fontWeight(FontWeight.Medium)
             .fontColor(this.palette.onPrimary).backgroundColor(this.palette.primary).borderRadius(14)
-            .onClick(() => this.openFeature(FEATURES[0]))
+            .onClick(() => this.openFeature(featureByName('newcard.campus_code.qrcode')))
         }.width('100%')
         if (this.balanceError) {
           Text('余额暂未更新，点击余额可重新查询').fontSize(12).fontColor(this.palette.onSurfaceVariant).width('100%')
@@ -377,7 +382,7 @@ export struct HomeTab {
           .fontSize(Typography.caption.fontSize).fontColor(this.palette.onSurfaceVariant)
       }.alignItems(HorizontalAlign.Start).layoutWeight(1)
       Text('›').fontSize(18).fontColor(this.palette.onSurfaceVariant)
-    }.width('100%').padding({ top: 10, bottom: 10 }).onClick(() => this.openFeature(FEATURES[10]))
+    }.width('100%').padding({ top: 10, bottom: 10 }).onClick(() => this.openFeature(featureByName('local.todos')))
   }
 
   build() {
@@ -413,7 +418,7 @@ export struct HomeTab {
             }
           }.width('100%')
           Column() {
-            this.SectionHeading('待办 · ' + this.openTodoItems.length.toString(), '全部 ›', FEATURES[10])
+            this.SectionHeading('待办 · ' + this.openTodoItems.length.toString(), '全部 ›', featureByName('local.todos'))
             CampusCard({ contentPadding: 16 }) {
               if (this.openTodoItems.length === 0) {
                 Row({ space: 12 }) {
@@ -424,7 +429,7 @@ export struct HomeTab {
                   }.layoutWeight(1).alignItems(HorizontalAlign.Start)
                   Button('添加').height(44).fontSize(12).fontColor(this.palette.primary)
                     .backgroundColor(this.palette.primaryContainer).borderRadius(12)
-                    .onClick(() => this.openFeature(FEATURES[10]))
+                    .onClick(() => this.openFeature(featureByName('local.todos')))
                 }.width('100%')
               } else {
                 ForEach(this.openTodoItems.slice(0, 3), (item: TodoItem) => { this.TodoPreview(item) },
