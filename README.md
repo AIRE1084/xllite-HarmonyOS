@@ -45,23 +45,23 @@
 
 ```mermaid
 flowchart TD
-    A["克隆仓库<br/>git clone &lt;URL&gt;"] --> B["DevEco Studio 打开工程根目录"]
-    B --> C["等待 Sync 完成<br/>首次会下载 SDK 与依赖"]
-    C --> D["File → Project Structure → Signing Configs"]
-    D --> E["勾选 Automatically generate signature<br/>并登录华为账号"]
-    E --> F{"签名生成成功？"}
-    F -- 失败 --> G["检查账号已实名<br/>网络可访问华为开发者服务"]
+    A["克隆仓库到本地"] --> B["DevEco Studio 打开工程根目录"]
+    B --> C["等待 Sync 完成"]
+    C --> D["Project Structure 打开 Signing Configs"]
+    D --> E["勾选自动生成签名并登录华为账号"]
+    E --> F{"签名生成成功"}
+    F -->|失败| G["检查账号已实名、网络可达华为开发者服务"]
     G --> D
-    F -- 成功 --> H["手机开启开发者模式<br/>设置 → 关于手机 → 连点版本号 7 次"]
-    H --> I["开发人员选项 → 打开 USB 调试"]
-    I --> J["USB 连接电脑<br/>手机弹窗选择「传输文件」"]
+    F -->|成功| H["手机连点版本号 7 次开启开发者模式"]
+    H --> I["开发人员选项打开 USB 调试"]
+    I --> J["USB 连接电脑并选择传输文件"]
     J --> K["hdc list targets"]
-    K --> L{"列出设备？"}
-    L -- 否 --> M["换数据线或装驱动<br/>hdc kill 后重新插拔"]
+    K --> L{"列出设备"}
+    L -->|否| M["更换数据线或安装驱动后重新插拔"]
     M --> K
-    L -- 是 --> N{"手机已装正式版？<br/>二者同为 com.xjit.app"}
-    N -- 是 --> O["先改 AppScope/app.json5 的 bundleName<br/>否则调试包与正式版冲突"]
-    N -- 否 --> P["DevEco 点击 Run"]
+    L -->|是| N{"手机已装正式版"}
+    N -->|是| O["先改 bundleName 避免与正式版冲突"]
+    N -->|否| P["DevEco 点击 Run"]
     O --> P
     P --> Q["应用安装并启动"]
 ```
