@@ -5,10 +5,6 @@ import { NativeGlass } from './NativeGlass'
 export struct LiquidGlass {
   @Prop contentPadding: Length = 16
   @Prop radius: number = 24
-  @Prop glassBlur: number = 20
-  @Prop elevation: number = 3
-  @Prop highlightOpacity: number = 0.15
-  @Prop glassBorderWidth: number = 1
   @Prop interactive: boolean = false
   @BuilderParam content: () => void
 

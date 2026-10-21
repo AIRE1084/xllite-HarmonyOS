@@ -353,7 +353,7 @@ struct TodoPage {
   @Builder
   TodoRow(item: TodoItem) {
     Column() {
-      LiquidGlass({ contentPadding: 14, radius: 18, glassBlur: 42 }) {
+      LiquidGlass({ contentPadding: 14, radius: 18 }) {
         Row() {
           Column() {
             this.StatusDot(item.done)
@@ -419,7 +419,7 @@ struct TodoPage {
       Scroll() {
         Column() {
           Column() {
-            LiquidGlass({ contentPadding: 16, radius: 22, glassBlur: 54 }) {
+            LiquidGlass({ contentPadding: 16, radius: 22 }) {
               Column() {
               TextInput({ placeholder: '新增待办', text: this.titleInput })
                 .fontColor(this.palette.onSurface).placeholderColor(this.palette.onSurfaceVariant)
@@ -500,7 +500,7 @@ struct TodoPage {
 
           if (this.visibleTodos().length === 0) {
             Column() {
-              LiquidGlass({ contentPadding: 20, radius: 22, glassBlur: 42 }) {
+              LiquidGlass({ contentPadding: 20, radius: 22 }) {
                 Column() {
                   Text(this.emptyTitle())
                     .fontSize(18)

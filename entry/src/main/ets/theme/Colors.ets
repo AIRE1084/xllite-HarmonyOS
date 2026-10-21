@@ -33,16 +33,6 @@ export interface ColorPalette {
   error: string
   info: string
 
-  // 玻璃(LiquidGlass / GlassCard / LiquidGlassPro 专用)
-  glassBase: string         // 玻璃底层背景 rgba
-  glassBaseStrong: string   // 玻璃高密度背景 rgba
-  glassBorder: string       // 玻璃描边
-  glassHighlight: string    // 玻璃高光
-  glassShadow: string       // 玻璃阴影
-  glassSpecular: string     // iOS26 顶部高光条中心色
-  glassRimTop: string       // iOS26 玻璃描边顶部色
-  glassRimBottom: string    // iOS26 玻璃描边底部色
-
   // 课程类型(课表卡片色块,5 种)
   courseColors: string[]
 }
@@ -70,16 +60,6 @@ export const LightColors: ColorPalette = {
   error: '#BA2A3B',
   info: '#3B82F6',
 
-  glassBase: 'rgba(255,255,255,0.55)',
-  glassBaseStrong: 'rgba(255,255,255,0.78)',
-  glassBorder: 'rgba(255,255,255,0.6)',
-  glassHighlight: 'rgba(255,255,255,0.92)',
-  glassShadow: 'rgba(15, 23, 42, 0.10)',
-  // iOS 26 Liquid Glass 额外色 (LiquidGlassPro 使用)
-  glassSpecular: 'rgba(255,255,255,1)',         // 顶部高光条中心色
-  glassRimTop: 'rgba(255,255,255,0.95)',         // 描边顶部
-  glassRimBottom: 'rgba(15, 23, 42, 0.10)',     // 描边底部 (柔和暗边)
-
   courseColors: ['#315EDA', '#007570', '#A55F05', '#BE286E', '#7443D6'],
 }
 
@@ -105,15 +85,6 @@ export const DarkColors: ColorPalette = {
   warning: '#FBBF24',
   error: '#F87171',
   info: '#60A5FA',
-
-  glassBase: 'rgba(22,26,35,0.55)',
-  glassBaseStrong: 'rgba(22,26,35,0.72)',
-  glassBorder: 'rgba(255,255,255,0.14)',
-  glassHighlight: 'rgba(255,255,255,0.22)',
-  glassShadow: 'rgba(0, 0, 0, 0.45)',
-  glassSpecular: 'rgba(255,255,255,0.6)',
-  glassRimTop: 'rgba(255,255,255,0.25)',
-  glassRimBottom: 'rgba(0, 0, 0, 0.25)',
 
   courseColors: ['#7B95F0', '#4FD1CE', '#FBBF24', '#F472B6', '#A78BFA'],
 }
