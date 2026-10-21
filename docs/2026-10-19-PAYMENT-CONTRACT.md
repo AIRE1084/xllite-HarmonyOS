@@ -30,7 +30,7 @@
 
 `docs/SCHOOL-NATIVE-API.md` 仅标记 `newcard.recharge.create_order`「尚未实施」，未沉淀 payCode 枚举与网关契约。本次核对补入本文件。
 
-`docs/2026-10-17-CONTRACT-RECHECK.md` 已说明 create_order 返回支付入口、下单不等于支付成功，与本文一致。
+create_order 返回支付入口，下单不等于支付成功，与本文一致。
 
 ## 后续条件
 

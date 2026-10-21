@@ -111,7 +111,7 @@ if (this.mainWindow !== null && this.avoidListener !== null) this.mainWindow.off
 
 ### 5.2 全屏 root 几何确认
 
-重启应用后 `uitest dumpLayout`（`docs/simulator-verify-20261020-164745/kb_audit_root.json`），登录页元素坐标（与 lead 提供前置事实一致）：
+重启应用后 `uitest dumpLayout`（`kb_audit_root.json`，属模拟器验收产物，未随仓库分发），登录页元素坐标（与 lead 提供前置事实一致）：
 
 | 元素 | 坐标 (y1~y2) |
 |------|-------------|

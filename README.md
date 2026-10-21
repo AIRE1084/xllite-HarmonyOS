@@ -93,7 +93,7 @@ hdc shell aa start -a EntryAbility -b com.xjit.app
 
 - [更新日志](CHANGELOG.md)：每次同步的变更记录。
 - [当前进度与下一步](docs/PROJECT-STATUS.md)：本轮实测结论、业务缺口、交付边界。
-- [目录与维护约定](docs/PROJECT-MAP.md)：源码、附属项目、工具链、历史产物和 Git 规则。
+- [目录与维护约定](docs/PROJECT-MAP.md)：源码结构、工具链、已移出内容与 Git 规则。
 - [学校接口与认证契约](docs/SCHOOL-NATIVE-API.md)：学校直连协议与历史验收。
 - [设计验收](docs/DESIGN-REVIEW-ACCEPTANCE.md)、[原生材质](docs/NATIVE-MATERIAL.md)、[实况窗申请草稿](docs/LIVEVIEW-APPLICATION.md)。
 
@@ -118,7 +118,7 @@ pwsh -File .\tools\build-api26.ps1 -BuildRoot 'D:\XJITApp-organize-20261016-buil
 | `main` | Flutter 实现，与本工程无共同提交历史 |
 | `harmony` | 本工程，HarmonyOS ArkTS 实现。安装说明与更新日志均以此分支为准 |
 
-GitHub 仓库首页默认展示 `main`，看不到本文件。查看本分支请切换分支，或直接访问 `https://github.com/AIRE1084/xllite-HarmonyOS/tree/harmony`。
+GitHub 仓库首页默认展示 `harmony` 分支。`main` 分支是 Flutter 实现，与本工程无共同提交历史，不随本仓库分发鸿蒙代码。
 
 ## 参与与反馈
 
