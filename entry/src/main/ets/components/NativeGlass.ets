@@ -30,7 +30,7 @@ export struct NativeGlass {
           .backgroundEffect({
             radius: this.prominent ? 54 : 40,
             saturation: this.prominent ? 1.7 : 1.5,
-            brightness: this.isDark ? 1.3 : 1.1,
+            brightness: 1.0,
             color: this.isDark ? '#3DFFFFFF' : '#CCFFFFFF',
             adaptiveColor: AdaptiveColor.DEFAULT,
           })

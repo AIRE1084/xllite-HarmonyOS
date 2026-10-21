@@ -190,15 +190,18 @@ export async function clearSession(): Promise<void> {
   const companionTask = clearCampusCompanion()
   savedUsername = ''; savedAccessToken = ''; savedTokenExpiresAt = 0; cardToken = ''; cardExpiresAt = 0; cardSessionEpoch++
   setTodoOwner('')
-  // School pages use the app's private incognito WebView store.
-  try { webview.WebCookieManager.clearAllCookiesSync(true); webview.WebStorage.deleteAllData(true) } catch (_e) {}
+  // School pages use the app's private incognito WebView store. deleteAllData is
+  // async: a synchronous try/catch cannot observe its rejection, so it has to join
+  // the cleanup chain instead of being fired and forgotten.
+  try { webview.WebCookieManager.clearAllCookiesSync(true) } catch (_e) {}
+  const webStorageTask: Promise<void> = Promise.resolve(webview.WebStorage.deleteAllData(true)).catch((_e: Error) => {})
   const authClearTask = enqueue(async () => {
     const task = getPrefs()
     if (task === null) return
     const prefs = await task; await prefs.clear(); await prefs.flush()
   })
   let cleanupError: Error | null = null
-  const tasks: Promise<void>[] = [cacheClearTask, authClearTask, companionTask, clearTodos(), clearTodoReminders()]
+  const tasks: Promise<void>[] = [cacheClearTask, authClearTask, companionTask, webStorageTask, clearTodos(), clearTodoReminders()]
   await Promise.all(tasks.map((task: Promise<void>): Promise<void> => task.catch((error: Error) => {
     if (cleanupError === null) cleanupError = error
   })))

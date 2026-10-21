@@ -1,19 +1,4 @@
-export interface CurrentWeek {
-  term: string
-  week: number
-  totalWeeks: number
-  termStartDate: string
-  today: string
-}
-
-// The schedule response owns the semester data; do not cache a stale default or wait on a timer.
-export async function fetchCurrentWeek(term: string = ''): Promise<CurrentWeek> {
-  return {
-    term: AppStorage.get<string>('term') ?? term,
-    week: getCurrentWeek(), totalWeeks: getTotalWeeks(),
-    termStartDate: '', today: new Date().toISOString(),
-  }
-}
-export function getCurrentWeek(): number { return AppStorage.get<number>('currentWeek') ?? 1 }
-export function getTotalWeeks(): number { return AppStorage.get<number>('totalWeeks') ?? 20 }
+// 学期名与周次由 CampusCompanionService.publishWeek 统一写入 AppStorage，
+// 这里只保留读取入口。曾经的 getCurrentWeek / getTotalWeeks 已移除：
+// 它们让同一份数据多出第二个真相源，且默认值 1 / 20 会掩盖"尚未同步"的状态。
 export function getTerm(): string { return AppStorage.get<string>('term') ?? '' }

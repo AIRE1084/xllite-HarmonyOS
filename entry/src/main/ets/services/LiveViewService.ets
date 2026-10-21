@@ -161,7 +161,15 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
     if (result.resultCode !== 0) {
       // Partial result may still leave a primary area: retain and stop it.
       currentView = view
-      await stopCurrent()
+      try {
+        await stopCurrent()
+      } catch (_error) {
+        // The system refused the cleanup too. Keep currentView set so a later
+        // finishAllLiveViews can retry, but never leave currentHandle stale.
+        currentHandle = null; currentKey = ''; currentTodoId = ''
+        setReason('实况窗显示不完整且回收未完成（' + result.resultCode + '）')
+        return { ok: false, reason: supportReason }
+      }
       setReason('实况窗显示不完整（' + result.resultCode + '）')
       return { ok: false, reason: supportReason }
     }

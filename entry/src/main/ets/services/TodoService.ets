@@ -51,6 +51,19 @@ export function setTodoContext(ctx: common.UIAbilityContext): void {
 // later session can tell whose data it is even when sign-out cleanup never
 // reached disk, which is the case a plain "delete on logout" cannot cover.
 export function setTodoOwner(owner: string): void { todoOwner = owner }
+let idCounter: number = 0
+// Two adds inside the same millisecond used to have a 1-in-100000 chance of
+// identical ids; a collision makes toggle/delete hit both rows. The counter is
+// monotonic per process and the loop still re-checks the live store.
+function makeId(existing: TodoItem[]): string {
+  const stamp = Date.now()
+  let candidate = ''
+  do {
+    idCounter++
+    candidate = stamp.toString() + '_' + idCounter.toString(36) + '_' + Math.floor(Math.random() * 1296).toString(36)
+  } while (existing.some((item: TodoItem): boolean => item.id === candidate))
+  return candidate
+}
 function ownerTag(): string {
   if (todoOwner.length === 0) return ''
   let a: number = 5381
@@ -206,7 +219,7 @@ export async function addTodo(draft: TodoDraft): Promise<TodoItem[]> {
   await loadTodos()
   const now = Date.now()
   const item: TodoItem = {
-    id: now.toString() + '_' + Math.floor(Math.random() * 100000).toString(),
+    id: makeId(todoStore),
     title: draft.title.trim(),
     note: draft.note.trim(),
     dueText: draft.dueText.trim(),
@@ -310,12 +323,15 @@ export function refreshTodoWidgets(): Promise<void> {
   return refresh
 }
 export async function clearTodos(): Promise<void> {
+  if (todoContext === null) throw new Error('待办存储尚未初始化，退出清理未完成，请重试')
   cleanupPending = true
   sessionVersion++
   remindersEnabled = false
   reminderStatus = '尚未登记任务提醒'
   liveCleanupStatus = ''
-  if (todoContext === null) throw new Error('待办存储尚未初始化，退出清理未完成，请重试')
+  // A failed clear must keep the marker: the rows on disk may be half-cleared, so
+  // reading them would show inconsistent data. Recovery stays explicit through a
+  // second clear, which is what the regression suite pins down.
   await mutate((_items: TodoItem[]): TodoItem[] => [], sessionVersion, true)
 }
 export function countOpenTodos(items: TodoItem[]): number {

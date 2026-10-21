@@ -35,17 +35,37 @@ export function initCampusCompanion(ctx: common.UIAbilityContext, bundleName: st
   AppStorage.setOrCreate<string>('courseReminderStatus', '未开启')
   AppStorage.setOrCreate<string>('campusWidgetStatus', '未开启')
   AppStorage.setOrCreate<string>('liveViewStatus', '未开启')
-  readyTask = (async (): Promise<void> => {
+  readyTask = bootstrap(ctx)
+  return readyTask
+}
+async function bootstrap(ctx: common.UIAbilityContext): Promise<void> {
+  try {
     prefs = await preferences.getPreferences(ctx, 'xjit_campus_companion')
     AppStorage.setOrCreate<boolean>('campusWidgetEnabled', (await prefs.get('widget', false)) === true)
     AppStorage.setOrCreate<boolean>('courseReminderEnabled', (await prefs.get('reminders', false)) === true)
     AppStorage.setOrCreate<boolean>('liveViewEnabled', (await prefs.get('live', false)) === true)
     snapshot = readWidgetSnapshot(ctx)
-  })()
-  return readyTask
+    AppStorage.setOrCreate<string>('campusInitError', '')
+  } catch (error) {
+    // Surface the reason instead of failing silently: without prefs the widget,
+    // reminders and live view are all inert for this session.
+    AppStorage.setOrCreate<string>('campusInitError',
+      '校园数据初始化失败（' + String((error as BusinessError).code ?? '') + '），请重启应用或到「桌面与提醒」重试')
+    throw error as Error
+  }
 }
 function enqueue(action: () => Promise<void>): Promise<void> {
-  const task = work.then(async () => { await readyTask; await action() })
+  const task = work.then(async () => {
+    try {
+      await readyTask
+    } catch (error) {
+      // A rejected bootstrap must not poison the rest of the session.
+      if (context === null) throw error as Error
+      readyTask = bootstrap(context)
+      await readyTask
+    }
+    await action()
+  })
   work = task.catch((_e: Error) => {})
   return task
 }
@@ -103,6 +123,11 @@ async function syncReminders(): Promise<void> {
   const items = upcoming.slice(0, REMINDER_LIMIT)
   const plan = enabled + '|' + localDateText(new Date()) + '|' + upcoming.length + '|' + items.map((item): string => item.key).join(';')
   if (plan === lastPlan) return
+  // Cancel-then-rebuild: the moment the system group is cleared, the previous
+  // plan no longer describes the system state. Any early return below (revision
+  // changed, capacity full) must leave lastPlan empty so the next pass rebuilds
+  // instead of short-circuiting on a plan whose reminders are already gone.
+  lastPlan = ''
   try {
     // Recover orphan course reminders without deleting other feature groups.
     await cancelReminderGroup('campus_courses')
