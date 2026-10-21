@@ -110,8 +110,8 @@ export async function loadSession(): Promise<boolean> {
 }
 export function getTokenExpiresAt(): number { return savedTokenExpiresAt }
 export function getUsername(): string { return savedUsername }
-// Compatibility for existing page signatures; no password is retained or submitted.
-export function getPassword(): string { return '' }
+// 这里曾经有一个恒 return '' 的 getPassword()，作用于二十多处调用链却从不被读取。
+// 鉴权只靠 Cookie 与 Bearer Token，密码既不保存也不提交，所以一并删除。
 export function getAccessToken(): string {
   return savedTokenExpiresAt > Date.now() ? savedAccessToken : ''
 }

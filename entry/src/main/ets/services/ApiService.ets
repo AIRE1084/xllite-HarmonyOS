@@ -47,7 +47,7 @@ function makeCacheKey(feature: string, username: string, params: Record<string, 
 }
 
 
-async function callViaHttp(feature: string, username: string, _password: string,
+async function callViaHttp(feature: string, username: string,
   params: Record<string, Object>): Promise<CallResult> {
   const result = new CallResult()
   result.officialUrl = schoolFeatureUrl(feature)
@@ -78,8 +78,10 @@ async function callViaHttp(feature: string, username: string, _password: string,
 function expiredSessionResult(): CallResult {
   const result = new CallResult(); result.error = '登录状态已变化，请重新登录'; result.statusCode = 401; return result
 }
+// 鉴权只走 Cookie 与 Bearer Token，密码不参与任何请求。此前这里挂着一个恒为空串的
+// password 形参，一路透传却从未被读取，读代码的人会误以为密码进了鉴权链。
 export async function callFeature(
-  feature: string, username: string, password: string, params: Record<string, Object>
+  feature: string, username: string, params: Record<string, Object>
 ): Promise<CallResult> {
   const epoch = getCacheEpoch()
   if (username.length === 0 || username !== getUsername() || getAccessToken().length === 0) return expiredSessionResult()
@@ -108,7 +110,7 @@ export async function callFeature(
       }
       if (!fresh) {
         // Background refresh: keep showing the cached value; the in-flight run republishes.
-        refreshInBackground(feature, username, password, params, cacheKey, epoch).catch((_e: Error) => {})
+        refreshInBackground(feature, username, params, cacheKey, epoch).catch((_e: Error) => {})
       }
       return result
     }
@@ -120,7 +122,7 @@ export async function callFeature(
   // Include cache publication in the shared task; no gap for a duplicate request.
   const task = (async (): Promise<CallResult> => {
     try {
-      const result = await callViaHttp(feature, username, password, params)
+      const result = await callViaHttp(feature, username, params)
       if (!sessionValid()) return expiredSessionResult()
       if (result.ok && feature === 'jw.schedule') await acceptCampusSchedule(username, result.data, epoch).catch((_e: Error) => {})
       if (!sessionValid()) return expiredSessionResult()
@@ -135,7 +137,7 @@ export async function callFeature(
 // Background stale-while-revalidate refresh: reuses the shared in-flight run when one
 // already exists for the same key, otherwise starts one. The cached value already shown
 // is kept until the fresh result republishes; session/epoch guards stop it on logout.
-async function refreshInBackground(feature: string, username: string, password: string,
+async function refreshInBackground(feature: string, username: string,
   params: Record<string, Object>, cacheKey: string, epoch: number): Promise<void> {
   if (!shouldCacheFeature(feature)) return
   const cardEpoch = getCardSessionEpoch()
@@ -148,7 +150,7 @@ async function refreshInBackground(feature: string, username: string, password: 
   if (existing !== undefined) { await existing; return }
   const task = (async (): Promise<CallResult> => {
     try {
-      const result = await callViaHttp(feature, username, password, params)
+      const result = await callViaHttp(feature, username, params)
       if (!sessionValid()) return result
       if (result.ok && feature === 'jw.schedule') await acceptCampusSchedule(username, result.data, epoch).catch((_e: Error) => {})
       if (!sessionValid()) return result
@@ -160,7 +162,7 @@ async function refreshInBackground(feature: string, username: string, password: 
   await task
 }
 
-export async function prewarmCampusData(username: string, password: string): Promise<void> {
+export async function prewarmCampusData(username: string): Promise<void> {
   if (username.length === 0 || getAccessToken().length === 0 || AppStorage.get<boolean>('appActive') === false ||
     AppStorage.get<boolean>('mainPageActive') === false) return
   const epoch = getCacheEpoch()
@@ -171,13 +173,13 @@ export async function prewarmCampusData(username: string, password: string): Pro
     try {
       // At most two warmup requests at once; respect valid cache and share in-flight reads.
       await Promise.all([
-        callFeature('jw.profile', username, password, {}),
-        (isGatewayAuth() || getCardToken().length > 0) ? callFeature('newcard.balance', username, password, {}) : Promise.resolve(new CallResult()),
+        callFeature('jw.profile', username, {}),
+        (isGatewayAuth() || getCardToken().length > 0) ? callFeature('newcard.balance', username, {}) : Promise.resolve(new CallResult()),
       ])
       if (epoch !== getCacheEpoch() || AppStorage.get<boolean>('appActive') === false ||
         AppStorage.get<boolean>('mainPageActive') === false) return
       await Promise.all([
-        (isGatewayAuth() || getCardToken().length > 0) ? callFeature('newcard.transactions', username, password, {}) : Promise.resolve(new CallResult()),
+        (isGatewayAuth() || getCardToken().length > 0) ? callFeature('newcard.transactions', username, {}) : Promise.resolve(new CallResult()),
       ])
     } finally { warmupTasks.delete(key) }
   })()

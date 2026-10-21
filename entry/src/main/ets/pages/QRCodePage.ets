@@ -5,7 +5,7 @@ import { getCacheEpoch } from '../services/MemoryCache'
 import { getColors } from '../theme/Colors'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { Motion, motionDuration } from '../theme/Motion'
 
 @Entry
@@ -63,7 +63,7 @@ struct QRCodePage {
     const username = getUsername()
     try {
       const empty: Record<string, Object> = {}
-      const res: CallResult = await callFeature('newcard.campus_code.qrcode', username, getPassword(), empty)
+      const res: CallResult = await callFeature('newcard.campus_code.qrcode', username, empty)
       if (!this.alive || epoch !== getCacheEpoch() || username !== getUsername()) return
       if (res.ok) {
         const d = res.data

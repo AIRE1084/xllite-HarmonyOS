@@ -5,7 +5,7 @@ import { ScheduleTab } from './ScheduleTab'
 import { ProfileTab } from './ProfileTab'
 import { BlurTabBar } from '../components/BlurTabBar'
 import { AmbientBackground } from '../components/AmbientBackground'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { prewarmCampusData } from '../services/ApiService'
 import { Motion, motionDuration } from '../theme/Motion'
 import { ThemeWash } from '../components/common/ThemeWash'
@@ -50,7 +50,7 @@ struct MainTabs {
       this.warmupTimer = -1
       if (!this.alive || !this.mainPageActive || !this.appActive) return
       this.warmupStarted = true
-      prewarmCampusData(getUsername(), getPassword()).catch((_e: Error) => {})
+      prewarmCampusData(getUsername()).catch((_e: Error) => {})
     }, 400)
   }
   applyRequestedRoute(): void {

@@ -3,7 +3,7 @@ import { Course } from '../models/JwTypes'
 import { getCacheEpoch } from '../services/MemoryCache'
 import { loadUiState, saveUiState } from '../services/UiStateCache'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { getTerm } from '../utils/SemesterService'
 import { isCourseInWeek } from '../utils/WeekParser'
 import { WeekSelector } from '../components/WeekSelector'
@@ -120,7 +120,7 @@ export struct ScheduleTab {
     const epoch = getCacheEpoch()
     try {
       const params: Record<string, Object> = forceRefresh ? { '_forceRefresh': true } : {}
-      const res: CallResult = await callFeature('jw.schedule', username, getPassword(), params)
+      const res: CallResult = await callFeature('jw.schedule', username, params)
       if (!this.alive || epoch !== getCacheEpoch() || username !== getUsername()) return
       if (res.ok) {
         this.errorMsg = ''

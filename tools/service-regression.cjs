@@ -429,32 +429,32 @@ test('concurrent todo initialization waits for one read and returns independent 
 
 test('concurrent feature reads deduplicate; cache hit and manual refresh differ', async () => {
   const f = fixture(); await f.seedToken();
-  const [a, b] = await Promise.all([f.api.callFeature('newcard.balance', 'student', 'mock', { b: 2, a: 1 }), f.api.callFeature('newcard.balance', 'student', 'mock', { a: 1, b: 2 })]);
+  const [a, b] = await Promise.all([f.api.callFeature('newcard.balance', 'student', { b: 2, a: 1 }), f.api.callFeature('newcard.balance', 'student', { a: 1, b: 2 })]);
   assert.equal(a.ok, true); assert.equal(b.ok, true); assert.equal(f.state.requests.length, 1);
-  const cached = await f.api.callFeature('newcard.balance', 'student', 'mock', { a: 1, b: 2 }); assert.equal(cached.fromCache, true); assert.equal(f.state.requests.length, 1);
-  const fresh = await f.api.callFeature('newcard.balance', 'student', 'mock', { _forceRefresh: true, b: 2, a: 1 });
+  const cached = await f.api.callFeature('newcard.balance', 'student', { a: 1, b: 2 }); assert.equal(cached.fromCache, true); assert.equal(f.state.requests.length, 1);
+  const fresh = await f.api.callFeature('newcard.balance', 'student', { _forceRefresh: true, b: 2, a: 1 });
   assert.equal(fresh.fromCache, false); assert.equal(f.state.requests.length, 2); assert.equal('_forceRefresh' in f.state.requests[1].body, false); assert.equal(f.state.created, f.state.destroyed);
 });
 
 test('failed school profile and session verification release HTTP sessions and can retry', async () => {
   const f = fixture(); await f.seedToken(); f.state.respond = async () => { throw new Error('mock failure'); };
-  assert.equal((await f.api.callFeature('jw.profile', 'student', 'mock', {})).ok, false); assert.equal(f.state.created, f.state.destroyed);
+  assert.equal((await f.api.callFeature('jw.profile', 'student', {})).ok, false); assert.equal(f.state.created, f.state.destroyed);
   assert.equal((await f.load('entry/src/main/ets/services/SchoolNativeApi.ets').acceptSchoolLogin(schoolJwt(),f.cache.getCacheEpoch())).ok, false); assert.equal(f.state.created, f.state.destroyed);
-  f.state.respond = null; assert.equal((await f.api.callFeature('jw.profile', 'student', 'mock', {})).ok, true);
+  f.state.respond = null; assert.equal((await f.api.callFeature('jw.profile', 'student', {})).ok, true);
 });
 
 test('prewarm shares ongoing reads, skips valid cache and uses at most two requests', async () => {
-  const f = fixture(); await f.seedToken(); await f.api.callFeature('newcard.balance', 'student', 'mock', {}); f.state.requests.length = 0; f.state.peak = 0;
-  await Promise.all([f.api.prewarmCampusData('student', 'mock'), f.api.prewarmCampusData('student', 'mock'), f.api.callFeature('jw.profile', 'student', 'mock', {})]);
+  const f = fixture(); await f.seedToken(); await f.api.callFeature('newcard.balance', 'student', {}); f.state.requests.length = 0; f.state.peak = 0;
+  await Promise.all([f.api.prewarmCampusData('student'), f.api.prewarmCampusData('student'), f.api.callFeature('jw.profile', 'student', {})]);
   assert.deepEqual(f.state.requests.map(r => new URL(r.url).pathname).sort(), ['/personal/api/v1/personal/me/user', '/server/bllt/queryCardSelfTradeList']); assert.ok(f.state.peak <= 2);
-  const count = f.state.requests.length; await f.api.prewarmCampusData('student', 'mock'); assert.equal(f.state.requests.length, count);
+  const count = f.state.requests.length; await f.api.prewarmCampusData('student'); assert.equal(f.state.requests.length, count);
 });
 
 test('background or hidden main page skips the second prewarm stage', async () => {
   for (const key of ['appActive', 'mainPageActive']) {
     const f = fixture(), gate = deferred(); await f.seedToken();
     f.state.respond = async request => { await gate.promise; return schoolResponse(request); };
-    const pending = f.api.prewarmCampusData('student', 'mock'); await until(() => f.state.active === 2); f.state[key] = false; gate.resolve(); await pending;
+    const pending = f.api.prewarmCampusData('student'); await until(() => f.state.active === 2); f.state[key] = false; gate.resolve(); await pending;
     assert.deepEqual(f.state.requests.map(r => new URL(r.url).pathname).sort(), ['/personal/api/v1/personal/me/user', '/server/user/info']);
   }
 });
@@ -462,7 +462,7 @@ test('background or hidden main page skips the second prewarm stage', async () =
 test('logout rejects a late network response without repopulating cache', async () => {
   const f = fixture(), gate = deferred(); await f.seedToken();
   f.state.respond = async request => { await gate.promise; return schoolResponse(request); };
-  const pending = f.api.callFeature('newcard.balance', 'student', 'mock', {}); await until(() => f.state.active === 1);
+  const pending = f.api.callFeature('newcard.balance', 'student', {}); await until(() => f.state.active === 1);
   await f.auth.clearSession(); gate.resolve(); assert.equal((await pending).ok, false); assert.equal(f.stores.get(CACHE).data.size, 0); assert.equal(f.state.created, f.state.destroyed);
 });
 
@@ -470,7 +470,7 @@ test('logout during a 401 token clear prevents reauthentication by the old reque
   const f = fixture(), gate = deferred(); let started = false; await f.seedToken();
   f.state.respond = async () => ({ responseCode: 401, result: JSON.stringify({ error: 'expired' }) });
   f.state.hook = async (name, op, key) => { if (name === AUTH && op === 'delete' && key === 'access_token' && !started) { started = true; await gate.promise; } };
-  const pending = f.api.callFeature('jw.profile', 'student', 'mock', {}); await until(() => started); const cleared = f.auth.clearSession(); gate.resolve();
+  const pending = f.api.callFeature('jw.profile', 'student', {}); await until(() => started); const cleared = f.auth.clearSession(); gate.resolve();
   const result = await pending; await cleared; assert.equal(result.ok, false); assert.equal(f.state.requests.filter(r => r.url.endsWith('/auth/login')).length, 0); assert.equal(f.auth.getAccessToken(), '');
 });
 
@@ -478,7 +478,7 @@ test('logout during a 401 token clear prevents reauthentication by the old reque
 test('prewarm does not start when already backgrounded or hidden', async () => {
   for (const key of ['appActive', 'mainPageActive']) {
     const f = fixture(); await f.seedToken(); f.state[key] = false;
-    await f.api.prewarmCampusData('student', 'mock'); assert.equal(f.state.requests.length, 0);
+    await f.api.prewarmCampusData('student'); assert.equal(f.state.requests.length, 0);
   }
 });
 
@@ -552,19 +552,19 @@ test('lazy list snapshot updates notify each mounted listener once', () => {
 
 // School-native transport/schema checks. Actual ETS modules, mocked HTTP/OS only.
 test('school profile uses the verified HTTPS service and X-Id-Token',async()=>{
- const f=fixture();await f.seedToken();const r=await f.api.callFeature('jw.profile','student','unused',{});assert.equal(r.ok,true);assert.equal(r.data.studentId,'student');
+ const f=fixture();await f.seedToken();const r=await f.api.callFeature('jw.profile','student',{});assert.equal(r.ok,true);assert.equal(r.data.studentId,'student');
  const q=f.state.requests[0];assert.equal(q.url,'https://authx-service.xjit.edu.cn/personal/api/v1/personal/me/user');assert.equal(q.options.method,'GET');assert.equal(q.options.header['X-Id-Token'],f.auth.getAccessToken());assert.equal(q.options.header.Authorization,undefined);assert.equal(q.options.usingCache,false);assert.deepEqual(q.body,{});
 });
 test('school card uses its own authorization and native amount mapping',async()=>{
- const f=fixture();await f.seedToken();const r=await f.api.callFeature('newcard.balance','student','unused',{});assert.equal(r.ok,true);assert.equal(r.data.accounts[0].balance,'12.34');
+ const f=fixture();await f.seedToken();const r=await f.api.callFeature('newcard.balance','student',{});assert.equal(r.ok,true);assert.equal(r.data.accounts[0].balance,'12.34');
  const q=f.state.requests[0];assert.equal(q.url,'https://newcard.xjit.edu.cn/server/user/info');assert.equal(q.options.method,'POST');assert.equal(q.options.header.Authorization,'fixture-card-token');assert.equal(q.options.header['X-Id-Token'],undefined);assert.deepEqual(q.body,{});
 });
 test('school transactions use verified parameters and convert minor units',async()=>{
- const f=fixture();await f.seedToken();const r=await f.api.callFeature('newcard.transactions','student','unused',{fromDate:'2026-10-01',toDate:'2026-10-09',pageNo:2});assert.equal(r.ok,true);assert.equal(r.data.transactions[0].amount,'6.50');
+ const f=fixture();await f.seedToken();const r=await f.api.callFeature('newcard.transactions','student',{fromDate:'2026-10-01',toDate:'2026-10-09',pageNo:2});assert.equal(r.ok,true);assert.equal(r.data.transactions[0].amount,'6.50');
  assert.equal(f.state.requests[0].url,'https://newcard.xjit.edu.cn/server/bllt/queryCardSelfTradeList');assert.deepEqual(f.state.requests[0].body,{starttime:'2026-10-01',endtime:'2026-10-09',tradetype:'-1',pageNumber:1,pageSize:20});
 });
 test('invalid native dates and page numbers cause no HTTP request',async()=>{
- for(const params of [{fromDate:'2026-02-30'},{fromDate:'2026-10-10',toDate:'2026-10-09'},{pageNo:-1},{pageNo:1.5},{pageNo:'bad'}]){const f=fixture();await f.seedToken();assert.equal((await f.api.callFeature('newcard.transactions','student','unused',params)).ok,false);assert.equal(f.state.requests.length,0);}
+ for(const params of [{fromDate:'2026-02-30'},{fromDate:'2026-10-10',toDate:'2026-10-09'},{pageNo:-1},{pageNo:1.5},{pageNo:'bad'}]){const f=fixture();await f.seedToken();assert.equal((await f.api.callFeature('newcard.transactions','student',params)).ok,false);assert.equal(f.state.requests.length,0);}
 });
 test('legacy migration clears old account data and does not forward it',async()=>{
  const f=fixture();f.prefs(AUTH);const old=f.stores.get(AUTH).data;old.set('username','legacy');old.set('access_token','legacy');await f.cache.setCachedValue('legacy',{private:'old'},10000);
@@ -588,27 +588,27 @@ test('card session needs native verification and a live owner',async()=>{
  assert.equal((await n.acceptSchoolCardLogin('new-card',Date.now()+3600000,f.cache.getCacheEpoch(),'student')).ok,true);assert.equal(f.auth.getCardToken(),'new-card');
 });
 test('card credential changes prevent reuse of old cache and late results',async()=>{
- const f=fixture();await f.seedToken();await f.api.callFeature('newcard.balance','student','unused',{});f.auth.clearCardToken();assert.equal((await f.api.callFeature('newcard.balance','student','unused',{})).ok,false);f.auth.saveCardToken('new-card',Date.now()+3600000,f.cache.getCacheEpoch());assert.equal((await f.api.callFeature('newcard.balance','student','unused',{})).fromCache,false);assert.equal(f.state.requests.length,2);
- const g=deferred();f.state.respond=async q=>{await g.promise;return schoolResponse(q);};const pending=f.api.callFeature('newcard.balance','student','unused',{_forceRefresh:true});await until(()=>f.state.active===1);f.auth.saveCardToken('another-card',Date.now()+3600000,f.cache.getCacheEpoch());g.resolve();assert.equal((await pending).ok,false);
+ const f=fixture();await f.seedToken();await f.api.callFeature('newcard.balance','student',{});f.auth.clearCardToken();assert.equal((await f.api.callFeature('newcard.balance','student',{})).ok,false);f.auth.saveCardToken('new-card',Date.now()+3600000,f.cache.getCacheEpoch());assert.equal((await f.api.callFeature('newcard.balance','student',{})).fromCache,false);assert.equal(f.state.requests.length,2);
+ const g=deferred();f.state.respond=async q=>{await g.promise;return schoolResponse(q);};const pending=f.api.callFeature('newcard.balance','student',{_forceRefresh:true});await until(()=>f.state.active===1);f.auth.saveCardToken('another-card',Date.now()+3600000,f.cache.getCacheEpoch());g.resolve();assert.equal((await pending).ok,false);
 });
 test('wrong portal account cannot read cached personal information',async()=>{
- const f=fixture();await f.seedToken();await f.api.callFeature('jw.profile','student','unused',{});assert.equal((await f.api.callFeature('jw.profile','another','unused',{})).ok,false);assert.equal(f.state.requests.length,1);
+ const f=fixture();await f.seedToken();await f.api.callFeature('jw.profile','student',{});assert.equal((await f.api.callFeature('jw.profile','another',{})).ok,false);assert.equal(f.state.requests.length,1);
 });
 test('late card 401 cannot invalidate a newer card connection',async()=>{
- const f=fixture(),g=deferred();await f.seedToken();f.state.respond=async()=>{await g.promise;return{responseCode:401,result:'{}'};};const p=f.api.callFeature('newcard.balance','student','unused',{});await until(()=>f.state.active===1);f.auth.saveCardToken('new-card',Date.now()+3600000,f.cache.getCacheEpoch());g.resolve();await p;assert.equal(f.auth.getCardToken(),'new-card');assert.notEqual(f.auth.getAccessToken(),'');
+ const f=fixture(),g=deferred();await f.seedToken();f.state.respond=async()=>{await g.promise;return{responseCode:401,result:'{}'};};const p=f.api.callFeature('newcard.balance','student',{});await until(()=>f.state.active===1);f.auth.saveCardToken('new-card',Date.now()+3600000,f.cache.getCacheEpoch());g.resolve();await p;assert.equal(f.auth.getCardToken(),'new-card');assert.notEqual(f.auth.getAccessToken(),'');
 });
 test('school SM4 envelope decrypts with actual CryptoUtil and an OS provider mock',async()=>{
  const f=fixture();const text=JSON.stringify({success:true,resultData:{user:{balance:'19.87'}}});const c=crypto.createCipheriv('sm4-ecb',Buffer.from('w687-9+3C_H&je_5'),null);const encoded=Buffer.concat([c.update(text),c.final()]).toString('base64');
- assert.equal(await f.load('entry/src/main/ets/utils/CryptoUtil.ets').decryptSchoolCardEnvelope(encoded),text);await f.seedToken();f.state.respond=async()=>({responseCode:200,result:JSON.stringify({success:false,data:encoded})});assert.equal((await f.api.callFeature('newcard.balance','student','unused',{})).data.accounts[0].balance,'19.87');
+ assert.equal(await f.load('entry/src/main/ets/utils/CryptoUtil.ets').decryptSchoolCardEnvelope(encoded),text);await f.seedToken();f.state.respond=async()=>({responseCode:200,result:JSON.stringify({success:false,data:encoded})});assert.equal((await f.api.callFeature('newcard.balance','student',{})).data.accounts[0].balance,'19.87');
 });
 test('malformed native response and ciphertext always release HTTP sessions',async()=>{
- for(const result of ['{broken',JSON.stringify({ok:true,data:{}}),JSON.stringify({success:false,data:'invalid'}),JSON.stringify({success:true,resultData:[]})]){const f=fixture();await f.seedToken();f.state.respond=async()=>({responseCode:200,result});assert.equal((await f.api.callFeature('newcard.balance','student','unused',{})).ok,false);assert.equal(f.state.created,f.state.destroyed);}
+ for(const result of ['{broken',JSON.stringify({ok:true,data:{}}),JSON.stringify({success:false,data:'invalid'}),JSON.stringify({success:true,resultData:[]})]){const f=fixture();await f.seedToken();f.state.respond=async()=>({responseCode:200,result});assert.equal((await f.api.callFeature('newcard.balance','student',{})).ok,false);assert.equal(f.state.created,f.state.destroyed);}
 });
 test('native schemas reject invalid amounts and missing transaction arrays',()=>{
  const n=fixture().load('entry/src/main/ets/services/SchoolNativeApi.ets');for(const balance of [null,'','bad',{},'NaN'])assert.throws(()=>n.normalizeSchoolBalance({user:{balance}}));assert.throws(()=>n.normalizeSchoolTransactions({rows:null,totalpage:1},{}));assert.throws(()=>n.normalizeSchoolTransactions({rows:[{txamt:null}],totalpage:1},{}));assert.throws(()=>n.normalizeSchoolTransactions({rows:[]},{}));
 });
 test('unimplemented school features cannot send guessed requests or retry payments',async()=>{
- const f=fixture();await f.seedToken();for(const feature of ['jw.schedule','jw.grades','jw.exams','jw.training','newcard.campus_code.qrcode','newcard.recharge.config','newcard.recharge.create_order','newcard.electricity.account','newcard.electricity.recharge.config','newcard.electricity.recharge.pay']){const r=await f.api.callFeature(feature,'student','unused',{});assert.equal(r.ok,false);assert.equal(r.statusCode,501);}assert.equal(f.state.requests.length,0);
+ const f=fixture();await f.seedToken();for(const feature of ['jw.schedule','jw.grades','jw.exams','jw.training','newcard.campus_code.qrcode','newcard.recharge.config','newcard.recharge.create_order','newcard.electricity.account','newcard.electricity.recharge.config','newcard.electricity.recharge.pay']){const r=await f.api.callFeature(feature,'student',{});assert.equal(r.ok,false);assert.equal(r.statusCode,501);}assert.equal(f.state.requests.length,0);
 });
 test('logout clears private school storage and increments card generation',async()=>{
  const f=fixture();await f.seedToken();const epoch=f.auth.getCardSessionEpoch();await f.auth.clearSession();assert.equal(f.auth.getCardToken(),'');assert.ok(f.auth.getCardSessionEpoch()>epoch);assert.equal(f.state.cookieClears,1);assert.equal(f.state.storageClears,1);

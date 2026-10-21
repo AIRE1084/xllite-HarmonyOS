@@ -11,7 +11,7 @@ import util from '@ohos.util'
 import common from '@ohos.app.ability.common'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { AmountOption, PayMethod, RechargeOrderResult } from '../models/CardTypes'
 import { Motion, motionDuration } from '../theme/Motion'
 
@@ -84,7 +84,7 @@ struct RechargePage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-      const res = await callFeature('newcard.recharge.config', username, getPassword(), { '_forceRefresh': force })
+      const res = await callFeature('newcard.recharge.config', username, { '_forceRefresh': force })
       if (!this.alive || version !== this.configVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
       if (res.ok) {
         const d = res.data
@@ -119,7 +119,7 @@ struct RechargePage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-    const res: CallResult = await callFeature('newcard.recharge.create_order', username, getPassword(), params)
+    const res: CallResult = await callFeature('newcard.recharge.create_order', username, params)
     if (!this.alive || epoch !== getCacheEpoch() || username !== getUsername()) return
     if (res.ok) {
       const order: RechargeOrderResult = res.data as Object as RechargeOrderResult

@@ -67,6 +67,8 @@
 
 - **电费页恢复返回按钮。** 这个页面是首页入口 push 进来的，却把头部写死成 `showBack: false`，导致进去之后只剩系统手势能退出；第二步"更换宿舍"、第三步"改金额"都只能靠手势回退。现在接上了页面自己的 `back()`：第一步直接退出，第二三步逐级回退，支付进行中仍然拦下返回。
 
+- **拆掉密码形参链。** `getPassword()` 恒返回空串，却被挂在 `callFeature`、`callViaHttp`、`refreshInBackground`、`prewarmCampusData` 四个签名上，贯穿十六个页面二十多个调用点。鉴权实际只靠 Cookie 和 Bearer Token，密码既不保存也不提交，所以连同该函数一并删除；四个签名各少一个参数，调用点同步收敛。读代码的人不会再误以为密码参与了鉴权。
+
 ### 死代码清理
 
 - **删除 17 个零引用文件、891 行。** 这批文件是早期重构残留，全都不在 `main_pages.json` 的 15 条路由内，且互不引用之外无人使用：`HomePage`、`HomePageV2`、`MainTabsV2`、`PlaceholderTab`、`CountUp`、`PageHeader`、`ThemeProvider`、`AppButton`、`AppCard`、`BottomNavigation`、`AppTheme`、`Spacing`、`PushService`、`ReminderScheduler`、`NotificationHelper`、`NetworkHelper`、`PerformanceMonitor`。

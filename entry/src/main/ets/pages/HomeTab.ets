@@ -13,7 +13,7 @@ import { CampusIcon } from '../components/common/CampusIcon'
 import { CampusHeader } from '../components/common/CampusHeader'
 import { getColors, ColorPalette } from '../theme/Colors'
 import { Typography } from '../theme/Typography'
-import { getUsername, getPassword, isGatewayAuth } from '../services/AuthManager'
+import { getUsername, isGatewayAuth } from '../services/AuthManager'
 import { callFeature, CallResult } from '../services/ApiService'
 import { loadTodos } from '../services/TodoService'
 import { getCourseMinutes, formatMinutes, nextClassIndex, sectionsResolved, courseTimeText } from '../utils/ClassTime'
@@ -138,14 +138,13 @@ export struct HomeTab {
     this.requestBusy = true
     this.loadingBrief = true
     const username = getUsername()
-    const password = getPassword()
     const epoch = getCacheEpoch()
     const valid = (): boolean => this.alive && epoch === getCacheEpoch() && username === getUsername()
     const params: Record<string, Object> = forceRefresh ? { '_forceRefresh': true } : {}
     try {
       await Promise.all([
         (async (): Promise<void> => {
-          const schedule: CallResult = await callFeature('jw.schedule', username, password, params)
+          const schedule: CallResult = await callFeature('jw.schedule', username, params)
           if (!valid()) return
           if (schedule.ok) {
             this.scheduleReady = true
@@ -161,7 +160,7 @@ export struct HomeTab {
           this.updateSummary()
         })(),
         (async (): Promise<void> => {
-          const balance: CallResult = await callFeature('newcard.balance', username, password, params)
+          const balance: CallResult = await callFeature('newcard.balance', username, params)
           if (!valid()) return
           this.balanceError = !balance.ok
           if (balance.ok) this.balanceText = readBalanceText(balance.data, '--')
