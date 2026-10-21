@@ -2,7 +2,7 @@
 
 ## 2026-10-09 17:18 UI 交付更新
 
-最终结果以 [原生设计验收记录](DESIGN-REVIEW-ACCEPTANCE.md) 和 [.wolf/design-handoff](../.wolf/design-handoff/final-verification.json) 为准。独立离线 UI 预览已装到已有 API26 模拟器，系统2×2桌面卡片的添加、暂停与恢复已实测；课程名、时间、教室、周次与底部同步日期完整可见。APP三个开关独立，实况窗开启后的等待提示已核对，最后留桌面开启、提醒与实况窗关闭。
+最终结果以 [原生材质接入记录](NATIVE-MATERIAL.md) 和 [.wolf/design-handoff](../.wolf/design-handoff/final-verification.json) 为准。独立离线 UI 预览已装到已有 API26 模拟器，系统2×2桌面卡片的添加、暂停与恢复已实测；课程名、时间、教室、周次与底部同步日期完整可见。APP三个开关独立，实况窗开启后的等待提示已核对，最后留桌面开启、提醒与实况窗关闭。
 
 本轮修复 FormDimension 的2×2参数、设置开关状态刷新、卡片紧凑排版、暂停文案“课表已暂停”，以及实况窗等待/关闭文案。29项校园能力回归在冻结UI快照上通过；系统提醒实际登记/触发、LiveView场景权益和系统胶囊仍未验收，2×4设备画面也未验收。
 

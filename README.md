@@ -92,10 +92,10 @@ hdc shell aa start -a EntryAbility -b com.xjit.app
 ## 项目入口
 
 - [更新日志](CHANGELOG.md)：每次同步的变更记录。
-- [当前进度与下一步](docs/PROJECT-STATUS.md)：本轮实测结论、业务缺口、交付边界。
 - [目录与维护约定](docs/PROJECT-MAP.md)：源码结构、工具链、已移出内容与 Git 规则。
 - [学校接口与认证契约](docs/SCHOOL-NATIVE-API.md)：学校直连协议与历史验收。
-- [设计验收](docs/DESIGN-REVIEW-ACCEPTANCE.md)、[原生材质](docs/NATIVE-MATERIAL.md)、[实况窗申请草稿](docs/LIVEVIEW-APPLICATION.md)。
+- [原生材质](docs/NATIVE-MATERIAL.md)、[实况窗申请草稿](docs/LIVEVIEW-APPLICATION.md)、[小艺意图接入](docs/XIAOYI-INTENT-INTEGRATION.md)。
+- [提交审阅说明](docs/PR-DESCRIPTION.md)：本工程相对 Flutter 版的适配点、已实现业务与已知边界。
 
 ## 本机验证
 
