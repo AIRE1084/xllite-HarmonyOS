@@ -185,7 +185,7 @@ struct ElectricityPage {
       AmbientBackground()
       Column() {
         DetailHeader({ title: this.step === 4 ? '支付已提交' : '电费服务', subtitle: '查询宿舍电量与充值', action: '',
-          showBack: false, onBack: () => {}, onAction: () => {} })
+          showBack: true, onBack: () => this.back(), onAction: () => {} })
         Scroll() {
           Column() {
       if (this.step === 1) {

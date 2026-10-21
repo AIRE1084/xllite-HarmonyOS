@@ -65,6 +65,8 @@
 - **第三个课色加深。** 浅色 `#A55F05` 在半透明底上只有 4.12:1，低于 4.5 门槛；改为 `#8B4E04` 后 5.34:1，白底 6.59:1，色相仍是橙棕。周视图背景透明度同时由 0.14 降到 0.10，最小对比度回到 4.82:1。
 - **"今日课程"过滤改用容错解析。** `HomeTab` 与 `ScheduleTab` 原先各自用"星期X"字符串精确比较，课表里出现「周一」「Mon」「1」这类写法时，那门课会在今日列表里消失；现在统一用 `weekdayIndex`，与网格、提醒、实况窗共用同一套解析。
 
+- **电费页恢复返回按钮。** 这个页面是首页入口 push 进来的，却把头部写死成 `showBack: false`，导致进去之后只剩系统手势能退出；第二步"更换宿舍"、第三步"改金额"都只能靠手势回退。现在接上了页面自己的 `back()`：第一步直接退出，第二三步逐级回退，支付进行中仍然拦下返回。
+
 ### 死代码清理
 
 - **删除 17 个零引用文件、891 行。** 这批文件是早期重构残留，全都不在 `main_pages.json` 的 15 条路由内，且互不引用之外无人使用：`HomePage`、`HomePageV2`、`MainTabsV2`、`PlaceholderTab`、`CountUp`、`PageHeader`、`ThemeProvider`、`AppButton`、`AppCard`、`BottomNavigation`、`AppTheme`、`Spacing`、`PushService`、`ReminderScheduler`、`NotificationHelper`、`NetworkHelper`、`PerformanceMonitor`。
