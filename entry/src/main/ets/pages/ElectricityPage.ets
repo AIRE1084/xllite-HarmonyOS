@@ -5,7 +5,7 @@ import { getCacheEpoch } from '../services/MemoryCache'
 import { getColors } from '../theme/Colors'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword, loadElectricityRoom, saveElectricityRoom } from '../services/AuthManager'
+import { getUsername, loadElectricityRoom, saveElectricityRoom } from '../services/AuthManager'
 import { ElectricityAccount, ElecRechargeConfig, ElecRechargePayResult, AmountOption, PayMethod } from '../models/CardTypes'
 import { Motion, motionDuration } from '../theme/Motion'
 
@@ -62,7 +62,7 @@ struct ElectricityPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-    const res: CallResult = await callFeature('newcard.electricity.account', username, getPassword(), params)
+    const res: CallResult = await callFeature('newcard.electricity.account', username, params)
     if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
     if (res.ok) {
       this.electricity = res.data as Object as ElectricityAccount
@@ -91,7 +91,7 @@ struct ElectricityPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-    const res: CallResult = await callFeature('newcard.electricity.recharge.config', username, getPassword(), params)
+    const res: CallResult = await callFeature('newcard.electricity.recharge.config', username, params)
     if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
     if (res.ok) {
       this.rechargeConfig = res.data as Object as ElecRechargeConfig
@@ -127,7 +127,7 @@ struct ElectricityPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-    const res: CallResult = await callFeature('newcard.electricity.recharge.pay', username, getPassword(), params)
+    const res: CallResult = await callFeature('newcard.electricity.recharge.pay', username, params)
     if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
     if (res.ok) {
       const order: ElecRechargePayResult = res.data as Object as ElecRechargePayResult

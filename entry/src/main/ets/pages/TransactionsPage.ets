@@ -2,7 +2,7 @@ import { getColors } from '../theme/Colors'
 import { Typography } from '../theme/Typography'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature } from '../services/ApiService'
-import { getUsername, getPassword, getCardSessionEpoch, getCardAccountLabel } from '../services/AuthManager'
+import { getUsername, getCardSessionEpoch, getCardAccountLabel } from '../services/AuthManager'
 import { getCacheEpoch } from '../services/MemoryCache'
 import { loadUiState, saveUiState } from '../services/UiStateCache'
 import { DetailScaffold } from '../components/common/DetailScaffold'
@@ -55,7 +55,7 @@ struct TransactionsPage {
     const cardEpoch = getCardSessionEpoch()
     const username = getUsername()
     try {
-      const res = await callFeature('newcard.transactions', username, getPassword(), { '_forceRefresh': force, 'pageNo': append ? this.nextPage : 1, 'pageSize': 20 })
+      const res = await callFeature('newcard.transactions', username, { '_forceRefresh': force, 'pageNo': append ? this.nextPage : 1, 'pageSize': 20 })
       if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || cardEpoch !== getCardSessionEpoch() || username !== getUsername()) return
       if (res.ok) {
         const data = res.data['transactions'] as Transaction[]

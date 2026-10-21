@@ -8,7 +8,7 @@ import { AmbientBackground } from '../components/AmbientBackground'
 import { getColors, ColorPalette } from '../theme/Colors'
 import { setCampusOption, calibrateCampusWeek, getCampusWidgetData, getCampusBundleName } from '../services/CampusCompanionService'
 import { callFeature } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { CampusWidgetData } from '../models/CampusCompanionTypes'
 import { safeBack } from '../utils/RouterHelper'
 import { safeToast } from '../utils/ToastHelper'
@@ -77,7 +77,7 @@ struct CampusSettingsPage {
     if (this.busy) return
     this.busy = true
     try {
-      const result = await callFeature('jw.schedule', getUsername(), getPassword(), { '_forceRefresh': true })
+      const result = await callFeature('jw.schedule', getUsername(), { '_forceRefresh': true })
       safeToast(this.getUIContext(), result.ok ? '课表已同步' : result.error)
       this.refreshPreview()
     } finally { this.busy = false }

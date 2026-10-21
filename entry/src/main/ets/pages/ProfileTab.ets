@@ -4,7 +4,7 @@ import { getColors, ColorPalette } from '../theme/Colors'
 import { CampusCard } from '../components/common/CampusCard'
 import { CampusIcon } from '../components/common/CampusIcon'
 import { CampusHeader } from '../components/common/CampusHeader'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { logoutGatewayAccount } from '../services/XlliteGateway'
 import { callFeature, CallResult } from '../services/ApiService'
 import { getCacheEpoch } from '../services/MemoryCache'
@@ -65,7 +65,7 @@ export struct ProfileTab {
     const empty: Record<string, Object> = {}
     let res: CallResult
     try {
-      res = await callFeature('jw.profile', username, getPassword(), empty)
+      res = await callFeature('jw.profile', username, empty)
     } catch (_error) {
       if (this.alive && epoch === getCacheEpoch() && username === getUsername()) {
         this.loading = false

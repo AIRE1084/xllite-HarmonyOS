@@ -2,7 +2,7 @@ import { getColors } from '../theme/Colors'
 import { Typography } from '../theme/Typography'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { getCacheEpoch } from '../services/MemoryCache'
 import { DetailScaffold } from '../components/common/DetailScaffold'
 import { PageState } from '../components/common/PageState'
@@ -37,7 +37,7 @@ struct GradesPage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-      const res = await callFeature('jw.grades', username, getPassword(), { '_forceRefresh': force })
+      const res = await callFeature('jw.grades', username, { '_forceRefresh': force })
       if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
       if (res.ok) {
         const data = res.data['normalGrades'] as GradeItem[]

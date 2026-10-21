@@ -7,7 +7,7 @@ import { ListDataSource } from '../utils/ListDataSource'
 import { getColors } from '../theme/Colors'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { Course } from '../models/JwTypes'
 import { Motion, motionDuration } from '../theme/Motion'
 
@@ -36,7 +36,7 @@ struct SchedulePage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-      const res = await callFeature('jw.schedule', username, getPassword(), { '_forceRefresh': force })
+      const res = await callFeature('jw.schedule', username, { '_forceRefresh': force })
       if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
       if (res.ok) {
         this.term = typeof res.data['term'] === 'string' ? res.data['term'] as string : ''

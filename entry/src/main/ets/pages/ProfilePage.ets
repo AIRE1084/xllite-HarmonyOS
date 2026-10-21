@@ -6,7 +6,7 @@ import { getCacheEpoch } from '../services/MemoryCache'
 import { getColors } from '../theme/Colors'
 import { safeBack } from '../utils/RouterHelper'
 import { callFeature, CallResult } from '../services/ApiService'
-import { getUsername, getPassword } from '../services/AuthManager'
+import { getUsername } from '../services/AuthManager'
 import { ProfileData } from '../models/JwTypes'
 import { Motion, motionDuration } from '../theme/Motion'
 
@@ -39,7 +39,7 @@ struct ProfilePage {
     const epoch = getCacheEpoch()
     const username = getUsername()
     try {
-      const res = await callFeature('jw.profile', username, getPassword(), { '_forceRefresh': force })
+      const res = await callFeature('jw.profile', username, { '_forceRefresh': force })
       if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
       if (res.ok) {
         const p: ProfileData = res.data as Object as ProfileData
