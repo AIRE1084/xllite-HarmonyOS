@@ -20,7 +20,7 @@ function materials(api, supported = true, materialState = 0, queryThrows = false
       if (spec === '@ohos.deviceInfo') return { default: { sdkApiVersion: api } };
       if (spec === '@ohos.arkui.uiMaterial') return { default: {
         ImmersiveMaterial: class { constructor(options) { this.options=options; } },
-        ImmersiveStyle: { REGULAR: 'regular', THIN: 'thin' },
+        ImmersiveStyle: { REGULAR: 'regular', THIN: 'thin', THICK: 'thick' },
         isImmersiveMaterialSupported() { calls++; if (api < 26) throw new Error('API26 invoked on old OS'); return supported; },
         getMaterialInfo() { if (queryThrows) throw new Error('system material query failed'); return { state: materialState }; }, MaterialState: { DISABLE: 1 },
       } };
@@ -40,14 +40,14 @@ test('native material caches all eight appearance combinations independently',as
  const f=materials(26);await f.api.loadImmersiveMaterial();const instances=new Set();
  for(const dark of [false,true])for(const interactive of [false,true])for(const prominent of [false,true]){
   const material=f.api.glassMaterial(dark,interactive,prominent);assert.equal(f.api.glassMaterial(dark,interactive,prominent),material);instances.add(material);
-  const o=material.options;assert.equal(o.style,prominent?'regular':'thin');assert.equal(o.interactive,interactive);assert.equal(o.applyShadow,false);
-  assert.equal(o.materialColor,dark?'#18203450':'#18FFFFFF');assert.equal(o.lightEffect?.color,interactive?(dark?'#A9C4FF':'#FFFFFF'):undefined);
+  const o=material.options;assert.equal(o.style,prominent?'thick':'regular');assert.equal(o.interactive,interactive);assert.equal(o.applyShadow,prominent);
+  assert.equal(o.materialColor,dark?'#33142033':'#33FFFFFF');assert.equal(o.lightEffect?.color,dark?'#80A9C4FF':'#CCFFFFFF');
  }
  assert.equal(instances.size,8);assert.equal(f.logs.length,8);
  assert.ok(f.logs.every(log=>log[1]==='XJITMaterial' && log[2]==='Native material created'));
 });
 test('minimum SDK is API23 while target and compile remain API26', () => { const p = JSON.parse(fs.readFileSync(path.join(root, 'build-profile.json5'), 'utf8')).app.products[0]; assert.equal(p.compatibleSdkVersion, '6.1.0(23)'); assert.equal(p.targetSdkVersion, '26.0.0'); });
-test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundBlurStyle\(BlurStyle\./); });
+test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundEffect\(\{/); });
 function mainTabs(reduceMotion) {
   const timers = new Map(); let next = 1;
   let s = fs.readFileSync(path.join(root, 'entry/src/main/ets/pages/MainTabs.ets'), 'utf8');
@@ -100,7 +100,7 @@ test('dock spring is bypassed rather than merely zero-duration under reduced mot
 });
 test('native login uses packaged mountain brand without monochrome tint',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/LoginPage.ets'),'utf8');
- assert.match(source,/Image\(\$r\('app.media.icon'\)\)\.width\(72\)\.height\(72\)\.borderRadius\(20\)/);
+ assert.match(source,/Image\(\$r\('app.media.icon'\)\)\.width\(60\)\.height\(60\)\.borderRadius\(18\)/);
  assert.ok(!source.includes("Image($r('app.media.campus_schedule'))"));
 });
 test('login discloses gateway credential processing separately from local storage',()=>{

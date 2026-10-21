@@ -1,4 +1,5 @@
 import { liveViewManager } from '@kit.LiveViewKit'
+import deviceInfo from '@ohos.deviceInfo'
 import wantAgent from '@ohos.app.ability.wantAgent'
 import { BusinessError } from '@ohos.base'
 import { Course } from '../models/JwTypes'
@@ -15,6 +16,12 @@ let lastViewId: number = Math.floor(Date.now() / 1000)
 function nextViewId(): number {
   lastViewId = lastViewId >= 2147483647 ? -2147483648 : lastViewId + 1
   return lastViewId
+}
+// sdkApiVersion arrives either as 23 or as 60100023 depending on the build, so normalise before comparing.
+function apiLevel(): number {
+  const raw = deviceInfo.sdkApiVersion
+  if (!Number.isInteger(raw)) return 0
+  return raw >= 100000000 ? raw % 1000 : raw
 }
 let operation: Promise<void> = Promise.resolve()
 let supportReason: string = '开启后检查系统实况窗能力'
@@ -130,17 +137,24 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
     const clickAction: object = action
     const deadline = target.startTime > Date.now() ? target.startTime : target.endTime
     const duration = Math.max(0, deadline - Date.now())
+    // lifeCycleMode is @since 26 and aliveTime is @since 24. Assigning either below its
+    // level would only hand the system an undefined member, so gate them and let older
+    // releases fall back to their own defaults instead of pretending the hint applied.
+    const api = apiLevel()
     const view: liveViewManager.LiveView = {
       id: nextViewId(), event: 'TIMER', sequence: 0, isMute: true,
-      lifeCycleMode: liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE,
       timer: { time: duration, isCountdown: true },
       liveViewData: {
         primary: { title: target.title.slice(0, 40), content: [{ text: target.extra.slice(0, 60) }],
-          clickAction: clickAction, aliveTime: Math.max(15, Math.min(28800, Math.ceil((target.endTime - Date.now()) / 1000))) },
+          clickAction: clickAction },
         capsule: { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER, status: 1,
           content: target.type === 'todo' ? '待办计时' : (target.startTime > Date.now() ? '距上课' : '上课中'), time: duration, isCountdown: true,
           backgroundColor: '#FF315FC4' },
       },
+    }
+    if (api >= 26) view.lifeCycleMode = liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE
+    if (api >= 24) {
+      view.liveViewData.primary.aliveTime = Math.max(15, Math.min(28800, Math.ceil((target.endTime - Date.now()) / 1000)))
     }
     if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '实况窗已关闭' }
     const result = await liveViewManager.startLiveView(view)
