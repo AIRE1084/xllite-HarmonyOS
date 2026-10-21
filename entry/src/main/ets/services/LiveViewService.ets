@@ -1,0 +1,255 @@
+import { liveViewManager } from '@kit.LiveViewKit'
+import deviceInfo from '@ohos.deviceInfo'
+import wantAgent from '@ohos.app.ability.wantAgent'
+import { BusinessError } from '@ohos.base'
+import { Course } from '../models/JwTypes'
+import { TodoItem } from '../models/TodoTypes'
+import { LiveViewHandle, LiveViewResult, LiveViewTarget } from '../models/LiveViewTypes'
+
+export type { LiveViewHandle }
+let currentView: liveViewManager.LiveView | null = null
+let currentHandle: LiveViewHandle | null = null
+let currentKey: string = ''
+let currentTodoId: string = ''
+let revision: number = 0
+let lastViewId: number = Math.floor(Date.now() / 1000)
+function nextViewId(): number {
+  lastViewId = lastViewId >= 2147483647 ? -2147483648 : lastViewId + 1
+  return lastViewId
+}
+// sdkApiVersion arrives either as 23 or as 60100023 depending on the build, so normalise before comparing.
+function apiLevel(): number {
+  const raw = deviceInfo.sdkApiVersion
+  if (!Number.isInteger(raw)) return 0
+  return raw >= 100000000 ? raw % 1000 : raw
+}
+let operation: Promise<void> = Promise.resolve()
+let supportReason: string = '开启后检查系统实况窗能力'
+let applicationBundleName: string = 'com.xjit.app'
+
+export function setLiveViewBundleName(bundleName: string): void {
+  applicationBundleName = bundleName.length > 0 ? bundleName : 'com.xjit.app'
+}
+
+function reasonFor(error: BusinessError): string {
+  if (error.code === 1003500005) return '应用尚未获批华为实况窗 TIMER 场景权限（1003500005）'
+  if (error.code === 1003500004) return '请在系统设置中允许新理工显示实况窗（1003500004）'
+  if (error.code === 801 || error.code === 1003500003) return '当前设备不支持或无法连接实况窗服务（801 / 1003500003）'
+  return '实况窗暂不可用（' + error.code + '）'
+}
+function setReason(reason: string): void {
+  supportReason = reason
+  AppStorage.setOrCreate<string>('liveViewStatus', reason)
+}
+export function getLiveViewSupportReason(): string { return supportReason }
+export async function isLiveViewSupported(): Promise<boolean> {
+  try {
+    const enabled = await liveViewManager.isLiveViewEnabled()
+    setReason(enabled ? '系统实况窗已允许，显示时仍需场景权限' : '系统实况窗未开启')
+    return enabled
+  } catch (error) { setReason(reasonFor(error as BusinessError)); return false }
+}
+export function buildCourseLiveTarget(course: Course, startTime: number, endTime: number): LiveViewTarget {
+  return { type: 'course', title: course.title, text: course.sections, extra: course.location + ' · ' + course.teacher,
+    startTime: startTime, endTime: endTime }
+}
+export function buildTodoLiveTarget(todo: TodoItem): LiveViewTarget {
+  const now = Date.now()
+  return { todoId: todo.id, type: 'todo', title: todo.title, text: todo.dueText || '待办计时', extra: todo.note,
+    startTime: now, endTime: todo.dueAt === undefined ? now + 3600000 : todo.dueAt }
+}
+async function stopCurrent(): Promise<void> {
+  if (currentView === null) return
+  const view = currentView
+  const previousStatus = view.liveViewData.capsule?.status
+  const previousKeepTime = view.liveViewData.primary.keepTime
+  view.sequence = (view.sequence ?? 0) + 1
+  if (view.liveViewData.capsule !== undefined) view.liveViewData.capsule.status = -1
+  view.liveViewData.primary.keepTime = 0
+  try {
+    const result = await liveViewManager.stopLiveView(view)
+    if (result.resultCode !== 0) throw new Error('系统结束实况窗失败（' + result.resultCode + '）')
+  } catch (error) {
+    const code = (error as BusinessError).code
+    if (code !== 1003500009 && code !== 1003500010) {
+      if (view.liveViewData.capsule !== undefined && previousStatus !== undefined) view.liveViewData.capsule.status = previousStatus
+      view.liveViewData.primary.keepTime = previousKeepTime
+      throw error as Error
+    }
+  }
+  currentView = null; currentHandle = null; currentKey = ''; currentTodoId = ''
+}
+async function startTarget(target: LiveViewTarget, captured: number): Promise<LiveViewResult> {
+  if (AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '请先在「桌面与提醒」开启实况窗' }
+  if (!Number.isSafeInteger(target.startTime) || !Number.isSafeInteger(target.endTime) ||
+    target.endTime > 8640000000000000 || target.endTime <= Date.now() ||
+    target.startTime < 1000000000000 || target.startTime >= target.endTime) {
+    return { ok: false, reason: '时间无效或已结束' }
+  }
+  if (!await isLiveViewSupported()) return { ok: false, reason: supportReason }
+  if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '实况窗已关闭' }
+  const key = JSON.stringify([target.type, target.todoId ?? '', target.title, target.startTime, target.endTime])
+  if (currentKey === key && currentHandle !== null && currentView !== null) {
+    if (target.startTime <= Date.now() && currentView.liveViewData.capsule?.content === '距上课') {
+      const previousTimer = currentView.timer
+      const previousCapsule = currentView.liveViewData.capsule
+      currentView.sequence = (currentView.sequence ?? 0) + 1
+      currentView.timer = { time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
+      currentView.liveViewData.capsule = { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
+        status: 1, content: '上课中', time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
+      try {
+        const result = await liveViewManager.updateLiveView(currentView)
+        if (result.resultCode !== 0) {
+          currentView.timer = previousTimer
+          currentView.liveViewData.capsule = previousCapsule
+          setReason('实况窗更新失败（' + result.resultCode + '）')
+          return { ok: false, reason: supportReason }
+        }
+      } catch (error) {
+        currentView.timer = previousTimer
+        currentView.liveViewData.capsule = previousCapsule
+        setReason(reasonFor(error as BusinessError))
+        return { ok: false, reason: supportReason }
+      }
+    }
+    setReason('实况窗已显示')
+    return { ok: true, handle: { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType } }
+  }
+  await stopCurrent()
+  if (captured !== revision) return { ok: false, reason: '实况窗已关闭' }
+  try {
+    let action: object | null = null
+    try {
+      action = await wantAgent.getWantAgent({ wants: [{ bundleName: applicationBundleName, abilityName: 'EntryAbility',
+        parameters: { campusRoute: target.type === 'course' ? 'schedule' : 'todo' } }],
+        operationType: wantAgent.OperationType.START_ABILITY, requestCode: 8201,
+        wantAgentFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG] })
+    } catch (error) {
+      const code = (error as BusinessError).code
+      if (code === 401 || code === 403 || code === 201 || code === 1003500004 || code === 1003500005) {
+        setReason('实况窗返回点击未开放（' + code + '）')
+        return { ok: false, reason: supportReason }
+      }
+      setReason(reasonFor(error as BusinessError))
+      return { ok: false, reason: supportReason }
+    }
+    if (action === null) return { ok: false, reason: '实况窗返回入口获取失败' }
+    const clickAction: object = action
+    const deadline = target.startTime > Date.now() ? target.startTime : target.endTime
+    const duration = Math.max(0, deadline - Date.now())
+    // lifeCycleMode is @since 26 and aliveTime is @since 24. Assigning either below its
+    // level would only hand the system an undefined member, so gate them and let older
+    // releases fall back to their own defaults instead of pretending the hint applied.
+    const api = apiLevel()
+    const view: liveViewManager.LiveView = {
+      id: nextViewId(), event: 'TIMER', sequence: 0, isMute: true,
+      timer: { time: duration, isCountdown: true },
+      liveViewData: {
+        primary: { title: target.title.slice(0, 40), content: [{ text: target.extra.slice(0, 60) }],
+          clickAction: clickAction },
+        capsule: { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER, status: 1,
+          content: target.type === 'todo' ? '待办计时' : (target.startTime > Date.now() ? '距上课' : '上课中'), time: duration, isCountdown: true,
+          backgroundColor: '#FF315FC4' },
+      },
+    }
+    if (api >= 26) view.lifeCycleMode = liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE
+    if (api >= 24) {
+      view.liveViewData.primary.aliveTime = Math.max(15, Math.min(28800, Math.ceil((target.endTime - Date.now()) / 1000)))
+    }
+    if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) return { ok: false, reason: '实况窗已关闭' }
+    const result = await liveViewManager.startLiveView(view)
+    if (result.resultCode !== 0) {
+      // Partial result may still leave a primary area: retain and stop it.
+      currentView = view
+      try {
+        await stopCurrent()
+      } catch (_error) {
+        // The system refused the cleanup too. Keep currentView set so a later
+        // finishAllLiveViews can retry, but never leave currentHandle stale.
+        currentHandle = null; currentKey = ''; currentTodoId = ''
+        setReason('实况窗显示不完整且回收未完成（' + result.resultCode + '）')
+        return { ok: false, reason: supportReason }
+      }
+      setReason('实况窗显示不完整（' + result.resultCode + '）')
+      return { ok: false, reason: supportReason }
+    }
+    currentView = view; currentKey = key; currentTodoId = target.todoId ?? ''
+    currentHandle = { id: String(view.id), startTime: target.startTime, targetType: target.type }
+    if (captured !== revision || AppStorage.get<boolean>('liveViewEnabled') !== true) {
+      await stopCurrent(); return { ok: false, reason: '实况窗已关闭' }
+    }
+    setReason('实况窗已显示')
+    return { ok: true, handle: { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType } }
+  } catch (error) { setReason(reasonFor(error as BusinessError)); return { ok: false, reason: supportReason } }
+}
+export function startLiveView(target: LiveViewTarget): Promise<LiveViewResult> {
+  const captured = revision
+  const snapshot: LiveViewTarget = { todoId: target.todoId, type: target.type, title: target.title, text: target.text,
+    extra: target.extra, startTime: target.startTime, endTime: target.endTime }
+  const task = operation.then(() => startTarget(snapshot, captured))
+  operation = task.then(() => {}).catch((_e: Error) => {})
+  return task
+}
+export function startCourseLiveView(course: Course, startTime: number, endTime: number): Promise<LiveViewResult> {
+  return startLiveView(buildCourseLiveTarget(course, startTime, endTime))
+}
+export function startTodoLiveView(todo: TodoItem): Promise<LiveViewResult> {
+  if (todo.done) return Promise.resolve<LiveViewResult>({ ok: false, reason: '任务已完成，无需启动实况窗' })
+  return startLiveView(buildTodoLiveTarget(todo))
+}
+function matchesCurrentHandle(handle: LiveViewHandle): boolean {
+  return currentHandle !== null && handle.id === currentHandle.id &&
+    handle.startTime === currentHandle.startTime && handle.targetType === currentHandle.targetType
+}
+export async function updateLiveView(handle: LiveViewHandle, course: Course, now: number): Promise<void> {
+  const title = course.title.slice(0, 40)
+  const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
+  const task = operation.then(async () => {
+    if (currentView === null || !matchesCurrentHandle(snapshot)) return
+    const view = currentView
+    const previousTitle = view.liveViewData.primary.title
+    view.sequence = (view.sequence ?? 0) + 1
+    view.liveViewData.primary.title = title
+    try {
+      const result = await liveViewManager.updateLiveView(view)
+      if (result.resultCode !== 0) {
+        setReason('实况窗更新失败（' + result.resultCode + '）')
+        throw new Error('系统实况窗更新失败：' + result.resultCode)
+      }
+    } catch (error) {
+      view.liveViewData.primary.title = previousTitle
+      if ((error as BusinessError).code !== undefined) setReason(reasonFor(error as BusinessError))
+      throw error as Error
+    }
+  })
+  operation = task.catch((_e: Error) => {})
+  return task
+}
+export function finishLiveView(handle: LiveViewHandle): Promise<void> {
+  const snapshot: LiveViewHandle = { id: handle.id, startTime: handle.startTime, targetType: handle.targetType }
+  const task = operation.then(async () => {
+    if (matchesCurrentHandle(snapshot)) await stopCurrent()
+  })
+  operation = task.catch((_e: Error) => {})
+  return task
+}
+export function reconcileTodoLiveView(items: TodoItem[]): Promise<void> {
+  const openIds = items.filter((item: TodoItem): boolean => !item.done).map((item: TodoItem): string => item.id)
+  const task = operation.then(async () => {
+    if (currentHandle?.targetType === 'todo' && currentTodoId.length > 0 && !openIds.includes(currentTodoId)) {
+      await stopCurrent()
+    }
+  })
+  operation = task.catch((_e: Error) => {})
+  return task
+}
+export function finishAllLiveViews(): Promise<void> {
+  revision++
+  const task = operation.then(() => stopCurrent())
+  operation = task.catch((_e: Error) => {})
+  return task
+}
+export function getCurrentHandle(): LiveViewHandle | null {
+  if (currentHandle === null) return null
+  return { id: currentHandle.id, startTime: currentHandle.startTime, targetType: currentHandle.targetType }
+}

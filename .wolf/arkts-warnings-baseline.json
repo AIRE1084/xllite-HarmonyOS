@@ -1,0 +1,355 @@
+{
+  "generatedAt": "2026-10-20T09:18:31.161Z",
+  "revision": "2bc313b",
+  "log": ".wolf/review/build-api26.log",
+  "total": 123,
+  "categories": {
+    "may-throw": 19,
+    "sdk-version": 17,
+    "syscap": 87
+  },
+  "acceptedCategories": [
+    "syscap",
+    "sdk-version",
+    "may-throw",
+    "other"
+  ],
+  "entries": [
+    {
+      "key": "entry/src/main/ets/components/NativeGlass.ets|sdk-version|The 'systemMaterial' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(2",
+      "file": "entry/src/main/ets/components/NativeGlass.ets",
+      "category": "sdk-version",
+      "message": "The 'systemMaterial' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(2",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/formability/CampusFormAbility.ets|may-throw|Function may throw exceptions. Special handling is required.",
+      "file": "entry/src/main/ets/formability/CampusFormAbility.ets",
+      "category": "may-throw",
+      "message": "Function may throw exceptions. Special handling is required.",
+      "reason": "平台接口声明 @throws；调用方以 try/catch 或 Promise 链捕获，函数按设计向上抛出",
+      "count": 2
+    },
+    {
+      "key": "entry/src/main/ets/services/CampusCompanionService.ets|may-throw|Function may throw exceptions. Special handling is required.",
+      "file": "entry/src/main/ets/services/CampusCompanionService.ets",
+      "category": "may-throw",
+      "message": "Function may throw exceptions. Special handling is required.",
+      "reason": "平台接口声明 @throws；调用方以 try/catch 或 Promise 链捕获，函数按设计向上抛出",
+      "count": 3
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'AUTO_STOP_WHEN_APP_TERMINATE' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'AUTO_STOP_WHEN_APP_TERMINATE' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'CAPSULE_TYPE_TIMER' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'CAPSULE_TYPE_TIMER' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 2
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'capsule' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'capsule' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 10
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'CapsuleType' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'CapsuleType' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 2
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'id' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'id' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'isLiveViewEnabled' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'isLiveViewEnabled' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'keepTime' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'keepTime' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 3
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'LifeCycleMode' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'LifeCycleMode' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'liveViewData' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'liveViewData' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 16
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'liveViewManager' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'liveViewManager' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 8
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'primary' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'primary' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 6
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'resultCode' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'resultCode' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 9
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'sequence' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'sequence' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 6
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'startLiveView' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'startLiveView' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'status' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'status' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 3
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'stopLiveView' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'stopLiveView' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'timer' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'timer' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 4
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'title' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'title' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 3
+    },
+    {
+      "key": "entry/src/main/ets/services/LiveViewService.ets|syscap|The system capacity of this api 'updateLiveView' is not supported on all devices",
+      "file": "entry/src/main/ets/services/LiveViewService.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'updateLiveView' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 2
+    },
+    {
+      "key": "entry/src/main/ets/services/ReminderGroups.ets|may-throw|Function may throw exceptions. Special handling is required.",
+      "file": "entry/src/main/ets/services/ReminderGroups.ets",
+      "category": "may-throw",
+      "message": "Function may throw exceptions. Special handling is required.",
+      "reason": "平台接口声明 @throws；调用方以 try/catch 或 Promise 链捕获，函数按设计向上抛出",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/TodoReminderService.ets|may-throw|Function may throw exceptions. Special handling is required.",
+      "file": "entry/src/main/ets/services/TodoReminderService.ets",
+      "category": "may-throw",
+      "message": "Function may throw exceptions. Special handling is required.",
+      "reason": "平台接口声明 @throws；调用方以 try/catch 或 Promise 链捕获，函数按设计向上抛出",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/services/WidgetService.ets|may-throw|Function may throw exceptions. Special handling is required.",
+      "file": "entry/src/main/ets/services/WidgetService.ets",
+      "category": "may-throw",
+      "message": "Function may throw exceptions. Special handling is required.",
+      "reason": "平台接口声明 @throws；调用方以 try/catch 或 Promise 链捕获，函数按设计向上抛出",
+      "count": 12
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'DISABLE' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'DISABLE' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'getMaterialInfo' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'getMaterialInfo' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'ImmersiveMaterial' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'ImmersiveMaterial' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'ImmersiveStyle' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(2",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'ImmersiveStyle' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(2",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 2
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'isImmersiveMaterialSupported' API is supported since SDK version 26.0.0. However, the current compatible SDK vers",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'isImmersiveMaterialSupported' API is supported since SDK version 26.0.0. However, the current compatible SDK vers",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'MaterialState' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'MaterialState' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'REGULAR' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'REGULAR' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'state' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'state' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'THIN' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'THIN' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/theme/NativeMaterials.ets|sdk-version|The 'uiMaterial' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "file": "entry/src/main/ets/theme/NativeMaterials.ets",
+      "category": "sdk-version",
+      "message": "The 'uiMaterial' API is supported since SDK version 26.0.0. However, the current compatible SDK version is 6.1.0(23).",
+      "reason": "API 26 专属接口；compatibleSdkVersion=23，仅在 api>=26 时由 Materials 动态加载适配层",
+      "count": 6
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'convertKey' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'convertKey' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'createCipher' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'createCipher' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'createSymKeyGenerator' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'createSymKeyGenerator' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'CryptoMode' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'CryptoMode' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'DECRYPT_MODE' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'DECRYPT_MODE' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'doFinal' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'doFinal' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    },
+    {
+      "key": "entry/src/main/ets/utils/CryptoUtil.ets|syscap|The system capacity of this api 'init' is not supported on all devices",
+      "file": "entry/src/main/ets/utils/CryptoUtil.ets",
+      "category": "syscap",
+      "message": "The system capacity of this api 'init' is not supported on all devices",
+      "reason": "依赖的 SystemCapability 并非所有设备具备；运行期由能力查询或 try/catch 兜底，属 SDK 元数据提示",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,369 @@
+{
+  "checkedAt": "2026-10-21T05:36:05.728Z",
+  "networkUsed": false,
+  "nativeApisMocked": true,
+  "checks": 90,
+  "failed": 0,
+  "results": [
+    {
+      "name": "form binding selects todo placeholder separately from schedule",
+      "ok": true
+    },
+    {
+      "name": "todo form snapshot roundtrips and corrupt counts fall back",
+      "ok": true
+    },
+    {
+      "name": "todo publication persists snapshot and refreshes only todo forms",
+      "ok": true
+    },
+    {
+      "name": "group reminder cancellation preserves unrelated reminders and surfaces query failure",
+      "ok": true
+    },
+    {
+      "name": "group cancellation attempts later reminders after one native cancellation fails",
+      "ok": true
+    },
+    {
+      "name": "course reminder reconciliation preserves todo reminders",
+      "ok": true
+    },
+    {
+      "name": "todo native reminder count reads only todo group without publishing",
+      "ok": true
+    },
+    {
+      "name": "todo reminder service registers native todo routes and preserves courses",
+      "ok": true
+    },
+    {
+      "name": "todo publication plus rollback failure retains both diagnostic causes",
+      "ok": true
+    },
+    {
+      "name": "todo reminders skip elapsed triggers after native query and earlier publication",
+      "ok": true
+    },
+    {
+      "name": "todo reminder synchronization serializes overlapping replacement plans",
+      "ok": true
+    },
+    {
+      "name": "todo reminder clear retires queued plans after active publication",
+      "ok": true
+    },
+    {
+      "name": "verified XJIT section clock matches confirmed 2026 autumn calendar",
+      "ok": true
+    },
+    {
+      "name": "unresolvable sections stay visible instead of disappearing silently",
+      "ok": true
+    },
+    {
+      "name": "invalid and out-of-range sections never crash or create false times",
+      "ok": true
+    },
+    {
+      "name": "comma, bracket and reversed section lists normalize and retain gaps",
+      "ok": true
+    },
+    {
+      "name": "course end boundary is exclusive",
+      "ok": true
+    },
+    {
+      "name": "single/double weeks and Chinese separators match actual week",
+      "ok": true
+    },
+    {
+      "name": "invalid week labels are excluded and giant ranges are bounded",
+      "ok": true
+    },
+    {
+      "name": "week rollover uses Monday and local calendar dates",
+      "ok": true
+    },
+    {
+      "name": "next week reminders obey odd/even week rules",
+      "ok": true
+    },
+    {
+      "name": "missing week metadata, missing course weeks and unknown times do not schedule",
+      "ok": true
+    },
+    {
+      "name": "duplicate API courses are deduplicated for reminders and rendering",
+      "ok": true
+    },
+    {
+      "name": "multi-section courses span rows and conflicting courses use separate lanes",
+      "ok": true
+    },
+    {
+      "name": "unrelated courses regain full width after overlapping cluster",
+      "ok": true
+    },
+    {
+      "name": "widget pause, logout and unknown weeks show no course information",
+      "ok": true
+    },
+    {
+      "name": "widget distinguishes no courses today from all courses ended",
+      "ok": true
+    },
+    {
+      "name": "widget lesson state observes inclusive start and exclusive end boundaries",
+      "ok": true
+    },
+    {
+      "name": "unknown companion option never mutates settings or calls native services",
+      "ok": true
+    },
+    {
+      "name": "enabled notifications skip another permission request",
+      "ok": true
+    },
+    {
+      "name": "logout during notification preflight cannot reenable course reminders",
+      "ok": true
+    },
+    {
+      "name": "logout during live view preflight cannot reenable live switch",
+      "ok": true
+    },
+    {
+      "name": "closing reminders during permission dialog wins over late grant or denial",
+      "ok": true
+    },
+    {
+      "name": "late live disable completion cannot overwrite a newer enabled status",
+      "ok": true
+    },
+    {
+      "name": "notification denial leaves switch off with no published reminders",
+      "ok": true
+    },
+    {
+      "name": "system calendar reminder is exactly ten minutes early and opens schedule",
+      "ok": true
+    },
+    {
+      "name": "course ten-minute trigger boundary never registers an elapsed calendar time",
+      "ok": true
+    },
+    {
+      "name": "course reminder skips trigger that elapsed during native group query",
+      "ok": true
+    },
+    {
+      "name": "course reminder rechecks later items after slow native publication",
+      "ok": true
+    },
+    {
+      "name": "turning reminders off cancels native reminders and persists switch",
+      "ok": true
+    },
+    {
+      "name": "switching off during native publication cancels the late reminder",
+      "ok": true
+    },
+    {
+      "name": "retired course publication failure cannot disable a newer enable request",
+      "ok": true
+    },
+    {
+      "name": "logout survives late course publication errors and preserves todo group",
+      "ok": true
+    },
+    {
+      "name": "logout cancels reminders, clears widget snapshot and rejects stale schedule",
+      "ok": true
+    },
+    {
+      "name": "week calibration persists and the same cached response cannot reset it",
+      "ok": true
+    },
+    {
+      "name": "fresh calendar cannot overwrite manual calibration but new term resets it",
+      "ok": true
+    },
+    {
+      "name": "shortened semester invalidates out-of-range inherited calibration without corrupting snapshot",
+      "ok": true
+    },
+    {
+      "name": "shorter semester retains valid manual week and adopts source week after invalid calibration",
+      "ok": true
+    },
+    {
+      "name": "companion ignores invalid semester totals consistently with schedule page",
+      "ok": true
+    },
+    {
+      "name": "companion semester total accepts bounds alternate field and retains valid prior term total",
+      "ok": true
+    },
+    {
+      "name": "snapshot read boundary rejects invalid shape and week metadata",
+      "ok": true
+    },
+    {
+      "name": "malformed persisted snapshot renders pending widget instead of crashing",
+      "ok": true
+    },
+    {
+      "name": "snapshot write and rename failures preserve last complete disk snapshot",
+      "ok": true
+    },
+    {
+      "name": "manual week marker and anchor survive snapshot disk roundtrip",
+      "ok": true
+    },
+    {
+      "name": "manual calibration rejects fractional and nonfinite weeks without mutation",
+      "ok": true
+    },
+    {
+      "name": "reminder registration is capped to leave system capacity",
+      "ok": true
+    },
+    {
+      "name": "system reminder quota preserves already registered courses",
+      "ok": true
+    },
+    {
+      "name": "quota status uses native reminder count without assuming zero on query failure",
+      "ok": true
+    },
+    {
+      "name": "returning to app retries a quota-limited plan after capacity recovers",
+      "ok": true
+    },
+    {
+      "name": "invalid reminder parameters are not reported as notification permission failure",
+      "ok": true
+    },
+    {
+      "name": "reminder failures distinguish permission notification and unknown errors and clean partial records",
+      "ok": true
+    },
+    {
+      "name": "real LiveView payload uses TIMER and millisecond duration",
+      "ok": true
+    },
+    {
+      "name": "enabled LiveView distinguishes waiting, empty day and active countdown from disabled state",
+      "ok": true
+    },
+    {
+      "name": "missing abilityInfo at emulator startup still resolves the launched bundle safely",
+      "ok": true
+    },
+    {
+      "name": "reminder taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "LiveView taps return to the running app bundle and course schedule",
+      "ok": true
+    },
+    {
+      "name": "changed live view deadline replaces the old timer",
+      "ok": true
+    },
+    {
+      "name": "same-tick live view instances have distinct system ids and reject old handles",
+      "ok": true
+    },
+    {
+      "name": "todo native live view capsule never uses class wording",
+      "ok": true
+    },
+    {
+      "name": "same-title todo live views retain distinct task identities",
+      "ok": true
+    },
+    {
+      "name": "todo reconciliation ends only the completed or deleted active task",
+      "ok": true
+    },
+    {
+      "name": "failed live view stop preserves active content for later retry",
+      "ok": true
+    },
+    {
+      "name": "failed live view title update restores committed content and reports failure",
+      "ok": true
+    },
+    {
+      "name": "queued course live view update preserves the submitted title",
+      "ok": true
+    },
+    {
+      "name": "live view handles returned to callers never expose internal identity",
+      "ok": true
+    },
+    {
+      "name": "stale live view handles cannot update or finish a newer instance",
+      "ok": true
+    },
+    {
+      "name": "queued live view target preserves caller snapshot",
+      "ok": true
+    },
+    {
+      "name": "todo live target uses structured deadline rather than fabricated one hour",
+      "ok": true
+    },
+    {
+      "name": "invalid live view times never reach the native service",
+      "ok": true
+    },
+    {
+      "name": "completed todo cannot start a native live view",
+      "ok": true
+    },
+    {
+      "name": "LiveView permission denial is reported and never presented as success",
+      "ok": true
+    },
+    {
+      "name": "partial LiveView result is cleaned up and is not success",
+      "ok": true
+    },
+    {
+      "name": "minute-of-day values are rejected by real LiveView adapter",
+      "ok": true
+    },
+    {
+      "name": "failed class-start transition remains retryable",
+      "ok": true
+    },
+    {
+      "name": "course LiveView changes timer at class start and stops on switch off",
+      "ok": true
+    },
+    {
+      "name": "logout reminder cancellation failure keeps widget private and allows group-specific retry",
+      "ok": true
+    },
+    {
+      "name": "preference flush failure during logout still clears widget and reminders",
+      "ok": true
+    },
+    {
+      "name": "widget disk failure during logout does not leave course reminders registered",
+      "ok": true
+    },
+    {
+      "name": "combined logout failures still cancel reminders and recover on retry",
+      "ok": true
+    },
+    {
+      "name": "failed LiveView stop reports logout failure after privacy and reminder cleanup",
+      "ok": true
+    }
+  ]
+}

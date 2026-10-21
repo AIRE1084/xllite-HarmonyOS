@@ -1,0 +1,330 @@
+{
+  "checkedAt": "2026-10-21T05:37:07.819Z",
+  "scope": "Opaque text tokens; translucent/native materials require screenshot review.",
+  "threshold": 4.5,
+  "minimum": 4.821,
+  "checks": 40,
+  "failed": [],
+  "pairs": [
+    {
+      "theme": "light",
+      "role": "body / background",
+      "text": "#171A21",
+      "surface": "#EEF3FA",
+      "ratio": 15.617,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "secondary / background",
+      "text": "#526176",
+      "surface": "#EEF3FA",
+      "ratio": 5.656,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "body / surface",
+      "text": "#171A21",
+      "surface": "#FFFFFF",
+      "ratio": 17.411,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "secondary / surface",
+      "text": "#526176",
+      "surface": "#FFFFFF",
+      "ratio": 6.306,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "body / surfaceVariant",
+      "text": "#171A21",
+      "surface": "#EFF3FA",
+      "ratio": 15.645,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "secondary / surfaceVariant",
+      "text": "#526176",
+      "surface": "#EFF3FA",
+      "ratio": 5.666,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "primary button",
+      "text": "#FFFFFF",
+      "surface": "#315EDA",
+      "ratio": 5.609,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "primary container",
+      "text": "#244BB4",
+      "surface": "#E5EDFF",
+      "ratio": 6.528,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "accent button",
+      "text": "#FFFFFF",
+      "surface": "#007570",
+      "ratio": 5.558,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "accent container",
+      "text": "#005754",
+      "surface": "#D8F5F4",
+      "ratio": 7.34,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "course 1",
+      "text": "#FFFFFF",
+      "surface": "#315EDA",
+      "ratio": 5.609,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "course 2",
+      "text": "#FFFFFF",
+      "surface": "#007570",
+      "ratio": 5.558,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "course 3",
+      "text": "#FFFFFF",
+      "surface": "#8B4E04",
+      "ratio": 6.585,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "course 4",
+      "text": "#FFFFFF",
+      "surface": "#BE286E",
+      "ratio": 5.648,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "course 5",
+      "text": "#FFFFFF",
+      "surface": "#7443D6",
+      "ratio": 5.972,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "body / background",
+      "text": "#F1F5FB",
+      "surface": "#0B1322",
+      "ratio": 16.979,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "secondary / background",
+      "text": "#B3C0D3",
+      "surface": "#0B1322",
+      "ratio": 10.082,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "body / surface",
+      "text": "#F1F5FB",
+      "surface": "#142033",
+      "ratio": 14.947,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "secondary / surface",
+      "text": "#B3C0D3",
+      "surface": "#142033",
+      "ratio": 8.875,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "body / surfaceVariant",
+      "text": "#F1F5FB",
+      "surface": "#1E2D43",
+      "ratio": 12.698,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "secondary / surfaceVariant",
+      "text": "#B3C0D3",
+      "surface": "#1E2D43",
+      "ratio": 7.54,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "primary button",
+      "text": "#0B0E14",
+      "surface": "#9FB6FF",
+      "ratio": 9.759,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "primary container",
+      "text": "#C5D2FA",
+      "surface": "#1D2E52",
+      "ratio": 8.929,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "accent button",
+      "text": "#0B0E14",
+      "surface": "#4FD1CE",
+      "ratio": 10.435,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "accent container",
+      "text": "#B8F0EE",
+      "surface": "#0F3D3C",
+      "ratio": 9.547,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "course 1",
+      "text": "#0B0E14",
+      "surface": "#7B95F0",
+      "ratio": 6.806,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "course 2",
+      "text": "#0B0E14",
+      "surface": "#4FD1CE",
+      "ratio": 10.435,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "course 3",
+      "text": "#0B0E14",
+      "surface": "#FBBF24",
+      "ratio": 11.571,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "course 4",
+      "text": "#0B0E14",
+      "surface": "#F472B6",
+      "ratio": 7.293,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "course 5",
+      "text": "#0B0E14",
+      "surface": "#A78BFA",
+      "ratio": 7.098,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "week overview course 1",
+      "text": "#315EDA",
+      "surface": "#eaeffb",
+      "ratio": 4.871,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "week overview course 2",
+      "text": "#007570",
+      "surface": "#e6f1f1",
+      "ratio": 4.821,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "week overview course 3",
+      "text": "#8B4E04",
+      "surface": "#f3ede6",
+      "ratio": 5.665,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "week overview course 4",
+      "text": "#BE286E",
+      "surface": "#f9eaf1",
+      "ratio": 4.859,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "role": "week overview course 5",
+      "text": "#7443D6",
+      "surface": "#f1ecfb",
+      "ratio": 5.156,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "week overview course 1",
+      "text": "#7B95F0",
+      "surface": "#212940",
+      "ratio": 5.082,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "week overview course 2",
+      "text": "#4FD1CE",
+      "surface": "#193539",
+      "ratio": 7.047,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "week overview course 3",
+      "text": "#FBBF24",
+      "surface": "#3b3117",
+      "ratio": 7.681,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "week overview course 4",
+      "text": "#F472B6",
+      "surface": "#3a2234",
+      "ratio": 5.437,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "role": "week overview course 5",
+      "text": "#A78BFA",
+      "surface": "#2a2742",
+      "ratio": 5.259,
+      "pass": true
+    }
+  ]
+}
