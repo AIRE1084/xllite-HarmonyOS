@@ -89,6 +89,15 @@ pwsh -File .\tools\build-api26.ps1 -BuildRoot 'D:\XJITApp-organize-20261016-buil
 
 构建默认产出未签名 HAP，正式签名配置保持空值。本地密钥、环境变量、SDK 副本、缓存、截图和大体积验收包均排除在 Git 外。
 
+## 分支说明
+
+| 分支 | 内容 |
+| --- | --- |
+| `main` | Flutter 实现，与本工程无共同提交历史 |
+| `harmony` | 本工程，HarmonyOS ArkTS 实现。安装说明与更新日志均以此分支为准 |
+
+GitHub 仓库首页默认展示 `main`，看不到本文件。查看本分支请切换分支，或直接访问 `https://github.com/AIRE1084/xllite-HarmonyOS/tree/harmony`。
+
 ## 参与与反馈
 
 本仓库为个人维护的开发分支，接口契约、SDK 能力边界等结论均以实测与官方 `.d.ts` 标注为依据，未经验证的部分会在文档中显式标注为待确认。发现问题请提 Issue，并附上设备型号、系统版本与复现步骤。
