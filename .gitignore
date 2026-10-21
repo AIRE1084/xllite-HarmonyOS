@@ -71,10 +71,20 @@
 # ===== 根目录历史归档与实施报告（不属于交付物） =====
 /API26*.md
 /*实施报告.md
+/*逆向*报告.md
 /计算机网络题库-刷题.html
 
 # ===== 模拟器验收产物（可由构建与验收流程复现） =====
 /docs/simulator-verify-*/
+
+# ===== 历史计划稿、待办批次与交接记录（开发过程材料，不是交付物） =====
+/docs/2026-10-17-ACCEPTANCE-REFRESH.md
+/docs/2026-10-17-CONTRACT-RECHECK.md
+/docs/2026-10-17-NEXT-SESSION-HANDOFF.md
+/docs/2026-10-17-REMAINING-ACCEPTANCE.md
+/docs/2026-10-17-REVISION-BATCH.md
+/docs/2026-10-17-TODO-BATCH.md
+/docs/STORE-READINESS.md
 
 # ===== 通用依赖与本地日志 =====
 node_modules/
