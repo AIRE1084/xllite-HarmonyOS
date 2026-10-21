@@ -1,4 +1,4 @@
-﻿import { FeatureDef } from '../models/Types'
+import { FeatureDef } from '../models/Types'
 
 export const SCHOOL_CAS: string = 'https://cas.xjit.edu.cn/cas/login'
 export const SCHOOL_SUPERAPP: string = 'https://superapp.xjit.edu.cn'
@@ -20,6 +20,18 @@ export const FEATURES: FeatureDef[] = [
   { name: 'jw.training', title: '培养方案', system: 'jw', icon: '培', page: 'TrainingPage' },
   { name: 'local.todos', title: '待办任务', system: 'local', icon: '办', page: 'TodoPage' },
 ]
+
+const FALLBACK_FEATURE: FeatureDef =
+  { name: 'unknown', title: '服务入口未配置', system: 'local', icon: '?', page: 'SchoolServicePage' }
+
+// 按 name 取功能定义。页面此前用 FEATURES[4] 这类下标硬编码，
+// 一旦调整数组顺序或插入新项，入口就会静默打开错误的页面。
+export function featureByName(name: string): FeatureDef {
+  for (let i = 0; i < FEATURES.length; i++) {
+    if (FEATURES[i].name === name) return FEATURES[i]
+  }
+  return FALLBACK_FEATURE
+}
 
 export function systemLabel(s: string): string {
   if (s === 'newcard') return '一卡通服务'

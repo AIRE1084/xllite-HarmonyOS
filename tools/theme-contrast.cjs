@@ -29,16 +29,19 @@ for (const [name, p] of [['light', moduleObject.exports.LightColors], ['dark', m
   check(name, 'accent container', p.onAccentContainer, p.accentContainer);
   p.courseColors.forEach((color, i) => check(name, 'course ' + (i + 1), name === 'light' ? '#FFFFFF' : '#0B0E14', color));
 }
-// Read the real overview palette so compact-course text is audited too.
-const overview = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/WeekOverview.ets'), 'utf8');
-function overviewColors(method) {
-  const match = overview.match(new RegExp('private ' + method + '[\\s\\S]*?const colors: string\\[\\] = this.isDark [?] (\\[[^\\]]+\\])\\s*: (\\[[^\\]]+\\])'));
-  if (!match) throw new Error('Overview palette format changed; update contrast reader.');
-  return [match[2], match[1]].map(array => array.match(/#[0-9A-Fa-f]{6}/g));
+// WeekOverview 现在由 courseColors + withAlpha 派生配色：背景是同色降透明度。
+// 半透明背景必须先合成到页面底色上才谈得上对比度，所以这里按同一公式复算。
+function blend(hex, alpha, base) {
+  const fg = hex.replace('#', '').match(/.{2}/g).map(s => parseInt(s, 16) / 255);
+  const bg = base.replace('#', '').match(/.{2}/g).map(s => parseInt(s, 16) / 255);
+  return '#' + fg.map((c, i) => Math.round((c * alpha + bg[i] * (1 - alpha)) * 255))
+    .map(c => c.toString(16).padStart(2, '0')).join('');
 }
-const overviewSurface = overviewColors('courseSurface'), overviewText = overviewColors('courseText');
-for (let theme = 0; theme < 2; theme++) overviewSurface[theme].forEach((color, i) =>
-  check(theme === 0 ? 'light' : 'dark', 'week overview course ' + (i + 1), overviewText[theme][i], color));
+for (const [name, p, base, alpha] of [['light', moduleObject.exports.LightColors, '#FFFFFF', 0.10],
+  ['dark', moduleObject.exports.DarkColors, '#0B0E14', 0.20]]) {
+  p.courseColors.forEach((color, i) =>
+    check(name, 'week overview course ' + (i + 1), color, blend(color, alpha, base)));
+}
 const report = { checkedAt: new Date().toISOString(), scope: 'Opaque text tokens; translucent/native materials require screenshot review.', threshold: 4.5,
   minimum: Math.min(...pairs.map(p => p.ratio)), checks: pairs.length, failed: pairs.filter(p => !p.pass), pairs };
 fs.mkdirSync(path.join(root, '.wolf'), { recursive: true });

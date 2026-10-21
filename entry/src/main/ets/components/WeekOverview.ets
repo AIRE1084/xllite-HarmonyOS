@@ -1,7 +1,8 @@
-import { getColors, ColorPalette } from '../theme/Colors'
+import { getColors, ColorPalette, withAlpha } from '../theme/Colors'
 import { Course } from '../models/JwTypes'
 import { ALL_TIMES, ClassTime, classStatus } from '../utils/ClassTime'
 import { scheduleBlocks, ScheduleBlock } from '../utils/ScheduleLayout'
+import { stableHash } from '../utils/Hash'
 
 /** Seven-day overview; daily headers also open a fully readable agenda. */
 @Component
@@ -28,19 +29,16 @@ export struct WeekOverview {
     return this.weekKnown && this.currentWeek === this.actualWeek && day === (new Date().getDay() + 6) % 7
   }
   private courseIndex(course: Course): number {
-    let hash = 0
-    for (let i = 0; i < course.title.length; i++) hash = (hash * 31 + course.title.charCodeAt(i)) | 0
-    return Math.abs(hash) % 4
+    return stableHash(course.title) % this.palette.courseColors.length
   }
+  // 背景由同一个前景色降透明度得到，深浅两套主题共用一份色板，
+  // 不再各存一张 16 色硬编码表（原先那批色值绕开了主题 token）。
+  // 浅色用 0.10：0.14 时最紧的一项只有 4.54:1，贴着 4.5 门槛；0.10 可回到 4.82:1。
   private courseSurface(course: Course): string {
-    const colors: string[] = this.isDark ? ['#263F6F', '#214737', '#503D21', '#42335B']
-      : ['#E3EBFF', '#E1F2E9', '#FFF0D2', '#EDE7FC']
-    return colors[this.courseIndex(course)]
+    return withAlpha(this.palette.courseColors[this.courseIndex(course)], this.isDark ? 0.20 : 0.10)
   }
   private courseText(course: Course): string {
-    const colors: string[] = this.isDark ? ['#D3E1FF', '#C7EFDC', '#FFE6B5', '#E3D5FC']
-      : ['#294B9E', '#205A43', '#795116', '#57418E']
-    return colors[this.courseIndex(course)]
+    return this.palette.courseColors[this.courseIndex(course)]
   }
   private dayDate(day: number): string {
     if (!this.weekKnown) return ''
