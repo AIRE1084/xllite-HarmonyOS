@@ -8,6 +8,7 @@ import { publishTodoWidgets } from './WidgetService'
 
 const PREFS_NAME: string = 'xjit_todos'
 const KEY_ITEMS: string = 'items'
+const KEY_OWNER: string = 'owner'
 
 let todoContext: common.UIAbilityContext | null = null
 let todoStore: TodoItem[] = []
@@ -17,6 +18,7 @@ let loadTask: Promise<void> | null = null
 let prefsTask: Promise<preferences.Preferences> | null = null
 let persistenceTask: Promise<void> = Promise.resolve()
 let sessionVersion: number = 0
+let todoOwner: string = ''
 let remindersEnabled: boolean = false
 let reminderStatus: string = '尚未登记任务提醒'
 export function getTodoReminderStatus(): string { return reminderStatus }
@@ -43,6 +45,22 @@ export function retryTodoLiveCleanup(): Promise<void> {
 
 export function setTodoContext(ctx: common.UIAbilityContext): void {
   todoContext = ctx
+}
+
+// Tasks belong to whoever is signed in. The tag is stored next to the rows so a
+// later session can tell whose data it is even when sign-out cleanup never
+// reached disk, which is the case a plain "delete on logout" cannot cover.
+export function setTodoOwner(owner: string): void { todoOwner = owner }
+function ownerTag(): string {
+  if (todoOwner.length === 0) return ''
+  let a: number = 5381
+  let b: number = 52711
+  for (let i = 0; i < todoOwner.length; i++) {
+    const c: number = todoOwner.charCodeAt(i)
+    a = (a * 33 + c) % 2147483647
+    b = (b * 31 + c) % 2147483629
+  }
+  return a.toString(36) + '-' + b.toString(36)
 }
 
 function parseItems(raw: string): TodoItem[] {
@@ -107,6 +125,7 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
       await prefs.put('cleanup_pending', true)
       await prefs.flush()
     }
+    await prefs.put(KEY_OWNER, ownerTag())
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     if (clearing) {
@@ -147,6 +166,21 @@ export async function loadTodos(): Promise<TodoItem[]> {
       if (task === null) return
       const prefs = await task
       const pending = await prefs.get('cleanup_pending', false)
+      const storedOwner = await prefs.get(KEY_OWNER, '')
+      if (typeof storedOwner !== 'string') throw new Error('待办归属标记异常，原数据已保留')
+      if (storedOwner !== ownerTag()) {
+        // Rows, and any cleanup marker, left behind by a different sign-in. Reset
+        // both: the marker describes the previous owner's interrupted cleanup and
+        // would otherwise stall this account on every later read.
+        await prefs.put(KEY_OWNER, ownerTag())
+        await prefs.put(KEY_ITEMS, '[]')
+        await prefs.put('cleanup_pending', false)
+        await prefs.flush()
+        if (version !== sessionVersion || cleanupPending) throw new Error('待办会话已变化，旧读取已失效')
+        todoStore = []
+        loaded = true
+        return
+      }
       if (pending !== false) {
         cleanupPending = true
         throw new Error('上一会话待办清理未完成，请重试退出清理')
@@ -281,7 +315,7 @@ export async function clearTodos(): Promise<void> {
   remindersEnabled = false
   reminderStatus = '尚未登记任务提醒'
   liveCleanupStatus = ''
-  if (todoContext === null) return
+  if (todoContext === null) throw new Error('待办存储尚未初始化，退出清理未完成，请重试')
   await mutate((_items: TodoItem[]): TodoItem[] => [], sessionVersion, true)
 }
 export function countOpenTodos(items: TodoItem[]): number {

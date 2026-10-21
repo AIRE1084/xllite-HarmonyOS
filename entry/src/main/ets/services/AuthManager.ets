@@ -1,5 +1,5 @@
 import { clearTodoReminders } from './TodoReminderService'
-import { clearTodos } from './TodoService'
+import { clearTodos, setTodoOwner } from './TodoService'
 import { clearCampusCompanion } from './CampusCompanionService'
 import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
@@ -47,8 +47,20 @@ export async function loadElectricityRoom(): Promise<string> {
     const task = getPrefs()
     if (task === null || owner.length === 0 || epoch !== getCacheEpoch() || owner !== savedUsername) return
     const prefs = await task
+    const storedOwner = await prefs.get('electricity_room_owner', '')
     const value = await prefs.get('electricity_room', '')
-    if (epoch === getCacheEpoch() && owner === savedUsername && typeof value === 'string') room = value
+    if (epoch !== getCacheEpoch() || owner !== savedUsername) return
+    if (typeof storedOwner !== 'string') return
+    if (storedOwner !== owner) {
+      // Bound by a different account. Drop it rather than show someone else's
+      // dormitory, which is what a sign-out whose session clear never reached
+      // disk would otherwise allow after a restart.
+      await prefs.delete('electricity_room')
+      await prefs.delete('electricity_room_owner')
+      await prefs.flush()
+      return
+    }
+    if (typeof value === 'string') room = value
   })
   return room
 }
@@ -62,6 +74,7 @@ export function saveElectricityRoom(value: string): Promise<void> {
     const prefs = await task
     if (epoch !== getCacheEpoch() || owner !== savedUsername) return
     await prefs.put('electricity_room', room)
+    await prefs.put('electricity_room_owner', owner)
     await prefs.flush()
   })
 }
@@ -89,7 +102,9 @@ export async function loadSession(): Promise<boolean> {
     const source = await prefs.get('auth_source', '')
     if (epoch !== getCacheEpoch() || typeof u !== 'string' || typeof t !== 'string' ||
       typeof exp !== 'number' || typeof source !== 'string' || u.length === 0 || t.length === 0 || exp <= Date.now()) return
-    savedUsername = u; savedAccessToken = t; savedTokenExpiresAt = exp; savedAuthSource = source; valid = true
+    savedUsername = u; savedAccessToken = t; savedTokenExpiresAt = exp; savedAuthSource = source
+    setTodoOwner(u)
+    valid = true
   })
   return valid && epoch === getCacheEpoch()
 }
@@ -142,7 +157,10 @@ export async function saveSchoolSession(username: string, token: string, expires
       await prefs.put('auth_source', source)
       await prefs.flush()
     })
-    if (epoch === getCacheEpoch()) { savedUsername = username; savedAccessToken = token; savedTokenExpiresAt = expiresAt; savedAuthSource = source }
+    if (epoch === getCacheEpoch()) {
+      savedUsername = username; savedAccessToken = token; savedTokenExpiresAt = expiresAt; savedAuthSource = source
+      setTodoOwner(username)
+    }
   } catch (_e) {
     if (epoch === getCacheEpoch()) {
       savedUsername = ''; savedAccessToken = ''; savedTokenExpiresAt = 0; clearCardToken(epoch)
@@ -171,6 +189,7 @@ export async function clearSession(): Promise<void> {
   const cacheClearTask = clearAllCachedValues()
   const companionTask = clearCampusCompanion()
   savedUsername = ''; savedAccessToken = ''; savedTokenExpiresAt = 0; cardToken = ''; cardExpiresAt = 0; cardSessionEpoch++
+  setTodoOwner('')
   // School pages use the app's private incognito WebView store.
   try { webview.WebCookieManager.clearAllCookiesSync(true); webview.WebStorage.deleteAllData(true) } catch (_e) {}
   const authClearTask = enqueue(async () => {

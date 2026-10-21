@@ -142,6 +142,19 @@ test('failed logout clearing blocks old todo cache until explicit cleanup retry 
  await assert.rejects(f.todo.loadTodos(),/清理/);await assert.rejects(f.todo.addTodo({title:'New account',note:'',dueText:''}),/清理/);
  f.state.hook=null;await f.todo.clearTodos();assert.equal((await f.todo.loadTodos()).length,0);
 });
+test('a different account never inherits tasks left by a failed logout cleanup',async()=>{
+ const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});
+ await f.auth.saveSchoolSession('alice','token-alice',Date.now()+3600000);
+ await f.todo.addTodo({title:'Alice private',note:'',dueText:''});
+ f.state.hook=async(name,op,key)=>{if(name===TODOS&&op==='put'&&key==='items')throw Error('fixture deletion failed')};
+ await assert.rejects(f.auth.clearSession(),/deletion failed/);
+ assert.ok(f.stores.get(TODOS).data.get('items').includes('Alice private'));
+ f.state.hook=null;
+ const bob=fixture(f.stores);await bob.auth.saveSchoolSession('bob','token-bob',Date.now()+3600000);
+ assert.equal((await bob.todo.loadTodos()).length,0);
+ const aliceAgain=fixture(f.stores);await aliceAgain.auth.saveSchoolSession('alice','token-alice-2',Date.now()+3600000);
+ assert.equal((await aliceAgain.todo.loadTodos()).length,0);
+});
 test('todo read failure blocks mutation without overwriting existing tasks and allows retry',async()=>{
  const f=fixture();f.todo.setTodoContext({abilityInfo:{bundleName:'com.xjit.app.acceptance'}});const original=JSON.stringify([{id:'old',title:'Existing',note:'',dueText:'',done:false,createdAt:1,updatedAt:1}]);await f.prefs('xjit_todos').put('items',original);
  f.state.hook=async(name,op)=>{if(name==='xjit_todos'&&op==='get')throw Error('fixture read failure')};
@@ -317,6 +330,14 @@ test('electricity binding persists in current session and logout clears it',asyn
  assert.equal(f.stores.get('xjit_session')?.data.get('electricity_room'),'9#312');
  await f.auth.clearSession();assert.equal(await f.auth.loadElectricityRoom(),'');
 });
+test('a different account never inherits a dormitory bound by another sign-in',async()=>{
+ const f=fixture();await f.auth.saveSchoolSession('alice','token-alice',Date.now()+3600000);
+ await f.auth.saveElectricityRoom('9#312');assert.equal(await f.auth.loadElectricityRoom(),'9#312');
+ const bob=fixture(f.stores);await bob.auth.saveSchoolSession('bob','token-bob',Date.now()+3600000);
+ assert.equal(await bob.auth.loadElectricityRoom(),'');
+ const aliceAgain=fixture(f.stores);await aliceAgain.auth.saveSchoolSession('alice','token-alice-2',Date.now()+3600000);
+ assert.equal(await aliceAgain.auth.loadElectricityRoom(),'');
+});
 test('logout retires pending electricity binding reads and writes',async()=>{
  const f=fixture();await f.seedToken();await f.auth.saveElectricityRoom('9#312');
  const gate=deferred();let entered=false;
@@ -402,7 +423,8 @@ test('concurrent todo initialization waits for one read and returns independent 
   f.state.hook = async (name, op) => { if (name === TODOS && op === 'get') { started = true; await gate.promise; } };
   const first = f.todo.loadTodos(); await until(() => started); const second = f.todo.loadTodos().then(v => { resolved = true; return v; });
   await Promise.resolve(); assert.equal(resolved, false); gate.resolve(); const [a, b] = await Promise.all([first, second]);
-  assert.equal(a.length, 1); assert.equal(b.length, 1); assert.equal(f.stores.get(TODOS).reads, 2); a[0].title = 'changed'; assert.equal(b[0].title, 'task');
+  // One round still reads a fixed key set: cleanup marker, owner tag, rows.
+  assert.equal(a.length, 1); assert.equal(b.length, 1); assert.equal(f.stores.get(TODOS).reads, 3); a[0].title = 'changed'; assert.equal(b[0].title, 'task');
 });
 
 test('concurrent feature reads deduplicate; cache hit and manual refresh differ', async () => {
