@@ -2,7 +2,7 @@
  * 主题色板 - 浅色 + 深色双套(Q5=A 跟随系统)
  *
  * 优先级:
- *   1. theme/Colors.ets (代码色板 - 浅深双套 + 玻璃色)
+ *   1. theme/Colors.ets (代码色板 - 浅深双套)
  *   2. resources/base/element/color.json (系统色 - 启动窗背景等)
  *
  * 浅深色由 isDark 决定,组件用 @StorageLink('isDark') 监听。
@@ -91,4 +91,14 @@ export const DarkColors: ColorPalette = {
 
 export function getColors(isDark: boolean): ColorPalette {
   return isDark ? DarkColors : LightColors
+}
+
+/**
+ * 给 #RRGGBB 叠加透明度，产出 ArkUI 要求的 #AARRGGBB（alpha 在前，不是 RGBA）。
+ * 用于需要「同色系淡底」的场景，避免在页面里另写一套硬编码色值跑偏。
+ */
+export function withAlpha(hex: string, alpha: number): string {
+  const ratio = Math.max(0, Math.min(1, alpha))
+  const channel = Math.round(ratio * 255).toString(16).padStart(2, '0').toUpperCase()
+  return '#' + channel + hex.replace('#', '').toUpperCase()
 }

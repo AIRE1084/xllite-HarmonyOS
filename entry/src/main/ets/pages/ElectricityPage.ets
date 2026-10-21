@@ -131,7 +131,13 @@ struct ElectricityPage {
     if (!this.alive || version !== this.requestVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
     if (res.ok) {
       const order: ElecRechargePayResult = res.data as Object as ElecRechargePayResult
-      this.resultMsg = '充值成功！金额: ¥' + order.amount
+      // res.ok only proves the gateway accepted the order. The balance moves on the
+      // campus-card side and there is no order-status endpoint to confirm it, so
+      // reporting "充值成功" here would fabricate a payment result.
+      const paid = typeof order.amount === 'string' && order.amount.trim().length > 0
+        ? Number(order.amount) : Number(this.selectedAmount)
+      this.resultMsg = '支付请求已提交' + (Number.isFinite(paid) && paid > 0 ? '，金额 ¥' + paid.toFixed(2) : '') +
+        '。请到一卡通账户核对到账结果'
       this.step = 4
     } else {
       this.errorMsg = res.error
@@ -178,7 +184,7 @@ struct ElectricityPage {
     Stack() {
       AmbientBackground()
       Column() {
-        DetailHeader({ title: this.step === 4 ? '充值完成' : '电费服务', subtitle: '查询宿舍电量与充值', action: '',
+        DetailHeader({ title: this.step === 4 ? '支付已提交' : '电费服务', subtitle: '查询宿舍电量与充值', action: '',
           showBack: false, onBack: () => {}, onAction: () => {} })
         Scroll() {
           Column() {

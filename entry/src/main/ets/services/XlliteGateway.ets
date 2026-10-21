@@ -169,6 +169,17 @@ export async function gatewayRun(feature: string, accessToken: string,
     if (key !== undefined && !Array.isArray(result.data[key])) {
       result.ok = false; result.data = {}; result.error = '业务响应缺少有效的' + key + '集合'
     }
+    // 两个支付入口都必须带回 payResult 对象。漏发时订单往往已在服务端创建成功，
+    // 若当成成功继续走，页面会在空对象上取属性、被通用 catch 吞成"网络失败"，
+    // 用户看不出订单已存在，很可能重复下单。
+    if (result.ok && (feature === 'newcard.recharge.create_order' ||
+      feature === 'newcard.electricity.recharge.pay')) {
+      const payResult: Object = result.data['payResult']
+      if (payResult === null || typeof payResult !== 'object' || Array.isArray(payResult)) {
+        result.ok = false; result.data = {}
+        result.error = '订单可能已创建，但响应缺少支付信息，请先到一卡通账户查询后再决定是否重试'
+      }
+    }
   }
   return result
 }

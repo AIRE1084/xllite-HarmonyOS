@@ -40,6 +40,7 @@ struct CampusSettingsPage {
   @StorageLink('currentWeek') @Watch('updateWeekDraft') currentWeek: number = 1
   @StorageLink('totalWeeks') totalWeeks: number = 20
   @StorageLink('companionVersion') @Watch('refreshPreview') companionVersion: number = 0
+  @StorageLink('campusInitError') initError: string = ''
   @State weekDraft: number = 1
   @State busy: boolean = false
   @State palette: ColorPalette = getColors(false)
@@ -121,6 +122,10 @@ struct CampusSettingsPage {
           onBack: () => safeBack(this.getUIContext()), onAction: () => this.syncSchedule() })
         Scroll() {
           Column({ space: 20 }) {
+            if (this.initError.length > 0) {
+              Text(this.initError).fontSize(13).fontColor(this.palette.error).width('100%')
+                .padding(14).backgroundColor(this.palette.surfaceVariant).borderRadius(14)
+            }
             CampusCard({ contentPadding: 18 }) {
               Column() {
                 this.SwitchRow({ title: '桌面课表卡片', subtitle: '在桌面查看今天的下一节课', enabled: this.widgetEnabled, option: 'widget' })

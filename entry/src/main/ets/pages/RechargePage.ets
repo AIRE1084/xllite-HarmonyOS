@@ -17,16 +17,20 @@ import { Motion, motionDuration } from '../theme/Motion'
 
 /**
  * 收银台 H5 里点微信/支付宝，浏览器内核只会当成"打不开的链接"，
- * 必须由我们自己交给系统。这里判定是否为需要外部应用承接的 scheme。
- * http/https/data/about/javascript/blob/file 一律留在 Web 内处理。
+ * 必须由我们自己交给系统。这里只放行已知的支付 scheme——收银台地址由服务端
+ * 返回，若响应被污染，白名单之外的一切都应留在 Web 内，绝不能交给系统去
+ * 启动任意应用。http/https/data/about/javascript/blob/file 一律留在 Web 内。
  */
+const PAYMENT_SCHEMES: string[] = ['weixin://', 'weixinurl://', 'alipays://', 'alipay://',
+  'unionpay://', 'uppay://', 'upwallet://']
+
 function isExternalScheme(url: string): boolean {
-  const lower: string = url.toLowerCase()
+  const lower: string = url.trim().toLowerCase()
   if (lower.length === 0) return false
-  if (lower.startsWith('http://') || lower.startsWith('https://')) return false
-  if (lower.startsWith('data:') || lower.startsWith('about:') || lower.startsWith('javascript:')) return false
-  if (lower.startsWith('blob:') || lower.startsWith('file:')) return false
-  return lower.indexOf('://') > 0
+  for (let i = 0; i < PAYMENT_SCHEMES.length; i++) {
+    if (lower.startsWith(PAYMENT_SCHEMES[i])) return true
+  }
+  return false
 }
 
 function schemeAppName(url: string): string {
@@ -99,6 +103,12 @@ struct RechargePage {
 
   async handlePay(): Promise<void> {
     if (this.paying || !this.alive || this.loading || this.selectedAmount.length === 0 || this.selectedPayCode.length === 0) return
+    // 服务端契约要求金额大于 0 且最多两位小数。档位来自服务端配置，
+    // 配置异常时不能把非法金额直接发出去。
+    if (!/^\d+(\.\d{1,2})?$/.test(this.selectedAmount) || Number(this.selectedAmount) <= 0) {
+      this.payError = '充值金额无效，请重新选择'
+      return
+    }
     this.paying = true
     this.payError = ''
     const params: Record<string, Object> = {
@@ -113,6 +123,13 @@ struct RechargePage {
     if (!this.alive || epoch !== getCacheEpoch() || username !== getUsername()) return
     if (res.ok) {
       const order: RechargeOrderResult = res.data as Object as RechargeOrderResult
+      // 订单可能已在服务端创建成功，只是漏发 payResult。此处必须给出与网络
+      // 失败不同的说法，否则用户会重复下单。
+      if (!order.payResult) {
+        this.payError = '订单已创建，但响应缺少支付入口字段，请到一卡通账户查询后再决定是否重试'
+        safeToast(this.getUIContext(), '订单已创建，请先到一卡通账户查询结果')
+        return
+      }
       if (order.payResult.htmlPost && order.payResult.htmlPost.length > 0) {
         const dataUrl: string = this.htmlToDataUrl(order.payResult.htmlPost)
         if (dataUrl.length > 0) {

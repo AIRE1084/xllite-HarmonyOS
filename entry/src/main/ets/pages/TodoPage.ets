@@ -9,7 +9,7 @@ import { TodoItem } from '../models/TodoTypes'
 import { addTodo, countOpenTodos, deleteTodo, loadTodos, toggleTodo, refreshTodoWidgets, registerTodoReminders, disableTodoReminders, getTodoReminderStatus, restoreTodoReminderStatus, getTodoLiveCleanupStatus, retryTodoLiveCleanup } from '../services/TodoService'
 import { startTodoLiveView } from '../services/LiveViewService'
 import { LiquidGlass } from '../components/LiquidGlass'
-import { getColors, ColorPalette } from '../theme/Colors'
+import { getColors, withAlpha, ColorPalette } from '../theme/Colors'
 import { Radius } from '../theme/Radius'
 import { Motion, motionDuration } from '../theme/Motion'
 
@@ -123,15 +123,15 @@ struct TodoPage {
       }
       return
     }
-    if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
+    if (!this.isCurrentOperation(version, epoch, username)) return
     this.todos = items
     this.loadError = ''
     await restoreTodoReminderStatus()
-    if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
+    if (!this.isCurrentOperation(version, epoch, username)) return
     this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus()
     try { await refreshTodoWidgets() }
     catch (_error) {
-      if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
+      if (this.isCurrentOperation(version, epoch, username)) {
         safeToast(this.getUIContext(), '任务已读取，桌面卡片暂未刷新')
       }
     }
@@ -162,7 +162,9 @@ struct TodoPage {
     const value = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute).getTime()
     if (value <= Date.now()) { safeToast(this.getUIContext(), '请选择未来时间'); return }
     this.dueAt = value
-    this.dueInput = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    this.dueInput = date.getFullYear() + '-' + month + '-' + day + ' ' + hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0')
   }
   clearDueTime(): void { this.dueAt = undefined; this.dueInput = '' }
   chooseDueTime(): void {
@@ -205,17 +207,17 @@ struct TodoPage {
         dueText: this.dueInput,
         dueAt: this.dueAt,
       })
-      if (!this.alive || version !== this.loadVersion || epoch !== getCacheEpoch() || username !== getUsername()) return
+      if (!this.isCurrentOperation(version, epoch, username)) return
       this.todos = items
       this.titleInput = ''
       this.noteInput = ''
       this.clearDueTime()
     } catch (_error) {
-      if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
+      if (this.isCurrentOperation(version, epoch, username)) {
         safeToast(this.getUIContext(), '任务保存未完成，请重试')
       }
     } finally {
-      if (this.alive && version === this.loadVersion && epoch === getCacheEpoch() && username === getUsername()) {
+      if (this.isCurrentOperation(version, epoch, username)) {
         this.saving = false; this.reminderStatus = getTodoReminderStatus(); this.liveCleanupStatus = getTodoLiveCleanupStatus()
       }
     }
@@ -328,7 +330,7 @@ struct TodoPage {
       .textAlign(TextAlign.Center)
       .layoutWeight(1)
       .height(34)
-      .backgroundColor(this.filter === value ? this.palette.primary : 'rgba(0,0,0,0)')
+      .backgroundColor(this.filter === value ? this.palette.primary : Color.Transparent)
       .borderRadius(Radius.sm)
       .onClick(() => { this.filter = value })
   }
@@ -400,7 +402,7 @@ struct TodoPage {
           .width(32)
           .height(32)
           .textAlign(TextAlign.Center)
-          .backgroundColor(this.isDark ? 'rgba(248,113,113,0.12)' : 'rgba(239,68,68,0.10)')
+          .backgroundColor(withAlpha(this.palette.error, this.isDark ? 0.12 : 0.10))
           .borderRadius(16)
           .margin({ left: 8 })
           .onClick(() => { this.handleDelete(item) })
