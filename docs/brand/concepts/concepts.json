@@ -1,8 +1,8 @@
 [
   {
     "name": "concept-1-schedule-ring.png",
-    "bytes": 641352,
-    "sha256": "03e8ca18402601b62a6bd93ba66f6a4129bb44fb2036fafa840b766140a734fa",
+    "bytes": 106250,
+    "sha256": "c55a75f0812aaccc08ffabe5cffcc8c5717b92015482b438315ba230ad2f7221",
     "size": [
       1024,
       1024
@@ -10,8 +10,8 @@
   },
   {
     "name": "concept-1-schedule-ring-216.png",
-    "bytes": 45393,
-    "sha256": "7ea886af7176a27ba2d42bdf62890ee7a663a16ba1a876b9a06cbc2301948af9",
+    "bytes": 18460,
+    "sha256": "bd216b2f759d4f1d635bff702bfe865b3b087c19336e135a98bb3a862dd2e5c8",
     "size": [
       216,
       216
@@ -19,8 +19,8 @@
   },
   {
     "name": "concept-2-tianshan-book.png",
-    "bytes": 621670,
-    "sha256": "f497282f05fa8d1d5dff8b894738297efd1d44b2f22541dacf0aa80319be0466",
+    "bytes": 66184,
+    "sha256": "53a428b76622134ef3fe0242ddd9c88973240902a7a601b3427e72b0b71008bf",
     "size": [
       1024,
       1024
@@ -28,44 +28,26 @@
   },
   {
     "name": "concept-2-tianshan-book-216.png",
-    "bytes": 41652,
-    "sha256": "acb59b1e4e18a9fe1f3864ba5e607d56357c2ec5c23acfb028d0a89cf5d4b8b5",
+    "bytes": 16070,
+    "sha256": "78ac753b40c83382dc521d62013218e132dff5cfcb1aa5c23bdaf5defc161495",
     "size": [
       216,
       216
     ]
   },
   {
-    "name": "concept-3-glass-palm.png",
-    "bytes": 697362,
-    "sha256": "d7aca9c46cf0208af781f57c9065214a5567d6ae87d25a608fd220e66f3fa819",
+    "name": "concept-3-week-grid.png",
+    "bytes": 73327,
+    "sha256": "b3a600e6d13088bb7f2058fd6f49b2bc1860807da1c7d8195fa3caf683bdd8c7",
     "size": [
       1024,
       1024
     ]
   },
   {
-    "name": "concept-3-glass-palm-216.png",
-    "bytes": 44443,
-    "sha256": "8a9e2cc047aa7dba5893bfc1b7d995331d046ef9786ac4a6caed67fc893ee979",
-    "size": [
-      216,
-      216
-    ]
-  },
-  {
-    "name": "concept-4-dynamic-island.png",
-    "bytes": 607515,
-    "sha256": "b13c1ca9e22221d534a0d01544980fa824d3e1a24e3947818484a6685926e7b2",
-    "size": [
-      1024,
-      1024
-    ]
-  },
-  {
-    "name": "concept-4-dynamic-island-216.png",
-    "bytes": 36906,
-    "sha256": "1ed7b7c692dbf53439792bcf6c16f13a7431a0ff89c7121952ea66eb4bfaa896",
+    "name": "concept-3-week-grid-216.png",
+    "bytes": 13389,
+    "sha256": "7b39542f76df11b13ad8dab7139acb9cdef4b9232a8bed50031abd97369c50dd",
     "size": [
       216,
       216

@@ -1,10 +1,19 @@
 """
 Creative icon concepts for 掌上新理工 (HarmonyOS).
 
-Draws several original vector-style marks with Pillow and exports them as
-transparent PNGs into docs/brand/concepts/. Nothing here is a copy of an
-existing asset: every concept is composed from primitives (arcs, polygons,
-gradients) so it stays reproducible and editable.
+Draws original vector-style marks with Pillow and exports them as PNGs into
+docs/brand/concepts/. Every concept is composed from primitives (arcs, polygons,
+gradients) so the result stays reproducible and editable.
+
+Design constraints applied after the first review round:
+- Solid deep-indigo background, matching the shipping icon (#081D59), so the
+  launcher does not show a background colour jump when the icon is replaced.
+  The "liquid glass" quality lives in the subject's translucency and highlights,
+  not in a busy gradient backdrop.
+- One focal point per icon, no scattered decorative specks.
+- Subject kept to roughly 70% of the canvas so circular and squircle masks do
+  not clip it.
+- Everything is drawn at 4x and downsampled, so edges are clean.
 
 Usage:
     python tools/generate-icon-concepts.py
@@ -21,57 +30,48 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'docs' / 'brand' / 'concepts'
 OUT.mkdir(parents=True, exist_ok=True)
 
-SS = 4  # supersampling factor for clean edges
+SS = 4  # supersampling factor
 
-INDIGO = (49, 94, 218)
-CYAN = (18, 181, 201)
+# Solid launcher background, identical family to the shipping icon.
+BG = (8, 29, 89)
+RING_BASE = (44, 111, 214)
+RING_LIVE = (18, 181, 201)
+COOL_WHITE = (232, 240, 255)
+AMBER = (255, 196, 92)
 VIOLET = (123, 92, 230)
-NIGHT = (8, 15, 34)
-GOLD = (255, 196, 92)
+SNOW = (226, 238, 255)
+CYAN_EDGE = (120, 214, 232)
 
 
-def lerp(a, b, t):
-    return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(3))
-
-
-def vertical_gradient(size, top, bottom):
-    """Smooth vertical gradient image."""
-    grad = Image.new('RGB', (1, size[1]))
+def vertical_gradient(size, top, bottom, alpha_top=255, alpha_bottom=255):
+    """Vertical gradient strip resized to the full canvas."""
+    grad = Image.new('RGBA', (1, size[1]))
     px = grad.load()
     for y in range(size[1]):
-        px[0, y] = lerp(top, bottom, y / max(1, size[1] - 1))
+        t = y / max(1, size[1] - 1)
+        c = tuple(int(round(top[i] + (bottom[i] - top[i]) * t)) for i in range(3))
+        a = int(round(alpha_top + (alpha_bottom - alpha_top) * t))
+        px[0, y] = c + (a,)
     return grad.resize(size, Image.BILINEAR)
 
 
-def radial_glow(size, center, radius, color, strength=1.0):
-    """Additive radial light bloom as an RGBA layer."""
-    layer = Image.new('RGBA', size, (0, 0, 0, 0))
-    px = layer.load()
-    cx, cy = center
-    for y in range(size[1]):
-        for x in range(size[0]):
-            d = math.hypot(x - cx, y - cy) / radius
-            if d >= 1.0:
-                continue
-            falloff = (1.0 - d) ** 2
-            a = int(255 * falloff * strength)
-            px[x, y] = (color[0], color[1], color[2], a)
-    return layer.filter(ImageFilter.GaussianBlur(radius * 0.08))
+def base_canvas(size):
+    """Solid indigo launcher background with a very soft top-left lift."""
+    base = Image.new('RGBA', (size, size), BG + (255,))
+    lift = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(lift)
+    r = int(size * 0.62)
+    d.ellipse([int(size * 0.10) - r, int(size * 0.04) - r,
+               int(size * 0.10) + r, int(size * 0.04) + r],
+              fill=(255, 255, 255, 20))
+    base.alpha_composite(lift.filter(ImageFilter.GaussianBlur(size * 0.16)))
+    return base
 
 
-def grain(size, amount=6):
-    """Very light noise so gradients do not band."""
-    layer = Image.new('RGBA', size, (0, 0, 0, 0))
-    px = layer.load()
-    seed = 20261022
-    for y in range(size[1]):
-        for x in range(size[0]):
-            seed = (seed * 1103515245 + 12345) & 0x7FFFFFFF
-            n = (seed >> 16) % (amount * 2 + 1) - amount
-            if n:
-                v = 128 + n
-                px[x, y] = (v, v, v, 10)
-    return layer
+def glass_white(size, top_alpha=255, bottom_alpha=180):
+    """White with a vertical transparency falloff, used for glassy subjects."""
+    return vertical_gradient((size, size), (255, 255, 255), (255, 255, 255),
+                             top_alpha, bottom_alpha)
 
 
 def save(img, name):
@@ -85,203 +85,179 @@ def save(img, name):
     }
 
 
-def canvas(size):
-    """Night base with indigo/cyan/violet blooms, the app's ambient language."""
-    base = vertical_gradient((size, size), (13, 22, 52), (5, 9, 22)).convert('RGBA')
-    base.alpha_composite(radial_glow((size, size), (int(size * 0.18), int(size * 0.16)),
-                                     size * 0.78, INDIGO, 0.55))
-    base.alpha_composite(radial_glow((size, size), (int(size * 0.92), int(size * 0.30)),
-                                     size * 0.62, CYAN, 0.38))
-    base.alpha_composite(radial_glow((size, size), (int(size * 0.26), int(size * 0.94)),
-                                     size * 0.66, VIOLET, 0.42))
-    return base
-
-
 # --- concept 1: "课表之环" ---------------------------------------------
-# A schedule ring: the arc reads as a clock, the gap reads as an open slot,
-# and the ascending dots are ten class periods climbing to the ninth and tenth.
+# A thick schedule ring with one hand and one amber pip. The ring is the
+# timetable made circular; the hand is "the next class"; the pip is "now".
 def concept_schedule_ring(size):
-    img = canvas(size)
+    img = base_canvas(size)
     d = ImageDraw.Draw(img)
-    c = size / 2
-    r = size * 0.31
-    lw = int(size * 0.062)
 
-    # track
-    d.ellipse([c - r, c - r, c + r, c + r], outline=(255, 255, 255, 40), width=lw)
-    # progress arc from top clockwise ~300 degrees
-    d.arc([c - r, c - r, c + r, c + r], start=-96, end=196,
-          fill=lerp(INDIGO, CYAN, 0.5) + (235,), width=lw)
-    # rounded cap
-    cap = (c + r * math.cos(math.radians(-96)), c + r * math.sin(math.radians(-96)))
-    d.ellipse([cap[0] - lw / 2, cap[1] - lw / 2, cap[0] + lw / 2, cap[1] + lw / 2],
-              fill=lerp(INDIGO, CYAN, 0.5) + (255,))
+    c = size * 0.5
+    r = size * 0.350
+    lw = int(size * 0.111)          # 24px at 216 -> readable weight
+    box = [c - r, c - r, c + r, c + r]
 
-    # ten periods as a rising staircase of dots inside the ring
-    for i in range(10):
-        a = math.radians(-90 + i * 26)
-        rr = r * 0.52
-        x = c + rr * math.cos(a) * 1.25
-        y = c + rr * math.sin(a)
-        t = i / 9
-        col = lerp(INDIGO, VIOLET, t) if i < 8 else lerp(VIOLET, GOLD, (i - 8) / 1)
-        rad = size * (0.020 + 0.008 * t)
-        d.ellipse([x - rad, y - rad, x + rad, y + rad], fill=col + (255,))
+    # base ring, slightly translucent so it reads as glass
+    d.ellipse(box, outline=RING_BASE + (215,), width=lw)
+    # live arc sweeping clockwise from 12 o'clock
+    d.arc(box, start=-90, end=150, fill=RING_LIVE + (255,), width=lw)
+    # rounded leading cap on the live arc
+    ex = c + r * math.cos(math.radians(150))
+    ey = c + r * math.sin(math.radians(150))
+    d.ellipse([ex - lw / 2, ey - lw / 2, ex + lw / 2, ey + lw / 2], fill=RING_LIVE + (255,))
+    # subtle inner rim highlight
+    d.arc([c - r + lw * 0.9, c - r + lw * 0.9, c + r - lw * 0.9, c + r - lw * 0.9],
+          start=200, end=340, fill=(255, 255, 255, 60), width=max(1, int(size * 0.008)))
 
-    img.alpha_composite(grain((size, size), 5))
+    # single hand, from the centre towards 1 o'clock
+    a = math.radians(60)
+    hand_len = r * 0.70
+    hx, hy = c + hand_len * math.cos(a), c + hand_len * math.sin(a)
+    hand_w = int(lw * 1.30)
+    d.line([(c, c), (hx, hy)], fill=COOL_WHITE + (255,), width=hand_w)
+    d.ellipse([c - hand_w / 2, c - hand_w / 2, c + hand_w / 2, c + hand_w / 2],
+              fill=COOL_WHITE + (255,))
+
+    # the single warm focal point: an amber pip at the hand tip
+    pip = size * 0.033
+    d.ellipse([hx - pip, hy - pip, hx + pip, hy + pip], fill=AMBER + (255,))
+    d.ellipse([hx - pip * 1.9, hy - pip * 1.9, hx + pip * 1.9, hy + pip * 1.9],
+              outline=AMBER + (70,), width=max(1, int(size * 0.006)))
+
     return img
 
 
 # --- concept 2: "天山书页" ----------------------------------------------
-# An open book whose two pages sweep up into a Tian Shan ridge, with a
-# schedule ribbon threading through the gutter.
+# A sharp Tian Shan ridge rising out of an open book. The ridge keeps the
+# Xinjiang Institute of Technology symbol; the book keeps the current icon's
+# "study" meaning. The two are separated by real negative space.
 def concept_tianshan_book(size):
-    img = canvas(size)
+    img = base_canvas(size)
     d = ImageDraw.Draw(img)
 
-    cx, cy = size * 0.5, size * 0.60
-    w = size * 0.62
-    h = size * 0.30
+    cx = size * 0.5
+    ridge_y = size * 0.30          # peaks reach this high
+    book_y = size * 0.545          # book gutter sits here
+    half = size * 0.335            # half width of the whole subject
 
-    # ribbon of light through the gutter
-    glow = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    gd.polygon([(cx - size * 0.035, cy - h * 0.9), (cx + size * 0.035, cy - h * 0.9),
-                (cx + size * 0.012, cy + h * 0.75), (cx - size * 0.012, cy + h * 0.75)],
-               fill=lerp(CYAN, VIOLET, 0.5) + (200,))
-    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(size * 0.03)))
+    # --- sharp ridge: narrow apexes, not rounded hills
+    peaks = [
+        (cx - half * 0.92, ridge_y + size * 0.135),
+        (cx - half * 0.40, ridge_y),
+        (cx - half * 0.12, ridge_y + size * 0.085),
+        (cx + half * 0.18, ridge_y - size * 0.028),
+        (cx + half * 0.52, ridge_y + size * 0.105),
+        (cx + half * 0.94, ridge_y + size * 0.150),
+    ]
+    d.polygon(peaks, fill=SNOW + (252,))
+    # lit left flank of the tallest peak
+    d.polygon([peaks[0], peaks[1], (cx - half * 0.30, ridge_y + size * 0.105)],
+              fill=(255, 255, 255, 255))
+    # cool cyan hairline along the ridge so it belongs to the glass language
+    d.line(peaks, fill=CYAN_EDGE + (190,), width=max(1, int(size * 0.010)), joint='curve')
 
-    # ridge: Tian Shan peaks above the book
-    ridge = [(size * 0.16, cy - h * 0.10), (size * 0.34, cy - h * 1.15),
-             (size * 0.46, cy - h * 0.52), (size * 0.58, cy - h * 1.32),
-             (size * 0.72, cy - h * 0.62), (size * 0.86, cy - h * 0.18)]
-    d.polygon(ridge, fill=(226, 238, 255, 235))
-    # lit left face of the tallest peak
-    d.polygon([(size * 0.16, cy - h * 0.10), (size * 0.34, cy - h * 1.15),
-               (size * 0.40, cy - h * 0.30)], fill=(255, 255, 255, 235))
+    # --- open book: two clearly separated pages meeting at a gutter
+    page_h = size * 0.115
+    top = book_y - page_h * 0.42
+    left_page = [
+        (cx, book_y),
+        (cx - half * 0.86, top),
+        (cx - half * 0.86, top + page_h * 1.55),
+        (cx, book_y + page_h * 1.35),
+    ]
+    right_page = [
+        (cx, book_y),
+        (cx + half * 0.86, top),
+        (cx + half * 0.86, top + page_h * 1.55),
+        (cx, book_y + page_h * 1.35),
+    ]
+    # Fill the pages through a mask so the white can fade out downwards
+    # (a solid fill would turn the lower half into a featureless white slab).
+    for page, a_top, a_bottom in ((left_page, 250, 185), (right_page, 232, 160)):
+        mask = Image.new('L', (size, size), 0)
+        ImageDraw.Draw(mask).polygon(page, fill=255)
+        page_layer = vertical_gradient((size, size), (255, 255, 255), (255, 255, 255),
+                                       a_top, a_bottom)
+        page_layer.putalpha(mask)
+        img.alpha_composite(page_layer)
+    d = ImageDraw.Draw(img)
+    # page lines, kept short so they read as pages and not as a solid block
+    for i in range(3):
+        y0 = top + page_h * (0.30 + i * 0.36)
+        d.line([(cx - half * 0.74, y0 + page_h * 0.16), (cx - half * 0.12, y0 + page_h * 0.46)],
+               fill=(58, 92, 160, 150), width=max(1, int(size * 0.009)))
+        d.line([(cx + half * 0.12, y0 + page_h * 0.46), (cx + half * 0.74, y0 + page_h * 0.16)],
+               fill=(58, 92, 160, 150), width=max(1, int(size * 0.009)))
+    # the gutter
+    d.line([(cx, book_y - page_h * 0.36), (cx, book_y + page_h * 1.30)],
+           fill=(40, 70, 140, 190), width=max(1, int(size * 0.011)))
+    # bottom edge of the book
+    d.line([(cx - half * 0.86, top + page_h * 1.55), (cx, book_y + page_h * 1.35),
+            (cx + half * 0.86, top + page_h * 1.55)],
+           fill=(255, 255, 255, 120), width=max(1, int(size * 0.010)), joint='curve')
 
-    # the open book: two pages as shallow wedges
-    left = [(cx, cy - h * 0.18), (cx - w * 0.5, cy - h * 0.30),
-            (cx - w * 0.5, cy + h * 0.34), (cx, cy + h * 0.30)]
-    right = [(cx, cy - h * 0.18), (cx + w * 0.5, cy - h * 0.30),
-             (cx + w * 0.5, cy + h * 0.34), (cx, cy + h * 0.30)]
-    d.polygon(left, fill=(240, 246, 255, 240))
-    d.polygon(right, fill=(198, 214, 244, 240))
-    # page lines
-    for i in range(4):
-        y = cy - h * 0.02 + i * h * 0.16
-        d.line([(cx - w * 0.44, y - h * 0.06), (cx - w * 0.06, y + h * 0.02)],
-               fill=(70, 96, 160, 120), width=max(1, int(size * 0.006)))
-        d.line([(cx + w * 0.06, y + h * 0.02), (cx + w * 0.44, y - h * 0.06)],
-               fill=(70, 96, 160, 120), width=max(1, int(size * 0.006)))
-
-    img.alpha_composite(grain((size, size), 5))
     return img
 
 
-# --- concept 3: "掌心光感" ---------------------------------------------
-# A translucent glass palm holding a glowing schedule chip: the app's
-# liquid-glass direction rendered as a single mark.
-def concept_glass_palm(size):
-    img = canvas(size)
+# --- concept 3: "一周课表" ----------------------------------------------
+# A seven-column timetable grid with one cell lit. The grid is the schedule
+# seen from above and reads instantly even at launcher size.
+def concept_week_grid(size):
+    img = base_canvas(size)
     d = ImageDraw.Draw(img)
 
-    cx, cy = size * 0.5, size * 0.54
-    # glass disc
-    r = size * 0.30
-    glass = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glass)
-    gd.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 255, 255, 46))
-    gd.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(255, 255, 255, 120),
-               width=max(2, int(size * 0.012)))
-    # inner rim light
-    gd.arc([cx - r * 0.86, cy - r * 0.86, cx + r * 0.86, cy + r * 0.86],
-           start=200, end=340, fill=lerp(CYAN, VIOLET, 0.4) + (190,),
-           width=max(2, int(size * 0.016)))
-    img.alpha_composite(glass.filter(ImageFilter.GaussianBlur(size * 0.004)))
+    cols, rows = 7, 3
+    left = size * 0.20
+    right = size * 0.80
+    top = size * 0.28
+    bottom = size * 0.72
+    gap_x = size * 0.014
+    gap_y = size * 0.020
+    cell_w = (right - left - gap_x * (cols - 1)) / cols
+    cell_h = (bottom - top - gap_y * (rows - 1)) / rows
+    radius = size * 0.018
 
-    # a "chip" card inside, glowing
-    cw, ch = size * 0.30, size * 0.21
-    chip = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    cd = ImageDraw.Draw(chip)
-    cd.rounded_rectangle([cx - cw / 2, cy - ch / 2, cx + cw / 2, cy + ch / 2],
-                         radius=size * 0.035, fill=(255, 255, 255, 235))
-    cd.rounded_rectangle([cx - cw / 2, cy - ch / 2, cx + cw / 2, cy + ch / 2],
-                         radius=size * 0.035, outline=lerp(INDIGO, VIOLET, 0.5) + (255,),
-                         width=max(2, int(size * 0.010)))
-    # chip content: a time bar and two lines
-    cd.rounded_rectangle([cx - cw * 0.30, cy - ch * 0.20, cx + cw * 0.06, cy - ch * 0.02],
-                         radius=size * 0.008, fill=lerp(INDIGO, CYAN, 0.35) + (255,))
-    cd.rounded_rectangle([cx - cw * 0.30, cy + ch * 0.08, cx + cw * 0.30, cy + ch * 0.18],
-                         radius=size * 0.006, fill=(150, 170, 210, 220))
-    cd.rounded_rectangle([cx - cw * 0.30, cy + ch * 0.28, cx + cw * 0.12, cy + ch * 0.36],
-                         radius=size * 0.005, fill=(180, 196, 226, 190))
-    img.alpha_composite(chip)
+    # the lit cell: Tuesday of the middle row, drawn first as a soft halo
+    lit_col, lit_row = 1, 1
+    lx = left + lit_col * (cell_w + gap_x)
+    ly = top + lit_row * (cell_h + gap_y)
+    halo = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    hd = ImageDraw.Draw(halo)
+    hd.rounded_rectangle([lx - size * 0.022, ly - size * 0.022,
+                           lx + cell_w + size * 0.022, ly + cell_h + size * 0.022],
+                          radius=radius * 1.8, fill=RING_LIVE + (120,))
+    img.alpha_composite(halo.filter(ImageFilter.GaussianBlur(size * 0.022)))
 
-    # palm: three upward fingers + thumb arc, drawn as a rounded cradle
-    pd = ImageDraw.Draw(img)
-    pw = max(3, int(size * 0.026))
-    for i, (dx, top) in enumerate([(-0.17, -0.30), (-0.02, -0.38), (0.13, -0.30)]):
-        x = cx + dx * size
-        y0 = cy + top * size
-        y1 = cy + size * 0.14
-        pd.line([(x, y0), (x, y1)], fill=(255, 255, 255, 205), width=pw)
-        pd.ellipse([x - pw / 2, y0 - pw / 2, x + pw / 2, y0 + pw / 2],
-                   fill=(255, 255, 255, 225))
-    # thumb
-    pd.arc([cx - size * 0.30, cy - size * 0.06, cx + size * 0.16, cy + size * 0.34],
-           start=120, end=250, fill=(255, 255, 255, 200), width=pw)
-
-    img.alpha_composite(grain((size, size), 5))
-    return img
-
-
-# --- concept 4: "灵动胶囊" ----------------------------------------------
-# A dynamic-island style pill with a live countdown, echoing the live view.
-def concept_dynamic_island(size):
-    img = canvas(size)
-    d = ImageDraw.Draw(img)
-
-    cx, cy = size * 0.5, size * 0.5
-    pw, ph = size * 0.56, size * 0.20
-    pill = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    pd = ImageDraw.Draw(pill)
-    pd.rounded_rectangle([cx - pw / 2, cy - ph / 2, cx + pw / 2, cy + ph / 2],
-                         radius=ph / 2, fill=(6, 10, 22, 255))
-    pd.rounded_rectangle([cx - pw / 2, cy - ph / 2, cx + pw / 2, cy + ph / 2],
-                         radius=ph / 2, outline=(255, 255, 255, 70), width=max(2, int(size * 0.008)))
-    img.alpha_composite(pill)
-
-    # leading glyph: a tiny Tian Shan triangle
-    gx = cx - pw * 0.33
-    gs = size * 0.055
-    d.polygon([(gx, cy + gs * 0.75), (gx + gs, cy - gs * 0.85), (gx + gs * 2, cy + gs * 0.75)],
-              fill=lerp(INDIGO, CYAN, 0.4) + (255,))
-
-    # countdown: ten tick marks, the last two gold (evening study)
-    for i in range(10):
-        x = cx - pw * 0.14 + i * (pw * 0.028)
-        top = cy - size * 0.045
-        bot = cy + size * 0.045
-        if i < 8:
-            col = lerp(INDIGO, VIOLET, i / 8) + (255,)
-            d.line([(x, top), (x, bot)], fill=col, width=max(2, int(size * 0.010)))
-        else:
-            d.line([(x, top), (x, bot)], fill=GOLD + (255,), width=max(2, int(size * 0.012)))
-    # sweeping hand
-    d.arc([cx - pw * 0.22, cy - size * 0.085, cx + pw * 0.22, cy + size * 0.085],
-          start=-92, end=40, fill=lerp(CYAN, VIOLET, 0.5) + (230,),
-          width=max(2, int(size * 0.014)))
-
-    img.alpha_composite(grain((size, size), 5))
+    for r in range(rows):
+        for c in range(cols):
+            x0 = left + c * (cell_w + gap_x)
+            y0 = top + r * (cell_h + gap_y)
+            x1, y1 = x0 + cell_w, y0 + cell_h
+            if r == lit_row and c == lit_col:
+                d.rounded_rectangle([x0, y0, x1, y1], radius=radius, fill=RING_LIVE + (255,))
+                d.rounded_rectangle([x0, y0, x1, y1], radius=radius,
+                                    outline=(255, 255, 255, 210),
+                                    width=max(1, int(size * 0.007)))
+            else:
+                d.rounded_rectangle([x0, y0, x1, y1], radius=radius,
+                                    fill=(255, 255, 255, 62))
+                d.rounded_rectangle([x0, y0, x1, y1], radius=radius,
+                                    outline=(255, 255, 255, 105),
+                                    width=max(1, int(size * 0.005)))
+    # header ticks: seven days
+    for c in range(cols):
+        x0 = left + c * (cell_w + gap_x)
+        w = size * (0.030 if c != 0 else 0.022)
+        d.rounded_rectangle([x0 + (cell_w - w) / 2, size * 0.215, x0 + (cell_w + w) / 2, size * 0.245],
+                            radius=size * 0.012,
+                            fill=(AMBER + (255,)) if c == lit_col else (255, 255, 255, 120))
     return img
 
 
 CONCEPTS = {
     'concept-1-schedule-ring.png': concept_schedule_ring,
     'concept-2-tianshan-book.png': concept_tianshan_book,
-    'concept-3-glass-palm.png': concept_glass_palm,
-    'concept-4-dynamic-island.png': concept_dynamic_island,
+    'concept-3-week-grid.png': concept_week_grid,
 }
 
 
@@ -289,12 +265,9 @@ def main():
     base = 1024
     records = []
     for name, fn in CONCEPTS.items():
-        img = fn(base * SS // SS).convert('RGBA')
-        # downsample for clean anti-aliased edges
-        img = img.resize((base, base), Image.LANCZOS)
-        records.append(save(img, name))
-        # 216px preview for quick comparison
-        records.append(save(img.resize((216, 216), Image.LANCZOS),
+        big = fn(base * SS).resize((base, base), Image.LANCZOS)
+        records.append(save(big, name))
+        records.append(save(big.resize((216, 216), Image.LANCZOS),
                             name.replace('.png', '-216.png')))
     manifest = OUT / 'concepts.json'
     manifest.write_text(json.dumps(records, indent=2), encoding='utf-8')
