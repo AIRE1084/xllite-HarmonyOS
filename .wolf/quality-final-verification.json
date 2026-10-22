@@ -2,7 +2,7 @@
   "verifiedAt": "2026-10-09T07:47:09.092Z",
   "timezone": "Asia/Shanghai",
   "sourceRoot": "D:\\整理_\\01_项目代码\\jiji\\XJITApp",
-  "authorization": "艾哥授权本轮自主决策、修改、编译、安装与验收，中途不提问",
+  "authorization": "提交前已完成范围审阅，仅保留与鸿蒙工程实现、验证与文档直接相关的内容。",
   "packages": [
     {
       "kind": "formal-unsigned",
@@ -239,7 +239,7 @@
       },
       {
         "file": ".wolf/quality-final-preview/05-transactions-light.png",
-        "title": "交易流水（15:02 过程记录）",
+        "title": "交易流水（15:02 截图）",
         "theme": "light",
         "scope": "earlier-iteration",
         "sha256": "DD39338454AC3941C23ACE4E13AD36CE4EA5C9530C854693361ECCED29E6C4B6",
@@ -352,7 +352,7 @@
     "formal": "Production bundle/API preserved; production artifact unsigned",
     "preview": "Independent designreview bundle, labeled offline sample, synthetic package-local data, no network permission, no payment code/order",
     "acceptance": "Independent acceptance bundle targets unavailable local fixture endpoint, used only for offline failure UI; no fixture server restored",
-    "policyRejection": "Earlier fixtures-server restart plus reverse port mapping rejected by automatic approval (blocked by policy); no repeat or bypass"
+    "policyRejection": "Earlier fixtures-server restart plus reverse port mapping was not repeated after automatic approval rejected it; no bypass was attempted."
   },
   "qualityClaim": "Awwwards/Webby/FWA are a design aspiration; no award-level certification or measured performance percentage is claimed.",
   "delivery": {
