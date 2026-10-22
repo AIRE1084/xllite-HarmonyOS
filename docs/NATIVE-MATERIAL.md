@@ -39,9 +39,9 @@
 - `adaptiveColor`：必须用 `AdaptiveColor.DEFAULT`。`AVERAGE` 会把遮罩色换成内容区平均色，卡片与背景收敛、边缘消失。
 - 前提是玻璃背后必须有色彩层次：`AmbientBackground` 用靛蓝 `#315EDA` / 青 `#12B5C9` / 紫 `#7B5CE6` 三团 radialGradient 光晕，模糊纯色等于没有效果。
 
-### 模拟器实测（API 26 模拟器，强制走降级路径）
+### 降级路径实测（API 26 模拟器，浅色模式）
 
-在同一台设备上把材质门槛临时放开，使 `backgroundEffect` 分支生效，再对同一张玻璃卡采样：
+在模拟器上把材质门槛临时放开，使 `backgroundEffect` 分支生效，再对首页同一张玻璃卡采样（`backgroundEffect` 自 API 11 起提供，渲染行为与 API 23 设备一致）：
 
 | 变体 | 卡内 luma 均值 | 卡外 luma 均值 | 卡/背比值 | 垂直边界剖面 |
 | --- | --- | --- | --- | --- |
@@ -51,6 +51,8 @@
 | `AVERAGE` + saturation 2.2 | 219.3 | 213.7 | 1.026 | 215.2 → 215.2，完全平坦 |
 
 结论：`AVERAGE` 下卡片与背景收敛为同一亮度、边界台阶消失；`DEFAULT` 保留可辨识的边界。提高 `saturation` 在浅色模式下对比度几乎不变（1.076 → 1.073），说明饱和度影响的是色彩鲜艳度而非明暗分离，卡片是否"看得见"由 `adaptiveColor` 决定。
+
+深色模式尚未取得样本，模拟器的深色开关不可写。
 
 `backgroundEffect` 每帧实时渲染，功耗较高；内容静止时应改用静态 `effectKit.Filter.blur`。
 

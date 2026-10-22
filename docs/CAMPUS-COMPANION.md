@@ -73,9 +73,7 @@
 - 大小：1322420 bytes。
 - 编译SDK：26.0.0.105，最低/目标API：26。
 - SHA-256：`F6FB8CFEF938B195F5D30F82704817807EC827ECB4AB8A3AC8368FA3885BA995`。
-- 输入记录：`.wolf/campus-companion-build-inputs.json`。
-- 包核验及后端探测：`.wolf/campus-companion-verification.json`。
-- 行为检查：`.wolf/campus-companion-checks.json`。
+- 行为检查基线：`.wolf/campus-companion-checks.json`。
 
 按仓库工具脚本执行即可，不安装额外依赖：
 

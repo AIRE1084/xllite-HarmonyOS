@@ -109,9 +109,7 @@
 | 正式工程包，未签名 | .wolf/school-native-production/entry-default-unsigned.hap | BB38AF35894830C436F8E35EF691773D500620580E9AA03A91C37ABA82A95E3F |
 | 模拟器独立直连包，测试签名 | .wolf/school-native-emulator/entry-school-native-signed.hap | 6528FF36F46CBDEEEBCB22FC0194CD322D85B826CD959B90D838FA6607B53CD7 |
 
-结构化验收记录：[school-native-verification.json](../.wolf/school-native-verification.json)。测试日志位于 `.wolf/school-native-build`，安装/启动/截图位于 `.wolf/school-native-emulator`。
-
-公开学校协议原文和格式化文本位于 `.wolf/native-api-discovery`，只作为文本检查，未执行获取的学校 JS。原文获取信息见 public-endpoints.json、公开 JS 清单及 superapp-my-contract.json；sha256-manifest.json 为本地保留文件完整性记录，不冒充学校发布的官方哈希。
+结构化验收记录与测试日志保留在本机工具链目录，不随仓库分发；公开协议原文与格式化文本同样只作本地文本检查，未执行获取的学校 JS。
 
 复用现有 DevEco Studio 26.0.0.851、SDK 26.0.0.105/API26、Node 24.14.1、Hvigor 6.26.8、JBR、HDC 和 SDK 随附公开测试签名。没有新增 SDK、依赖、插件、下载工具或全局环境配置。一次性脚本以标准输入执行，没有临时可执行脚本残留；可复用构建与回归工具保留。
 
