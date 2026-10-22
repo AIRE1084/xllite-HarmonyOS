@@ -58,6 +58,34 @@ export function buildTodoLiveTarget(todo: TodoItem): LiveViewTarget {
   return { todoId: todo.id, type: 'todo', title: todo.title, text: todo.dueText || '待办计时', extra: todo.note,
     startTime: now, endTime: todo.dueAt === undefined ? now + 3600000 : todo.dueAt }
 }
+/** 灵动岛胶囊主色：课程用品牌靛蓝，待办用品牌紫，让胶囊一眼可分辨来源。 */
+function capsuleColor(type: string): string {
+  return type === 'todo' ? '#FF7B5CE6' : '#FF315FC4'
+}
+/** 胶囊图标放在 rawfile 根目录；不可用时系统回退默认图标。 */
+const CAPSULE_ICON = 'liveview_capsule.png'
+/**
+ * 取计时型胶囊。
+ *
+ * `capsule` 的类型是三种胶囊的联合类型，计时相关的 `time` / `isCountdown` 只存在于
+ * 计时胶囊上，因此必须先按 `type` 收窄，否则 ArkTS 拒绝访问这两个字段。
+ */
+function timerCapsule(view: liveViewManager.LiveView): liveViewManager.TimerCapsule | null {
+  const capsule = view.liveViewData.capsule
+  if (capsule === undefined) return null
+  if (capsule.type !== liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER) return null
+  return capsule as liveViewManager.TimerCapsule
+}
+/**
+ * 胶囊与主区文案。
+ *
+ * 系统会用 ${placeholder.timer} 替换主区里的计时占位符，由系统每秒刷新，
+ * 因此主区不需要我们自己算剩余时间——这正是灵动岛能持续走秒的原因。
+ */
+function capsuleContent(type: string, started: boolean): string {
+  if (type === 'todo') return '待办计时'
+  return started ? '上课中' : '距上课'
+}
 async function stopCurrent(): Promise<void> {
   if (currentView === null) return
   const view = currentView
@@ -92,22 +120,38 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
   if (currentKey === key && currentHandle !== null && currentView !== null) {
     if (target.startTime <= Date.now() && currentView.liveViewData.capsule?.content === '距上课') {
       const previousTimer = currentView.timer
-      const previousCapsule = currentView.liveViewData.capsule
+      const capsule = timerCapsule(currentView)
+      // The capsule is mutated in place, so snapshot the scalar fields rather than
+      // the object reference: keeping the reference would restore the mutated values.
+      const previousContent = capsule === null ? '' : capsule.content
+      const previousTime = capsule === null ? 0 : (capsule.time ?? 0)
       currentView.sequence = (currentView.sequence ?? 0) + 1
       currentView.timer = { time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
-      currentView.liveViewData.capsule = { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER,
-        status: 1, content: '上课中', time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
+      // Mutate the existing capsule instead of replacing it: the dynamic-island icon
+      // and tail affordances set at creation time live on this object, and rebuilding
+      // it from scratch would drop them and leave a bare capsule on HarmonyOS 6.0.
+      if (capsule !== null) {
+        capsule.content = '上课中'
+        capsule.time = Math.max(0, target.endTime - Date.now())
+        capsule.isCountdown = true
+      }
       try {
         const result = await liveViewManager.updateLiveView(currentView)
         if (result.resultCode !== 0) {
           currentView.timer = previousTimer
-          currentView.liveViewData.capsule = previousCapsule
+          if (capsule !== null) {
+            capsule.content = previousContent
+            capsule.time = previousTime
+          }
           setReason('实况窗更新失败（' + result.resultCode + '）')
           return { ok: false, reason: supportReason }
         }
       } catch (error) {
         currentView.timer = previousTimer
-        currentView.liveViewData.capsule = previousCapsule
+        if (capsule !== null) {
+          capsule.content = previousContent
+          capsule.time = previousTime
+        }
         setReason(reasonFor(error as BusinessError))
         return { ok: false, reason: supportReason }
       }
@@ -141,15 +185,31 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
     // level would only hand the system an undefined member, so gate them and let older
     // releases fall back to their own defaults instead of pretending the hint applied.
     const api = apiLevel()
+    const started = target.startTime <= Date.now()
+    const capsule: liveViewManager.TimerCapsule = {
+      type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER, status: 1,
+      content: capsuleContent(target.type, started), time: duration, isCountdown: true,
+      backgroundColor: capsuleColor(target.type),
+    }
+    if (api >= 20) {
+      // HarmonyOS 6.0 added the dynamic-island tail affordances. On older releases
+      // these members do not exist, so passing them would hand the system undefined
+      // values; gate them by API level instead of guessing.
+      capsule.icon = CAPSULE_ICON
+      capsule.tailIcon = CAPSULE_ICON
+      capsule.isContentDisplayed = true
+      capsule.isTailIconDisplayed = true
+    }
     const view: liveViewManager.LiveView = {
       id: nextViewId(), event: 'TIMER', sequence: 0, isMute: true,
       timer: { time: duration, isCountdown: true },
       liveViewData: {
-        primary: { title: target.title.slice(0, 40), content: [{ text: target.extra.slice(0, 60) }],
+        primary: { title: target.title.slice(0, 40),
+          // The system refreshes ${placeholder.timer} every second, so the fixed area
+          // keeps ticking without the app pushing an update for every second.
+          content: [{ text: target.extra.slice(0, 60) }, { text: '${placeholder.timer}' }],
           clickAction: clickAction },
-        capsule: { type: liveViewManager.CapsuleType.CAPSULE_TYPE_TIMER, status: 1,
-          content: target.type === 'todo' ? '待办计时' : (target.startTime > Date.now() ? '距上课' : '上课中'), time: duration, isCountdown: true,
-          backgroundColor: '#FF315FC4' },
+        capsule: capsule,
       },
     }
     if (api >= 26) view.lifeCycleMode = liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE

@@ -1,5 +1,25 @@
 import { glassMaterial, supportsImmersiveMaterial, loadImmersiveMaterial } from '../theme/Materials'
 
+/**
+ * Glass surface.
+ *
+ * Two rendering paths, chosen at runtime:
+ *
+ * - API 26+ (HarmonyOS 7.0): native `systemMaterial` with `uiMaterial.ImmersiveMaterial`,
+ *   which refracts the real scene behind the window.
+ * - API 23-25 (HarmonyOS 6.0 and below): ArkUI `backgroundEffect`, which is the only
+ *   light-sensing blur available on those releases.
+ *
+ * The fallback is not a plain grey blur. `backgroundEffect` exposes `saturation`, and
+ * saturation above 1 is what separates glass from frosted glass: it pushes the
+ * refracted colours past their original vibrancy instead of merely washing them out.
+ * Combined with the multi-hue ambient field behind the surface, that is what makes
+ * the card read as glass rather than as a translucent grey slab.
+ *
+ * `adaptiveColor: AdaptiveColor.AVERAGE` makes the tint follow the averaged colour of
+ * the content behind the surface, so a card over the indigo bloom tints indigo and a
+ * card over the cyan bloom tints cyan.
+ */
 @Component
 export struct NativeGlass {
   @Prop contentPadding: Length = 16
@@ -29,10 +49,11 @@ export struct NativeGlass {
           .width('100%').padding(this.contentPadding).borderRadius(this.radius)
           .backgroundEffect({
             radius: this.prominent ? 54 : 40,
-            saturation: this.prominent ? 1.7 : 1.5,
+            // Above 1 the refracted colours gain vibrancy instead of being flattened.
+            saturation: this.prominent ? 2.2 : 1.8,
             brightness: 1.0,
             color: this.isDark ? '#3DFFFFFF' : '#CCFFFFFF',
-            adaptiveColor: AdaptiveColor.DEFAULT,
+            adaptiveColor: AdaptiveColor.AVERAGE,
           })
       }
       Row().width('78%').height(1)

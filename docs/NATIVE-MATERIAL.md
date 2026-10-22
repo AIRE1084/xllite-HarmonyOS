@@ -12,6 +12,8 @@
 
 材质节点本身不叠加自绘模糊、描边或阴影。这与 `backgroundEffect` 系列 API 的分工一致：`uiMaterial` 负责系统级材质，`backdropBlur` / `backgroundBlurStyle` 只暴露半径参数，不能用来模拟玻璃。
 
+回退路径上的 `backgroundEffect` 则由 `backgroundEffect` 自身承担模糊与饱和度，材质节点仍然不叠加自绘模糊。
+
 底部导航的主题渐变衬底是独立节点，并且不截获触摸事件，避免遮挡导航点击区域。
 
 ## 能力检测与回退
@@ -19,6 +21,25 @@
 运行时读取 `deviceInfo.sdkApiVersion` 判断设备是否支持 `uiMaterial`。该字段存在两种编码：`"60100023"` 与 `"23"`，统一按 `raw >= 100000000 ? raw % 1000 : raw` 归一化后再比较。
 
 检测同时覆盖设备支持状态与 `DISABLE` 状态。任一条件不满足时回退为普通表面，界面结构与交互不变，仅材质效果降级。
+
+### 沉浸光感在 HarmonyOS 6.0 的实现路径
+
+| 能力 | 起始版本 | 说明 |
+| --- | --- | --- |
+| `uiMaterial.ImmersiveMaterial` + `systemMaterial` | API 26（HarmonyOS 7.0） | 原生沉浸材质，折射窗口后方真实场景 |
+| `backgroundEffect`（含 `saturation`） | API 11 | ArkUI 背景特效，低版本唯一的光感模糊通道 |
+| `SystemAdaptiveOptions` | API 19 | 允许系统按算力与负载自动降级特效 |
+
+`uiMaterial` 整包标注 `@since 26.0.0`，HarmonyOS 6.0 走不到；本机 SDK 也没有环境光传感器 API。因此 6.0 及以下的"沉浸光感"只能由 ArkUI `backgroundEffect` 承担。
+
+分界点是 `saturation`（取值 `[0,+∞)`，推荐 `[0,50]`，默认 1）：**`saturation > 1` 才是玻璃与灰模糊的区别**——它把透过的颜色推向更高饱和度；纯 `backdropBlur` / `backgroundBlurStyle` 只暴露半径参数，透过去是灰的。
+
+- `saturation`：普通卡 1.8、强调卡 2.2。
+- `brightness`：固定 1.0（推荐区间 `[0,2]`）。
+- `adaptiveColor: AdaptiveColor.AVERAGE`：遮罩色取内容区平均色，靛蓝光晕上的卡片偏靛蓝、青色光晕上的偏青。`AdaptiveColor.DEFAULT` 只会得到固定遮罩色。
+- 前提是玻璃背后必须有色彩层次：`AmbientBackground` 用靛蓝 `#315EDA` / 青 `#12B5C9` / 紫 `#7B5CE6` 三团 radialGradient 光晕，模糊纯色等于没有效果。
+
+`backgroundEffect` 每帧实时渲染，功耗较高；内容静止时应改用静态 `effectKit.Filter.blur`。
 
 ## 运行状态
 

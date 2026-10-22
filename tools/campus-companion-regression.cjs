@@ -14,7 +14,9 @@ function fixture() {
   let nextFile = 1, nextReminder = 1, timer = 1;
   const state = { bundleName: 'com.xjit.app', now: new Date(2026, 9, 12, 7, 45).getTime(), reminders: new Map(), requests: [],
     cancelAll: 0, forms: [], widgetUpdates: [], liveStarts: [], liveUpdates: [], liveStops: [],
-    notificationAllowed: true, liveAllowed: true, liveCode: 0, liveError: null, publishHook: null, stopFail: false };
+    notificationAllowed: true, liveAllowed: true, liveCode: 0, liveError: null, publishHook: null, stopFail: false,
+    // Default to the HarmonyOS 6.0 API level so the dynamic-island branches are exercised.
+    sdkApiVersion: 20 };
   class Clock extends Date { constructor(...args) { if (!args.length) super(state.now); else super(...args); } static now() { return state.now; } }
   const preferences = { async getPreferences(_ctx, name) {
     if (!stores.has(name)) stores.set(name, new Map()); const store = stores.get(name);
@@ -51,6 +53,7 @@ function fixture() {
       const native = {'@ohos.data.preferences':preferences,'@ohos.file.fs':nativeFs,'@ohos.notificationManager':notification,
         '@ohos.reminderAgentManager':reminder,'@ohos.app.ability.wantAgent':wantAgent};
       if(native[spec]) return {default:native[spec]};
+      if(spec==='@ohos.deviceInfo') return {default:{sdkApiVersion:state.sdkApiVersion}};
       if(spec==='@kit.LiveViewKit') return {liveViewManager}; if(spec==='@kit.FormKit') return formKit;
       if(spec.startsWith('@ohos.')) return {default:{}};
       return load(path.relative(root,path.resolve(path.dirname(full),spec+'.ets')));
@@ -462,6 +465,50 @@ test('real LiveView payload uses TIMER and millisecond duration',async()=>{
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,1);const view=f.state.liveStarts[0];assert.equal(view.event,'TIMER');assert.equal(view.timer.time,9*60000);
  assert.equal(view.liveViewData.capsule.type,2);assert.equal(view.liveViewData.primary.clickAction.options.wants[0].parameters.campusRoute,'schedule');
+});
+test('HarmonyOS 6.0 live view carries the dynamic island tail affordances',async()=>{
+ const f=fixture();f.state.sdkApiVersion=20;f.state.now=new Date(2026,9,12,9,51).getTime();
+ const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const capsule=f.state.liveStarts[0].liveViewData.capsule;
+ assert.equal(capsule.icon,'liveview_capsule.png');
+ assert.equal(capsule.tailIcon,'liveview_capsule.png');
+ assert.equal(capsule.isContentDisplayed,true);
+ assert.equal(capsule.isTailIconDisplayed,true);
+});
+test('live view before API 20 omits the dynamic island members that do not exist yet',async()=>{
+ const f=fixture();f.state.sdkApiVersion=19;f.state.now=new Date(2026,9,12,9,51).getTime();
+ const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const capsule=f.state.liveStarts[0].liveViewData.capsule;
+ assert.equal(capsule.icon,undefined);
+ assert.equal(capsule.tailIcon,undefined);
+ assert.equal(capsule.isTailIconDisplayed,undefined);
+});
+test('live view fixed area uses the system timer placeholder so the island ticks itself',async()=>{
+ const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();
+ const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const content=f.state.liveStarts[0].liveViewData.primary.content;
+ assert.ok(content.some(part=>part.text==='${placeholder.timer}'),'fixed area must carry the timer placeholder');
+});
+test('capsule keeps its island affordances when the course switches to 上课中',async()=>{
+ const f=fixture();f.state.sdkApiVersion=20;f.state.now=new Date(2026,9,12,9,51).getTime();
+ f.values.set('liveViewEnabled',true);
+ const live=f.get('services/LiveViewService');
+ const start=f.state.now+60000;
+ const target={type:'course',title:'算法',text:'1-2节',extra:'B306',startTime:start,endTime:start+3600000};
+ await live.startLiveView(target);
+ assert.equal(f.state.liveStarts.length,1);
+ assert.equal(f.state.liveStarts[0].liveViewData.capsule.content,'距上课');
+ // The clock moves past the class start while the target identity stays the same,
+ // so the service must flip the existing capsule instead of recreating the view.
+ f.state.now=start+1000;
+ await live.startLiveView(target);
+ assert.equal(f.state.liveUpdates.length,1);
+ assert.equal(f.state.liveStops.length,0,'a running island must not be torn down at class start');
+ const updated=f.state.liveUpdates[0].liveViewData.capsule;
+ assert.equal(updated.content,'上课中');
+ assert.equal(updated.icon,'liveview_capsule.png');
+ assert.equal(updated.tailIcon,'liveview_capsule.png');
+ assert.equal(updated.isTailIconDisplayed,true);
 });
 test('enabled LiveView distinguishes waiting, empty day and active countdown from disabled state',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('live',true);
