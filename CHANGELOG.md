@@ -18,7 +18,7 @@
 ### 鸿蒙适配
 
 - **课表作息与 Flutter 版对齐为 10 小节。** 上午 10:00–13:40、下午 16:00–19:40、晚自习 20:30–22:10，45 分一节、小课间 10 分、大课间 20 分。鸿蒙侧 `ClassTime.ets` 原本已按该表实现，本次与 Flutter 侧逐项核对确认一致，并修正了文档与注释中仍写"8 节作息 / 9-10 节不可解析"的过期描述；越界样例改用 `11-12节`。
-- **HarmonyOS 6.0 的沉浸光感落地路径。** `@ohos.arkui.uiMaterial` 整包标注 `@since 26.0.0`，HarmonyOS 6.0 走不到；本机 SDK 也没有环境光传感器 API。因此 6.0 及以下的沉浸光感只能由 ArkUI `backgroundEffect` 承担，关键是 `saturation`——取值大于 1 才会把透过的颜色推向更高饱和度，这是玻璃与灰模糊的分界（普通卡 1.8、强调卡 2.2），而 `backdropBlur` / `backgroundBlurStyle` 只暴露半径、透过去是灰的。同时把 `adaptiveColor` 从 `DEFAULT` 改为 `AVERAGE`，遮罩色取内容区平均色，靛蓝光晕上的卡片偏靛蓝、青色光晕上的偏青。
+- **HarmonyOS 6.0 的沉浸光感落地路径。** `@ohos.arkui.uiMaterial` 整包标注 `@since 26.0.0`，HarmonyOS 6.0 走不到；本机 SDK 也没有环境光传感器 API。因此 6.0 及以下的沉浸光感只能由 ArkUI `backgroundEffect` 承担，关键是 `saturation`——取值大于 1 才会把透过的颜色推向更高饱和度，这是玻璃与灰模糊的分界（而 `backdropBlur` / `backgroundBlurStyle` 只暴露半径，根本没有饱和度参数）。低版本回退路径的 `backgroundEffect` 参数与经像素实测标定的 `CampusCard` 对齐：`brightness` 恒为 1.0、`adaptiveColor` 用 `DEFAULT`（用 `AVERAGE` 会让遮罩色取背景平均色，卡片与背景收敛、对比度从 1.78:1 掉到约 1.5:1）、遮罩色用 `#2EFFFFFF` / `#B8FFFFFF`、半径 42，饱和度深浅色 1.5 / 1.9、强调卡 1.7 / 2.1。
 - **灵动岛（实况窗）补齐 HarmonyOS 6.0 能力。** 新增 `capsule.tailIcon`、`isContentDisplayed`、`isTailIconDisplayed`（均 @since 6.0.0(20)）与 `capsule.icon`（@since 11），指向新增的 `rawfile/liveview_capsule.png`（1.5 KB，低于 API 26 前 30 KB 上限）；主区改用系统 `${placeholder.timer}` 占位符，由系统每秒替换，APP 不必逐秒推更新。
 - **修复上课瞬间状态切换丢失灵动岛图标。** 原实现整体替换 `capsule` 对象，而图标与尾部开关挂在该对象上，替换会一并丢掉，HarmonyOS 6.0 上退化为没有图标的裸胶囊；现改为就地修改标量字段，回滚时按字段逐一还原（原先保存对象引用，还原会写回已改过的值）。
 - **胶囊主色按来源区分。** 课程 `#FF315FC4`（品牌靛蓝），待办 `#FF7B5CE6`（品牌紫），灵动岛一眼可分辨来源。

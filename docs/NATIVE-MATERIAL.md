@@ -34,9 +34,9 @@
 
 分界点是 `saturation`（取值 `[0,+∞)`，推荐 `[0,50]`，默认 1）：**`saturation > 1` 才是玻璃与灰模糊的区别**——它把透过的颜色推向更高饱和度；纯 `backdropBlur` / `backgroundBlurStyle` 只暴露半径参数，透过去是灰的。
 
-- `saturation`：普通卡 1.8、强调卡 2.2。
-- `brightness`：固定 1.0（推荐区间 `[0,2]`）。
-- `adaptiveColor: AdaptiveColor.AVERAGE`：遮罩色取内容区平均色，靛蓝光晕上的卡片偏靛蓝、青色光晕上的偏青。`AdaptiveColor.DEFAULT` 只会得到固定遮罩色。
+- `saturation`：深色 1.5 / 浅色 1.9；强调卡 1.7 / 2.1。
+- `brightness`：固定 1.0。实测调高会远超线性地把卡片提亮成白纸，实体感应来自 `color` 的 alpha 而非亮度。
+- `adaptiveColor`：必须用 `AdaptiveColor.DEFAULT`。`AVERAGE` 会把遮罩色换成内容区平均色，卡片与背景收敛、边缘消失，实测与背景的对比度从 1.78:1 掉到约 1.5:1。
 - 前提是玻璃背后必须有色彩层次：`AmbientBackground` 用靛蓝 `#315EDA` / 青 `#12B5C9` / 紫 `#7B5CE6` 三团 radialGradient 光晕，模糊纯色等于没有效果。
 
 `backgroundEffect` 每帧实时渲染，功耗较高；内容静止时应改用静态 `effectKit.Filter.blur`。
