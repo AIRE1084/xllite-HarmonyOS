@@ -5,16 +5,16 @@ Draws original vector-style marks with Pillow and exports them as PNGs into
 docs/brand/concepts/. Every mark is composed from primitives (polygons, lines,
 gradients) so the result stays reproducible and editable.
 
-Constraints applied after the second review round:
+Constraints applied to every mark:
 - The background is a single flat RGB(8,29,89) fill, matching the shipping
-  icon exactly. The earlier versions used a diagonal gradient plus a soft
-  top-left lift, which still produced a visible colour shift on the launcher
-  and read as a different icon family.
+  icon exactly, so the launcher does not show a colour shift when the icon is
+  replaced. The "liquid glass" quality lives in the subject's translucency and
+  highlights, not in a busy gradient backdrop.
 - Output is exported as RGB with no alpha channel, like the shipping icon, so
   the launcher renders it identically on any wallpaper or theme.
 - One clear focal point per mark, with no scattered decorative specks.
 - Subject kept to roughly 70% of the canvas so circular and squircle masks do
-  not clip it.
+  not clip it, and the subject must stay readable at 48px.
 - Everything is drawn at 4x and downsampled, so edges stay clean.
 
 Usage:

@@ -77,6 +77,12 @@
 # ===== 模拟器验收产物（可由构建与验收流程复现） =====
 /docs/simulator-verify-*/
 
+# ===== 本地一次性探测脚本（结论已记入文档，不随仓库分发） =====
+/tools/glass-ab-probe.py
+
+# ===== 未上线的备选设计稿（线上素材以 docs/brand 根目录为准） =====
+/docs/brand/concepts/
+
 # ===== 通用依赖与本地日志 =====
 node_modules/
 oh_modules/

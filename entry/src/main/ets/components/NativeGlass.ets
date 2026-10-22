@@ -25,8 +25,9 @@ import { glassMaterial, supportsImmersiveMaterial, loadImmersiveMaterial } from 
  *   comes from the alpha of `color` instead.
  * - `adaptiveColor` stays `DEFAULT`. `AVERAGE` replaces the mask colour with the
  *   average colour of the content behind the surface, so the card converges on
- *   the background and its edge disappears; the measured contrast against the
- *   backdrop drops from 1.78:1 to roughly 1.5:1.
+ *   the background and its edge disappears. Measured on the emulator, `AVERAGE`
+ *   flattens the vertical profile across the card border completely, while
+ *   `DEFAULT` keeps a visible step at the edge.
  * - `saturation` carries the vibrancy and must stay above 1.
  */
 @Component
