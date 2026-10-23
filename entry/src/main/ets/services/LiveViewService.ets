@@ -5,6 +5,7 @@ import { BusinessError } from '@ohos.base'
 import { Course } from '../models/JwTypes'
 import { TodoItem } from '../models/TodoTypes'
 import { LiveViewHandle, LiveViewResult, LiveViewTarget } from '../models/LiveViewTypes'
+import { Logger } from '../utils/Logger'
 
 export type { LiveViewHandle }
 let currentView: liveViewManager.LiveView | null = null
@@ -40,6 +41,9 @@ function reasonFor(error: BusinessError): string {
 function setReason(reason: string): void {
   supportReason = reason
   AppStorage.setOrCreate<string>('liveViewStatus', reason)
+  // 实况窗的成败只能看系统侧反应，真机验收时靠这条日志判断走到了哪一步：
+  // 是系统开关没开、场景权益没批，还是载荷下发被拒。
+  Logger.info('LiveView', 'api=%{public}d status=%{public}s', apiLevel(), reason)
 }
 export function getLiveViewSupportReason(): string { return supportReason }
 export async function isLiveViewSupported(): Promise<boolean> {

@@ -16,7 +16,7 @@ function fixture() {
     cancelAll: 0, forms: [], widgetUpdates: [], liveStarts: [], liveUpdates: [], liveStops: [],
     notificationAllowed: true, liveAllowed: true, liveCode: 0, liveError: null, publishHook: null, stopFail: false,
     // Default to the HarmonyOS 6.0 API level so the dynamic-island branches are exercised.
-    sdkApiVersion: 20 };
+    sdkApiVersion: 20, logs: [] };
   class Clock extends Date { constructor(...args) { if (!args.length) super(state.now); else super(...args); } static now() { return state.now; } }
   const preferences = { async getPreferences(_ctx, name) {
     if (!stores.has(name)) stores.set(name, new Map()); const store = stores.get(name);
@@ -49,9 +49,15 @@ function fixture() {
     const full = path.resolve(root,rel); if(modules.has(full)) return modules.get(full).exports;
     const module={exports:{}}; modules.set(full,module);
     const js=ts.transpileModule(fs.readFileSync(full,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText;
+    // hilog 必须给全 debug/info/warn/error：Logger 封装会按级别分派，
+    // 兜底的空对象会让服务层一打日志就抛 TypeError。
+    const hilog = { debug(){state.logs.push(['debug',...arguments]);},
+      info(){state.logs.push(['info',...arguments]);},
+      warn(){state.logs.push(['warn',...arguments]);},
+      error(){state.logs.push(['error',...arguments]);} };
     const requireLocal = spec => {
       const native = {'@ohos.data.preferences':preferences,'@ohos.file.fs':nativeFs,'@ohos.notificationManager':notification,
-        '@ohos.reminderAgentManager':reminder,'@ohos.app.ability.wantAgent':wantAgent};
+        '@ohos.reminderAgentManager':reminder,'@ohos.app.ability.wantAgent':wantAgent,'@ohos.hilog':hilog};
       if(native[spec]) return {default:native[spec]};
       if(spec==='@ohos.deviceInfo') return {default:{sdkApiVersion:state.sdkApiVersion}};
       if(spec==='@kit.LiveViewKit') return {liveViewManager}; if(spec==='@kit.FormKit') return formKit;

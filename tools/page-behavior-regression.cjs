@@ -42,6 +42,8 @@ function fixture(name) {
       if (spec.endsWith('/ToastHelper')) return { safeToast(_ctx, text) { state.toasts.push(text); } };
       if (spec === '@ohos.notificationManager') return {default:{isNotificationEnabled:async()=>state.notificationPending?await state.notificationPending:true,requestEnableNotification:async()=>{}}};
       if (spec === '@ohos.web.webview') return { default: { WebviewController: class {} } };
+      // Logger 封装会按级别分派，缺任一方法都会让服务层一打日志就抛 TypeError。
+      if (spec === '@ohos.hilog') return { default: { debug() {}, info() {}, warn() {}, error() {} } };
       if (spec === '@ohos.util') return { default: {} };
       return {};
     },

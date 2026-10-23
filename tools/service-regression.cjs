@@ -67,6 +67,8 @@ function fixture(sharedStores = new Map()) {
       if (spec === './CampusCompanionService' && full.endsWith('AuthManager.ets')) return {async clearCampusCompanion(){state.companionClears=(state.companionClears||0)+1;if(state.companionClearFailure)throw Error('fixture companion cleanup failed')}};
       if (spec === '@ohos.data.preferences') return { default: preferences };
       if (spec === '@ohos.net.http') return { default: http };
+      // Logger 封装会按级别分派，缺任一方法都会让服务层一打日志就抛 TypeError。
+      if (spec === '@ohos.hilog') return { default: { debug() {}, info() {}, warn() {}, error() {} } };
       if (spec === '@ohos.app.ability.ConfigurationConstant') return {default:{ColorMode:{COLOR_MODE_DARK:0,COLOR_MODE_LIGHT:1,COLOR_MODE_NOT_SET:-1}}};
       if (spec === '@ohos.util') return { default: { TextEncoder: class extends TextEncoder {encodeInto(s) {return this.encode(s);}}, TextDecoder: class extends TextDecoder { decodeToString(b) { return this.decode(b); } }, Base64Helper: class {decodeSync(s) {return new Uint8Array(Buffer.from(s,'base64'));}} } };
       if (spec === '@ohos.security.cryptoFramework') return { default: {

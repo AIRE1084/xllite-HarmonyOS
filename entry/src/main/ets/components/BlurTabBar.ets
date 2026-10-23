@@ -53,14 +53,18 @@ export struct BlurTabBar {
     this.indicatorX = this.currentIndex * this.itemWidth + (this.itemWidth - INDICATOR_WIDTH) / 2
   }
 
-  // 指示器玻璃：顶部一层极淡白色收向中段，底部转暗，形成"被光照到"的弧度；
-  // 描边只给顶部一丝高光，四圈等宽描边会让胶囊显得像贴纸。
+  // 指示器玻璃：顶部一层高光收向中段，底部转暗，形成"被光照到"的弧度；
+  // 描边只给顶部一丝边，四圈等宽描边会让胶囊显得像贴纸。
+  //
+  // 亮色主题必须带色，不能是白色。纯白玻璃的背景本来就落在 241-243 的亮度上，
+  // 再叠一个白色指示器等于没有选中态——实测在模拟器上完全找不到那块高亮。
+  // 暗色主题则相反，浅蓝高光压在深底上本来就分得开，加色反而脏。
   private indicatorColors(): Array<[ResourceColor, number]> {
     if (this.isDark) return [['#3DA9C4EA', 0], ['#1FA9C4EA', 0.52], ['#0A0B1220', 1]]
-    return [['#F2FFFFFF', 0], ['#C7E4EDFF', 0.5], ['#8CFFFFFF', 1]]
+    return [['#52315EDA', 0], ['#33315EDA', 0.52], ['#1A315EDA', 1]]
   }
 
-  private indicatorBorder(): string { return this.isDark ? '#3DA9C4EA' : '#D9FFFFFF' }
+  private indicatorBorder(): string { return this.isDark ? '#3DA9C4EA' : '#73315EDA' }
 
   private indicatorGlow(): ShadowOptions {
     return { radius: this.isDark ? 12 : 8, color: this.isDark ? '#33000000' : '#1F315EDA', offsetY: 2 }
