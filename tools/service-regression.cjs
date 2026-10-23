@@ -615,6 +615,24 @@ test('unimplemented school features cannot send guessed requests or retry paymen
 test('logout clears private school storage and increments card generation',async()=>{
  const f=fixture();await f.seedToken();const epoch=f.auth.getCardSessionEpoch();await f.auth.clearSession();assert.equal(f.auth.getCardToken(),'');assert.ok(f.auth.getCardSessionEpoch()>epoch);assert.equal(f.state.cookieClears,1);assert.equal(f.state.storageClears,1);
 test('toast failure is logged instead of vanishing',()=>{
+test('theme and motion persistence failures are reported instead of swallowed', async () => {
+ // 界面已经按新值切过去了。若把写入失败吞掉并返回成功，用户会以为设置已保存，
+ // 重启却回到旧值——主题与减少动效都是用户显式选择的偏好，静默丢失体验最差。
+ const f = fixture(); await f.theme.initTheme({});
+ f.state.hook = async (name, op) => { if (name === 'xjit_theme' && op === 'put') throw Error('fixture disk full'); };
+ assert.equal(await f.theme.setThemeMode('dark'), false, 'failed theme write must not report success');
+ assert.equal(await f.theme.setReduceMotion(true), false, 'failed motion write must not report success');
+});
+
+test('a failed setting write does not stall later writes', async () => {
+ // 失败必须只影响它自己：队列要继续推进，否则一次写入失败会让之后所有设置都存不下去。
+ const f = fixture(); await f.theme.initTheme({});
+ f.state.hook = async (name, op, key) => { if (name === 'xjit_theme' && op === 'put' && key === 'mode') throw Error('fixture write failed'); };
+ assert.equal(await f.theme.setThemeMode('dark'), false);
+ f.state.hook = undefined;
+ assert.equal(await f.theme.setReduceMotion(true), true, 'the queue must keep running after a failure');
+ assert.equal(f.stores.get('xjit_theme').data.get('reduceMotion'), true);
+});
  // 这些提示在多数场景是用户唯一的结果反馈。静默吞掉异常等于出问题后无从查起，
  // 但也不能抛出去——调用点都在写入完成之后，抛出会把成功回滚成失败。
  const f=fixture();const {safeToast}=f.load('entry/src/main/ets/utils/ToastHelper.ets');
