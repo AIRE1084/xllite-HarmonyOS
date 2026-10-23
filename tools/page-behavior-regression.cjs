@@ -455,6 +455,24 @@ for(const [name,key,field] of [['BalancePage','accounts','accounts'],['Transacti
   });
 }
 
+// 充值页进入收银台是页面内切屏，不是路由跳转，所以要用组件级 transition 表达方向感。
+// 硬切会让用户在输密码前不知道界面换了；而随意加动画又容易在"减少动效"下留下残余位移。
+test('checkout slides in from the right and stalls under reduced motion', () => {
+  const source = fs.readFileSync(path.join(root, 'entry/src/main/ets/pages/RechargePage.ets'), 'utf8');
+  // 收银台（Web）进场：右移 72 淡入；出场只淡出，避免和金额页出场抢。
+  assert.match(source, /TransitionEffect\.OPACITY\.combine\(TransitionEffect\.translate\(\{ x: 72 \}\)\)/);
+  assert.match(source, /TransitionEffect\.asymmetric\(/);
+  assert.match(source, /curve: Motion\.curve\.decelerate/);
+  assert.match(source, /curve: Motion\.curve\.accelerate/);
+  // 金额页退场：轻微缩小 + 淡出，给收银台留出层次。
+  assert.match(source, /TransitionEffect\.OPACITY\.combine\(TransitionEffect\.scale\(\{ x: 0\.97, y: 0\.97 \}\)\)/);
+  // 所有时长都必须走 motionDuration()，它是"减少动效"的唯一开关：
+  // 直接把数字写进 animation 会在偏好开启时仍然播动画。
+  const durs = [...source.matchAll(/animation\(\{ duration: ([^,]+),/g)].map(m => m[1].trim());
+  assert.ok(durs.length >= 3, 'the page must declare its transition durations');
+  assert.ok(durs.every(d => d.startsWith('motionDuration(')), 'every transition duration must go through motionDuration(): ' + durs.join(' | '));
+});
+
 (async () => {
   let failed = 0;
   for (const t of tests) { try { await t.run(); console.log('PASS ' + t.name); } catch (error) { failed++; console.error('FAIL ' + t.name); console.error(error.stack); } }
