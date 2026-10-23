@@ -21,12 +21,14 @@
 - **亮色主题的指示器必须带色，不能取白色。** 这是这次唯一踩到的坑：纯白玻璃被透过的页面底色推高到 241–243 的亮度，再叠一层白色指示器，等于没有选中态。在模拟器上按像素搜过，`y=2600` 一带找不到任何高亮块，肉眼也分不出来。现在亮色用品牌靛蓝 `#315EDA` 的 32% / 20% / 10% 三段，暗色仍用浅蓝 `#A9C4EA` 高光——深底上浅色本来就分得开，再上色反而脏。
 - **按压反馈不等选中态变化。** `onTouch` 的 Down 先把该格标记为按压，Up 与 Cancel 都复位，图标缩放到 1.06；用户手指按下去的当帧就有回应，不必等页面切换完成。手势被系统打断时走 `TouchType.Cancel`，不会留下一个卡住的缩放图标。
 - **动效跟随系统减弱动态效果。** 指示器滑动用 `curves.springMotion(0.32, 0.86, 0.12)`，`reduceMotion` 打开时不只是把时长降到 0，而是把曲线换成 `Curve.Linear`——弹簧曲线在时长为 0 时仍会被求值成一帧跳变，只改时长并未真的去掉动效。
+- **选中指示器必须由 `@Watch` 驱动，否则只会停在第一格。** `indicatorX` 是由 `currentIndex` 与 `itemWidth` 算出来的 `@State`，而 `@Prop currentIndex` 的更新本身不会触发重算。只在 `onAreaChange` 里算一次的话，首次布局的尺寸是对的，但用户切 tab 后 `currentIndex` 变了、`indicatorX` 没变，指示器永远留在第一格。现补 `@Prop @Watch('onIndexChange')`，回调里重算位置，回归断言同时钉住这两个标记。
 
 ### 验证
 
-- 三套回归 0 失败：`api23-regression` 25 项、`ui-structure-regression` 18 项、`page-behavior-regression` 85 项。
+- 九套回归 0 失败：`api23-regression` 25 项、`campus-companion-regression` 103 项、`gateway-regression` 18 项、`login-regression` 9 项、`page-behavior-regression` 85 项、`service-regression` 84 项、`ui-structure-regression` 18 项，另 `brand-regression` 与 `material-loading-regression` 全部 PASS。
 - 清缓存后完整重建 `BUILD SUCCESSFUL in 1 min 34 s 842 ms`，34 个任务全部执行、0 up-to-date、无 ERROR。
-- 独立验收包装入 API 26 模拟器实测：指示器落在第一格居中位置，像素上在该处检出 `blue-red` 峰值 +170，横向覆盖约 187–315 px，与 64 vp 指示器换算后的 128 px 宽度吻合。
+- 独立验收包装入 API 26 模拟器后逐 tab 截图核对：该模拟器密度为 3.5 px/vp（由 24 vp 图标实测 84 px 反推），指示器实测横向 220–221 px，即 63 vp，与设定的 64 vp 一致；三个 tab 下指示器中心分别落在 289 / 658 / 1028 px，而由布局转储取得的标签中心是 288 / 658 / 1028 px，偏差 0–1 px，确认它跟随选中态整格居中滑动。
+- 截图之所以能看到 Tab 页，是因为新增了 `tools/prepare-simulator.ps1 -PreviewLogin`：该开关只在模拟器副本的 `AuthManager.loadSession()` 开头短路成"已登录"，正式源码与正式包都不含这段代码，且被限制只能打进 `com.xjit.app.designreview` 这个隔离包。此前是靠一次性临时脚本做同样的注入，用完即删、无法复核；现在注入点固定在脚本里，任何人重跑同一条命令都能复现同样的界面。
 
 ### 未验证项
 

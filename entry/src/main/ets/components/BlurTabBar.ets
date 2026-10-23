@@ -31,7 +31,10 @@ const TABS_LABELS: string[] = ['首页', '课表', '我的']
 
 @Component
 export struct BlurTabBar {
-  @Prop currentIndex: number = 0
+  // 必须挂 @Watch：指示器的位置是由 currentIndex 和 itemWidth 算出来的 @State，
+  // 而 @Prop 变化本身不会重算它。只靠 onAreaChange 算一次的话，尺寸确实对得上，
+  // 但切 tab 时 currentIndex 变了、indicatorX 没变，指示器会一直停在第一格。
+  @Prop @Watch('onIndexChange') currentIndex: number = 0
   onTabChange: (index: number) => void = () => {}
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
@@ -41,6 +44,7 @@ export struct BlurTabBar {
   @StorageLink('reduceMotion') reduceMotion: boolean = false
   aboutToAppear(): void { this.onThemeChange() }
   onThemeChange(): void { this.palette = getColors(this.isDark) }
+  onIndexChange(): void { this.recalcIndicator() }
   private icon(index: number): Resource {
     if (index === 0) return $r('app.media.nav_home')
     if (index === 1) return $r('app.media.nav_calendar')

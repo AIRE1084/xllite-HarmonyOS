@@ -94,6 +94,10 @@ test('dock indicator is narrower than one tab so the glass reads as a moving bea
  assert.match(source,/const INDICATOR_WIDTH: number = 64/);
  assert.match(source,/this\.currentIndex \* this\.itemWidth \+ \(this\.itemWidth - INDICATOR_WIDTH\) \/ 2/);
  assert.match(source,/\.linearGradient\(\{ angle: 165/);
+ // indicatorX 是算出来的 @State，@Prop currentIndex 变了不会自动重算；
+ // 少了这个 @Watch，尺寸对得上但指示器永远停在第一格。
+ assert.match(source,/@Prop @Watch\('onIndexChange'\) currentIndex/);
+ assert.match(source,/onIndexChange\(\): void \{ this\.recalcIndicator\(\) \}/);
  // 与 tab 等宽的实心块会把整格染色，把胶囊切成一格一格，不再允许回退到那种做法。
  assert.ok(!source.includes('this.currentIndex * this.itemWidth })'));
 });

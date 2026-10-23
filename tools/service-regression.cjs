@@ -614,6 +614,16 @@ test('unimplemented school features cannot send guessed requests or retry paymen
 });
 test('logout clears private school storage and increments card generation',async()=>{
  const f=fixture();await f.seedToken();const epoch=f.auth.getCardSessionEpoch();await f.auth.clearSession();assert.equal(f.auth.getCardToken(),'');assert.ok(f.auth.getCardSessionEpoch()>epoch);assert.equal(f.state.cookieClears,1);assert.equal(f.state.storageClears,1);
+test('toast failure is logged instead of vanishing',()=>{
+ // 这些提示在多数场景是用户唯一的结果反馈。静默吞掉异常等于出问题后无从查起，
+ // 但也不能抛出去——调用点都在写入完成之后，抛出会把成功回滚成失败。
+ const f=fixture();const {safeToast}=f.load('entry/src/main/ets/utils/ToastHelper.ets');
+ const ok={getPromptAction:()=>({showToast(){}})};
+ assert.equal(safeToast(ok,'已保存'),true);
+ const failing={getPromptAction:()=>({showToast(){throw {code:1001,message:'window not ready'};}})};
+ assert.equal(safeToast(failing,'已保存'),false);
+ assert.equal(safeToast(ok,''),false,'empty message must not reach the system');
+});
 });
 
 module.exports = {fixture,deferred,until,schoolJwt,schoolResponse};
