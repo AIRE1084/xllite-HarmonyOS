@@ -786,6 +786,18 @@ test('combined logout failures still cancel reminders and recover on retry',asyn
   assert.ok(logged.length>0,'the refusal reason must be logged as well');
  });
 test('failed LiveView stop reports logout failure after privacy and reminder cleanup',async()=>{
+ test('api level normalises the eight-digit encoding instead of trusting it raw',async()=>{
+  // 6.1.0(23) 的编码形态是 60100023。若门槛写成 1e8，这个值会原样参与比较，
+  // 六千万对任何 api >= N 都成立，低版本设备就会拿到高版本字段。
+  for (const [raw, expected] of [[60100023, 23], [60260000, 0], [26, 26], [19, 19], [0, 0], [-1, 0]]) {
+   const f=fixture();f.state.sdkApiVersion=raw;f.state.now=new Date(2026,9,12,9,51).getTime();
+   const core=await readyCourse(f);await core.setCampusOption('live',true);
+   const view=f.state.liveStarts[0];
+   if (expected >= 20) { assert.ok(view.liveViewData.capsule.tailIcon,'API ' + expected + ' must carry the tail affordances'); }
+   else if (expected >= 12) { assert.ok(view.timer,'API ' + expected + ' must set the timer'); assert.equal(view.liveViewData.capsule.tailIcon,undefined); }
+   else { assert.equal(view.timer,undefined,'API ' + expected + ' must not set the timer'); }
+  }
+ });
  const f=fixture();const core=await readyCourse(f);await core.setCampusOption('reminders',true);f.state.now=new Date(2026,9,12,9,51).getTime();await core.setCampusOption('live',true);assert.equal(f.state.liveStarts.length,1);
  f.state.stopFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);assert.equal(f.disks.get('/data/campus_widget.json'),'null');
  f.state.stopFail=false;await core.clearCampusCompanion();assert.equal(f.state.liveStops.length,2);

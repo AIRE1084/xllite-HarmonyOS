@@ -18,11 +18,17 @@ function nextViewId(): number {
   lastViewId = lastViewId >= 2147483647 ? -2147483648 : lastViewId + 1
   return lastViewId
 }
-// sdkApiVersion arrives either as 23 or as 60100023 depending on the build, so normalise before comparing.
+// SDK 声明 sdkApiVersion: number，取值为纯 API 级（文档示例 12），设备上实测为 26。
+// 早先这里按"可能是 60100023 这种八位编码"做了取模归一化，但门槛写成了 1e8，
+// 而 60100023 只有六千万，条件永远不成立——真出现该编码时原样返回，
+// 所有 api >= N 门控会把 6 千万当成版本号而恒为真，低版本设备反而拿到高版本字段。
+// 现在按 6.1.0(23) -> 60100023 的真实构造规则覆盖编码形态，并拦住非法值。
 function apiLevel(): number {
   const raw = deviceInfo.sdkApiVersion
-  if (!Number.isInteger(raw)) return 0
-  return raw >= 100000000 ? raw % 1000 : raw
+  if (!Number.isInteger(raw) || raw <= 0) return 0
+  // 编码形态是 主版本 * 1e7 + 次版本 * 1e5 + 补丁 * 1e3 + API，例如 6.1.0(23) -> 60100023。
+  if (raw >= 10000000) return raw % 1000
+  return raw
 }
 let operation: Promise<void> = Promise.resolve()
 let supportReason: string = '开启后检查系统实况窗能力'

@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-23T03:50:22.689Z",
+  "checkedAt": "2026-10-23T04:07:27.369Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 103,
+  "checks": 104,
   "failed": 0,
   "results": [
     {
@@ -415,6 +415,10 @@
     },
     {
       "name": "failed LiveView stop reports logout failure after privacy and reminder cleanup",
+      "ok": true
+    },
+    {
+      "name": "api level normalises the eight-digit encoding instead of trusting it raw",
       "ok": true
     }
   ]
