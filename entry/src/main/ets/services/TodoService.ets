@@ -50,7 +50,18 @@ export function setTodoContext(ctx: common.UIAbilityContext): void {
 // Tasks belong to whoever is signed in. The tag is stored next to the rows so a
 // later session can tell whose data it is even when sign-out cleanup never
 // reached disk, which is the case a plain "delete on logout" cannot cover.
-export function setTodoOwner(owner: string): void { todoOwner = owner }
+export function setTodoOwner(owner: string): void {
+  if (todoOwner === owner) return
+  // 账号变了，内存里那一份就属于上一个账号。只换 todoOwner 而不清缓存的话，
+  // loaded 仍是 true，下一次 loadTodos 会直接返回内存里的旧行——同进程内
+  // 切换账号或登出后仍能读到别人的待办。这里连同读取任务与已加载标记一起作废。
+  todoOwner = owner
+  if (loaded || loadTask !== null) {
+    loaded = false
+    loadTask = null
+    todoStore = []
+  }
+}
 let idCounter: number = 0
 // Two adds inside the same millisecond used to have a 1-in-100000 chance of
 // identical ids; a collision makes toggle/delete hit both rows. The counter is
@@ -181,11 +192,16 @@ export async function loadTodos(): Promise<TodoItem[]> {
       const pending = await prefs.get('cleanup_pending', false)
       const storedOwner = await prefs.get(KEY_OWNER, '')
       if (typeof storedOwner !== 'string') throw new Error('待办归属标记异常，原数据已保留')
-      if (storedOwner !== ownerTag()) {
+      // 两边都是空串时必须算作不匹配。ownerTag() 在无账号时返回空串，而磁盘上
+      // owner 键缺失的默认值也是空串，单看相等性会把「没有账号」认成「同一个
+      // 账号」，于是上一个账号留在盘上的待办被当成当前用户的读出来。
+      const owner = ownerTag()
+      const sameOwner = owner.length > 0 && storedOwner === owner
+      if (!sameOwner) {
         // Rows, and any cleanup marker, left behind by a different sign-in. Reset
         // both: the marker describes the previous owner's interrupted cleanup and
         // would otherwise stall this account on every later read.
-        await prefs.put(KEY_OWNER, ownerTag())
+        await prefs.put(KEY_OWNER, owner)
         await prefs.put(KEY_ITEMS, '[]')
         await prefs.put('cleanup_pending', false)
         await prefs.flush()
