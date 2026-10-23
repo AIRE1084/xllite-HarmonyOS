@@ -29,7 +29,7 @@ function fixture(name) {
     clearTimeout(id) { state.timers.delete(id); }, clearInterval(id) { state.timers.delete(id); },
     require(spec) {
       if (spec.endsWith('/ApiService')) return { callFeature(feature, username, params) { const deferred = gate(); state.requests.push({ feature, username, params, ...deferred }); return deferred.promise; } };
-      if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { state.room = value; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
+      if (spec.endsWith('/AuthManager')) return { getUsername: () => state.username, loadElectricityRoom: async () => state.roomLoad ? await state.roomLoad : state.room || '', saveElectricityRoom: async value => { if (state.roomSaveFails) return false; state.room = value; return true; }, getPassword: () => 'mock', getCardSessionEpoch: () => state.cardEpoch, getCardAccountLabel: () => '测试校园卡' };
       if (spec.endsWith('/TodoService')) return {async addTodo(draft){state.todoAdds=(state.todoAdds||0)+1;if(state.todoPending)await state.todoPending;return []},toggleTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},deleteTodo:async()=>{if(state.todoActionPending)return await state.todoActionPending;throw new Error('fixture disk failure')},disableTodoReminders:async()=>{state.todoDisabled=true;if(state.reminderServicePending)await state.reminderServicePending},registerTodoReminders:async()=>{state.todoRegisters=(state.todoRegisters||0)+1;if(state.reminderServicePending)await state.reminderServicePending;return 2},getTodoLiveCleanupStatus:()=>state.liveCleanupStatus||'',retryTodoLiveCleanup:async()=>{state.liveCleanupStatus=''},getTodoReminderStatus:()=> 'fixture status',restoreTodoReminderStatus:async()=>{state.todoRestores=(state.todoRestores||0)+1},refreshTodoWidgets:async()=>{state.todoRefreshes=(state.todoRefreshes||0)+1;if(state.todoRefreshFailure)throw Error('fixture widget failure')},loadTodos:async()=>state.todoLoad?await state.todoLoad:[],countOpenTodos:()=>0};
       if (spec.endsWith('/LiveViewService')) return {startTodoLiveView:async()=>state.livePending?await state.livePending:{ok:true}};
       if (spec.endsWith('/Colors')) return {getColors:()=>({})};
@@ -71,6 +71,14 @@ test('electricity change room retires requests and keeps stored binding until su
  const {page,state}=fixture('ElectricityPage');page.alive=true;page.step=2;page.electricity={};state.room='9#312';
  const version=page.requestVersion;page.changeRoom();assert.equal(page.step,1);assert.equal(page.electricity,null);assert.ok(page.requestVersion>version);assert.equal(state.room,'9#312');
  page.paying=true;page.step=3;page.changeRoom();assert.equal(page.step,3);
+});
+test('electricity reports an unsaved room binding instead of staying silent',async()=>{
+ // 宿舍绑定是「记住上次输入」的便利功能，失败不影响本次查询，但用户要知道
+ // 下次还得重输。原先 saveElectricityRoom 静默 return，调用方的 catch 永不触发。
+ const {page,state}=fixture('ElectricityPage');page.alive=true;page.roomQuery='9#312';state.roomSaveFails=true;
+ const task=page.queryElectricity();state.requests[0].resolve({ok:true,data:{}});await task;
+ assert.equal(page.step,2,'the query itself must still succeed');
+ assert.match(page.errorMsg,/宿舍绑定未保存/);
 });
 test('electricity results offer refresh independently from change room',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/ElectricityPage.ets'),'utf8');
