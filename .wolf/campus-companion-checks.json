@@ -1,9 +1,9 @@
 {
-  "checkedAt": "2026-10-23T02:35:30.822Z",
+  "checkedAt": "2026-10-23T03:17:36.163Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 99,
-  "failed": 0,
+  "checks": 101,
+  "failed": 1,
   "results": [
     {
       "name": "form binding selects todo placeholder separately from schedule",
@@ -264,6 +264,15 @@
     {
       "name": "live view fixed area uses the system timer placeholder so the island ticks itself",
       "ok": true
+    },
+    {
+      "name": "the timer placeholder is never a standalone content entry",
+      "ok": true
+    },
+    {
+      "name": "the countdown reaches a preset ending instead of a raw zero",
+      "ok": false,
+      "error": "a preset ending is required from API 20"
     },
     {
       "name": "capsule keeps its island affordances when the course switches to 上课中",

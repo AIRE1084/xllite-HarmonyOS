@@ -250,8 +250,8 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       if (api >= 20) {
         // When the countdown reaches zero the system swaps in these texts, so the
         // surface never falls back to a raw zero or an unresolved placeholder.
-        void 0
-        void 0
+        timer.countdownPreset = { presetTitle: target.title.slice(0, 40), presetContent: '已结束' }
+        timer.capsuleCountdownPreset = { presetTitle: '已结束', presetContent: '已结束' }
       }
       view.timer = timer
     }
