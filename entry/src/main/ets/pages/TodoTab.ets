@@ -416,7 +416,7 @@ export struct TodoTab {
   build() {
     Stack() {
       DetailScaffold({ title: '待办任务', subtitle: countOpenTodos(this.todos).toString() + ' 项待完成 · 安排好今天的每一件事', action: '',
-        onBack: () => safeBack(this.getUIContext()) }) {
+        showBack: false }) {
       Scroll() {
         Column() {
           Column() {
@@ -524,7 +524,8 @@ export struct TodoTab {
           }
         }
         .width('100%')
-        .padding({ bottom: 28 })
+          // 底部留出悬浮导航栏的高度，否则最后一条待办会被栏压住。
+          .padding({ bottom: this.safeAreaBottom + 104 })
       }
       .layoutWeight(1).align(Alignment.TopStart)
 

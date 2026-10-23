@@ -225,7 +225,7 @@ export struct ProfileTab {
           Text('掌上新理工 · 1.0.0').fontSize(12).fontColor(this.palette.onSurfaceVariant)
         }
           .width('100%')
-          .padding({ left: 20, right: 20, top: 4, bottom: this.safeAreaBottom + 88 })
+          .padding({ left: 20, right: 20, top: 4, bottom: this.safeAreaBottom + 104 })
       }.layoutWeight(1).width('100%').scrollBar(BarState.Off)
     }.width('100%').height('100%').backgroundColor(Color.Transparent)
   }

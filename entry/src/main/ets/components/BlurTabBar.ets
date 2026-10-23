@@ -1,7 +1,6 @@
 import { getColors, ColorPalette } from '../theme/Colors'
 import { Typography } from '../theme/Typography'
 import { Motion } from '../theme/Motion'
-import { glassMaterial, supportsImmersiveMaterial, loadImmersiveMaterial } from '../theme/Materials'
 
 /**
  * 底部导航栏：液态玻璃 / 沉浸光感。
@@ -73,18 +72,8 @@ export struct BlurTabBar {
   @StorageLink('safeAreaBottom') safeAreaBottom: number = 0
   @State palette: ColorPalette = getColors(false)
   @State pressingIdx: number = -1
-  @State nativeSupported: boolean = supportsImmersiveMaterial()
-  private appearance: number = 0
 
-  aboutToAppear(): void {
-    this.onThemeChange()
-    const revision = ++this.appearance
-    // 26 的材质要异步装载；装载完成前先按回退路径渲染，避免出现空白栏。
-    loadImmersiveMaterial().then((supported: boolean) => {
-      if (revision === this.appearance) this.nativeSupported = supported
-    })
-  }
-  aboutToDisappear(): void { this.appearance++ }
+  aboutToAppear(): void { this.onThemeChange() }
   onThemeChange(): void { this.palette = getColors(this.isDark) }
 
   private icon(index: number): Resource {
@@ -150,28 +139,23 @@ export struct BlurTabBar {
       // 高度含 safeAreaBottom：玻璃要一路铺到屏幕底边，不能在手势条上方就断掉，
       // 否则栏底会露出一条背景色，看起来像"飘在屏幕上方"。
       // 圆角只给上面两角——贴屏幕底边的那侧必须是直角，否则边缘会露出方形背景。
-      if (this.nativeSupported) {
-        // API 26+：交回系统沉浸材质，保持原有适配不变。
-        Column()
-          .width('100%').height(BAR_CONTENT_HEIGHT + PAD_Y * 2 + this.safeAreaBottom)
-          .borderRadius({ topLeft: TAB_RADIUS, topRight: TAB_RADIUS })
-          .systemMaterial(glassMaterial(this.isDark, true, false))
-      } else {
-        // API 23–25：模糊 + 底色 + 漫反射高光 + 通透顶沿。
-        // clip 让高光与底色被圆角裁住，否则渐变的直角会露出栏外。
+        // 始终走 backgroundEffect 这条路：它自 API 11 起可用，所有设备都能渲染出
+        // 模糊与底色。曾经按版本分流到 systemMaterial，但在渲染不出材质的设备上
+        // （模拟器就是）整个玻璃层会变成全透明，课表内容直接压在导航图标上——
+        // 导航栏不能有这种「看起来没渲染」的状态，所以这里不再按版本分叉。
+        // 真正的沉浸材质仍保留在卡片（NativeGlass）上。
         Column()
           .width('100%').height(BAR_CONTENT_HEIGHT + PAD_Y * 2 + this.safeAreaBottom)
           .borderRadius({ topLeft: TAB_RADIUS, topRight: TAB_RADIUS })
           .clip(true)
-          // ① 高斯模糊：透过来的内容被柔化，这是"玻璃"而非"透明"的基础。
+          // ① 高斯模糊：透过来的内容被柔化，这是玻璃而非透明的基础。
           .backdropBlur(TAB_BLUR)
-          // ② 低透明底色：深色带蓝紫、浅色偏白。决定玻璃"有多大分量"。
+          // ② 低透明底色：深色带蓝紫、浅色偏白。决定玻璃有多大分量。
           .backgroundColor(this.isDark ? TAB_TINT_DARK : TAB_TINT_LIGHT)
           // ③ 漫反射高光：上亮下暗，模拟光打在弧面玻璃上的走向。
           .linearGradient({ angle: 180, colors: this.sheen() })
           // ④ 通透边缘：只给顶沿一丝亮边，不做四边描边。
           .border({ width: { top: 1 }, color: this.isDark ? TAB_EDGE_DARK : TAB_EDGE_LIGHT })
-      }
       // ── 内容层 ────────────────────────────────────────────────
       this.TabRow()
     }
