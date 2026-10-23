@@ -4,10 +4,10 @@
 
 ## 鸿蒙平台能力
 
-以下是本分支相对移动端通用实现所做的平台特化，均为鸿蒙独有的系统能力，无法在 Flutter 层通用实现：
+以下是本分支相对移动端通用实现所做的平台特化，均为 Flutter 层无法通用实现的鸿蒙系统能力。其中小艺意图只完成了契约核实，代码尚未接入，已在对应条目注明：
 
 - **实况窗（LiveView）**：接入 HMS `@kit.LiveViewKit`（@since 4.1.0(11)，位于 SDK 闭源 `hms` 层，非 OpenHarmony 系统 API）。以 `TIMER` 场景承载课前倒计时与待办计时，提供胶囊、锁屏与通知中心三处呈现，并按错误码给出可执行的处置提示：`1003500005` 指向 TIMER 场景权限未获批，`1003500004` 指向系统开关未允许，`801` / `1003500003` 指向设备不支持或服务不可达。
-- **小艺意图（InsightIntent）**：使用 `@ohos.app.ability.InsightIntentDecorator`（装饰器 @since 20）将课表等入口声明为意图，供小艺与系统搜索分发。标准意图清单共 101 项，其中没有创建待办或提醒的意图，`JumpFunctionPage` 只能打开页面而不能填充内容，故落地目标收敛为 `ViewSchoolTimetable`，不承诺无依据的能力。
+- **小艺意图（InsightIntent）**：核实了 `@ohos.app.ability.InsightIntentDecorator`（装饰器 @since 20）的接入契约，但**当前代码尚未接入**。标准意图清单共 101 项，其中没有创建待办或提醒的意图，`JumpFunctionPage` 只能打开页面而不能填充内容，故可落地目标只能是打开课表页，不承诺无依据的能力。接入前还需落实的条件见 `docs/XIAOYI-INTENT-INTEGRATION.md`。
 - **原生沉浸材质**：接入 `@ohos.arkui.uiMaterial`（@since 26）的 `ImmersiveMaterial`，按 `ULTRA_THIN` 至 `ULTRA_THICK` 五级样式渲染玻璃；不可用时回落 `backgroundEffect`（@since 11），以 `saturation` 而非 `brightness` 塑造玻璃质感——`backgroundBlurStyle` 只暴露半径，是早期玻璃呈灰雾的根因。
 - **系统提醒代理**：使用 `reminderAgentManager` 注册课程提醒，退出登录时按 `groupId` 枚举 `getAllValidReminders()` 取消，不依赖落盘的提醒 ID，避免残留提醒泄漏到下一个账号。
 - **桌面服务卡片**：`CampusFormAbility` 提供课表卡片，快照写入失败时不注册提醒，保证卡片与提醒数据一致。
@@ -53,8 +53,8 @@
 
 ### 文档
 
-- 新增 `docs/2026-10-21-payment-success-contract.md`：核实应用侧不存在支付结果的观测手段——SDK 没有系统支付接口，充值为 `tradeType: 'WAP'` 的 WebView 支付，`partnerJourno` 只证明订单对象返回、不证明支付成功，且无订单状态查询接口。据此判定支付成功浮层缺少合法触发条件，保留文档设计，不落实现。
-- 新增 `docs/2026-10-21-xiaoyi-intent-contract.md`：核实小艺意图接入的平台能力边界与可落地的意图目标。
+- 核实支付结果的观测手段：应用侧不存在合法途径——SDK 没有系统支付接口，充值为 `tradeType: 'WAP'` 的 WebView 支付，`partnerJourno` 只证明订单对象返回、不证明支付成功，且无订单状态查询接口。据此判定支付成功浮层缺少合法触发条件，保留文档设计，不落实现。
+- 核实小艺意图接入的平台能力边界与可落地的意图目标，结论见 `docs/XIAOYI-INTENT-INTEGRATION.md`。
 
 ### 账号与数据
 
