@@ -802,6 +802,13 @@ test('combined logout failures still cancel reminders and recover on retry',asyn
 test('failed LiveView stop reports logout failure after privacy and reminder cleanup',async()=>{
  test('api level normalises the eight-digit encoding instead of trusting it raw',async()=>{
  test('reminder group names come from one constant, never a fresh literal',()=>{
+ test('course reminders are cancelled by group, never by a stored id list',()=>{
+  // reminderIds 曾经每登记一条就写盘 flush 一次（最多 24 次），但从没被读过：
+  // 取消一律按 groupId 枚举。留着实属只写不读的死数据，回归钉住它不再出现。
+  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/services/CampusCompanionService.ets'),'utf8');
+  assert.doesNotMatch(source,/reminderIds/);
+  assert.match(source,/cancelReminderGroup\(COURSE_REMINDER_GROUP\)/);
+ });
   // 注册与取消各写字面量时，拼写差一个字符就一条都取消不掉，系统提醒会在
   // 退出登录后继续弹给下一个账号。断言两侧都引用同一常量。
   const groups=fs.readFileSync(path.join(root,'entry/src/main/ets/services/ReminderGroups.ets'),'utf8');

@@ -162,7 +162,9 @@ async function syncReminders(): Promise<void> {
         }
         if (version !== revision) { await reminderAgentManager.cancelReminder(id); return }
         ids.push(id)
-        if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
+        // 这里曾经每登记一条就把 ids 写盘并 flush（最多 24 次）。但取消一律按
+        // groupId 枚举 cancelReminderGroup，从不读这份记录，属于只写不读的死数据。
+        // 终态在循环外统一写一次即可。
       }
     }
     let capacityDetail: string = ''
@@ -179,7 +181,6 @@ async function syncReminders(): Promise<void> {
          '系统提醒受限（1700002）：SDK定义为提醒数量超限，实际限制来源待核实；已登记最近 ' + ids.length + ' 条' + capacityDetail + '；其余未登记，请检查系统提醒设置后重试' : upcoming.length > REMINDER_LIMIT ?
         '未来 7 天共 ' + upcoming.length + ' 条，已登记最近 ' + ids.length + ' 条；打开 APP 自动续订' :
         '已登记未来 7 天 ' + ids.length + ' 条课前提醒')
-    if (prefs !== null) { await prefs.put('reminderIds', JSON.stringify(ids)); await prefs.flush() }
   } catch (error) {
     if (version !== revision) return
     lastPlan = ''

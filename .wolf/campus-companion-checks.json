@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-23T05:30:46.651Z",
+  "checkedAt": "2026-10-23T05:38:13.230Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 106,
+  "checks": 107,
   "failed": 0,
   "results": [
     {
@@ -427,6 +427,10 @@
     },
     {
       "name": "reminder group names come from one constant, never a fresh literal",
+      "ok": true
+    },
+    {
+      "name": "course reminders are cancelled by group, never by a stored id list",
       "ok": true
     }
   ]
