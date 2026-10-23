@@ -85,14 +85,23 @@ test('dock scrim fully isolates scrolling glyphs below the fade edge', () => {
 });
 test('flowing dock has one shared noninteractive indicator and vertical labels',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- assert.match(source,/Column\(\{ space: 3 \}\)/); assert.match(source,/\.translate\(\{ x: this.currentIndex \* this.itemWidth \}\)/);
+ assert.match(source,/Column\(\{ space: 3 \}\)/); assert.match(source,/\.translate\(\{ x: this\.indicatorX/);
  assert.match(source,/\.onAreaChange/); assert.match(source,/\.hitTestBehavior\(HitTestMode.None\)/);
  assert.match(source,/this.reduceMotion \? 0 :/); assert.ok(!source.includes('setTimeout')); assert.ok(!source.includes("'#D9E5EDFF'"));
 });
-test('dock selection uses a flat tint without decorative gradient border or shadow',()=>{
+test('dock indicator is narrower than one tab so the glass reads as a moving bead',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- assert.doesNotMatch(source,/\.linearGradient\(|\.shadow\(|\.border\(/);
- assert.match(source,/\.backgroundColor\(this\.isDark \? '#263B59' : '#E5EDFF'\)/);
+ assert.match(source,/const INDICATOR_WIDTH: number = 64/);
+ assert.match(source,/this\.currentIndex \* this\.itemWidth \+ \(this\.itemWidth - INDICATOR_WIDTH\) \/ 2/);
+ assert.match(source,/\.linearGradient\(\{ angle: 165/);
+ // 与 tab 等宽的实心块会把整格染色，把胶囊切成一格一格，不再允许回退到那种做法。
+ assert.ok(!source.includes('this.currentIndex * this.itemWidth })'));
+});
+test('dock signal its pressed slot without waiting for the selection to change',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
+ assert.match(source,/this\.pressingIdx = index/);
+ assert.match(source,/TouchType\.Cancel/);
+ assert.match(source,/const PRESS_SCALE: number = 1\.06/);
 });
 test('dock spring is bypassed rather than merely zero-duration under reduced motion',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
