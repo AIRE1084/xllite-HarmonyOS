@@ -40,13 +40,39 @@ test('native material caches all eight appearance combinations independently',as
  const f=materials(26);await f.api.loadImmersiveMaterial();const instances=new Set();
  for(const dark of [false,true])for(const interactive of [false,true])for(const prominent of [false,true]){
   const material=f.api.glassMaterial(dark,interactive,prominent);assert.equal(f.api.glassMaterial(dark,interactive,prominent),material);instances.add(material);
-  const o=material.options;assert.equal(o.style,prominent?'thick':'regular');assert.equal(o.interactive,interactive);assert.equal(o.applyShadow,prominent);
-  assert.equal(o.materialColor,dark?'#33142033':'#33FFFFFF');assert.equal(o.lightEffect?.color,dark?'#80A9C4FF':'#CCFFFFFF');
+  const o=material.options;
+  // 悬浮栏必须走薄档。之前 prominent 也传 thick，材质读出来是一块白板，
+  // 和"玻璃"没有关系——这正是"背景一点都不透"的根因。
+  assert.equal(o.style,prominent?'thin':'regular');
+  assert.equal(o.interactive,interactive);assert.equal(o.applyShadow,true);
+  // 浅色不额外叠色（全透明）；深色只给一丝压暗。
+  assert.equal(o.materialColor,dark?'#0A000000':'#00000000');
+  assert.equal(o.lightEffect?.color,dark?'#66A9C4FF':'#B3FFFFFF');
  }
  assert.equal(instances.size,8);assert.equal(f.logs.length,8);
- assert.ok(f.logs.every(log=>log[1]==='XJITMaterial' && log[2]==='Native material created'));
+ assert.ok(f.logs.every(log=>log[1]==='XJITMaterial' && log[2]==='Native material created style=%{public}d prominent=%{public}s'));
 });
 test('minimum SDK is API23 while target and compile remain API26', () => { const p = JSON.parse(fs.readFileSync(path.join(root, 'build-profile.json5'), 'utf8')).app.products[0]; assert.equal(p.compatibleSdkVersion, '6.1.0(23)'); assert.equal(p.targetSdkVersion, '26.0.0'); });
+test('compatibility glass keeps the backdrop visible instead of veiling it', () => {
+ const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8');
+ // 遮罩 alpha 是"透不透"的总闸。浅色曾经用 #B8FFFFFF（72% 白），等于给内容
+ // 盖了一层七成白，模糊与否都看不出来，读起来就是白板；实测栏内像素方差 0.2，
+ // 一点背景都没透。这里把上限钉在 25%，并要求饱和度足够高以维持玻璃感。
+ // 只检查 backgroundEffect 的遮罩色，不要扫到顶部那条 1px 纯白高光。
+ const veil = s.match(/color: this\.prominent\s*\n\s*\?\s*\(this\.isDark \? '(#[0-9A-Fa-f]{8})' : '(#[0-9A-Fa-f]{8})'\)\s*\n\s*:\s*\(this\.isDark \? '(#[0-9A-Fa-f]{8})' : '(#[0-9A-Fa-f]{8})'\)/);
+ assert.ok(veil !== null, 'the backgroundEffect veil colours must be findable');
+ const alphas = veil.slice(1, 5).map(c => parseInt(c.slice(1, 3), 16));
+ assert.ok(Math.max(...alphas) <= 0x40, 'the fallback veil must stay translucent, max alpha ' + Math.max(...alphas));
+ const sats = [...s.matchAll(/\? \(this\.isDark \? ([\d.]+) : ([\d.]+)\)/g)].map(m => Number(m[2]));
+ assert.ok(sats.length >= 1, 'saturation values must be present');
+ assert.ok(Math.min(...sats) >= 2.5, 'saturation must stay high enough to read as glass');
+ // 自绘立面渐变同样不能太浓，否则把模糊层重新捂实。只检查 145° 那段渐变，
+ // 描边是单独的 1px，不在这条约束里。
+ const gradBlock = (s.match(/linearGradient\(\{ angle: 145[\s\S]*?\]\]\s*\}\)/)||[''])[0];
+ const grad = [...gradBlock.matchAll(/'#([0-9A-Fa-f]{2})[0-9A-Fa-f]{6}'/g)].map(m => parseInt(m[1], 16));
+ assert.ok(grad.length >= 3, 'the 145-degree facade gradient must be present');
+ assert.ok(grad.every(a => a <= 0x20), 'the facade gradient must stay light, max alpha ' + Math.max(...grad));
+});
 test('compatibility glass uses native blur rather than an opaque placeholder', () => { const s = fs.readFileSync(path.join(root, 'entry/src/main/ets/components/NativeGlass.ets'), 'utf8'); assert.match(s, /backgroundEffect\(\{/); });
 function mainTabs(reduceMotion) {
   const timers = new Map(); let next = 1;

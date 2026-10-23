@@ -62,19 +62,23 @@ export struct NativeGlass {
       } else {
         // 回退路径：backgroundEffect 只提供模糊与饱和度，玻璃的立面感（顶部高光、
         // 底部转暗、边缘描边）必须由自绘节点补出来，否则只是一层灰模糊。
+        //
+        // 遮罩 alpha 是"透不透"的总闸。之前浅色用 #B8FFFFFF(72%)，等于给内容盖了
+        // 一层七成白，模糊与否都看不出来，读起来就是白板。现在按悬浮/实体分两档：
+        // 悬浮栏透到能看清背后的渐变走向，实体卡片保留更多底色以保证文字对比。
+        // 饱和度必须大于 1 才叫玻璃：它把透过的颜色推向更艳，而不是洗成灰。
         Stack({ alignContent: Alignment.Top }) {
           Column() { this.content() }
             .width('100%').padding(this.contentPadding).borderRadius(this.radius)
             .backgroundEffect({
-              radius: 42,
-              // A prominent surface sits over more content, so it needs a little
-              // more saturation to stay distinct. Both values are above 1, which is
-              // the requirement for a glass read rather than a grey blur.
+              radius: this.prominent ? 60 : 48,
               saturation: this.prominent
-                ? (this.isDark ? 1.7 : 2.1)
-                : (this.isDark ? 1.5 : 1.9),
+                ? (this.isDark ? 2.6 : 3.2)
+                : (this.isDark ? 2.2 : 2.8),
               brightness: 1.0,
-              color: this.isDark ? '#2EFFFFFF' : '#B8FFFFFF',
+              color: this.prominent
+                ? (this.isDark ? '#0F000000' : '#1FFFFFFF')
+                : (this.isDark ? '#17000000' : '#29FFFFFF'),
               adaptiveColor: AdaptiveColor.DEFAULT,
             })
           Row().width('78%').height(1)
@@ -83,10 +87,11 @@ export struct NativeGlass {
               : [['#00FFFFFF', 0], ['#FFFFFFFF', 0.5], ['#00FFFFFF', 1]] })
             .margin({ top: 1 }).hitTestBehavior(HitTestMode.None).accessibilityLevel('no')
         }.width('100%').borderRadius(this.radius)
+          // 立面渐变同样要减淡：它压在模糊层之上，太浓会把这层玻璃重新捂实。
           .linearGradient({ angle: 145, colors: this.isDark
-            ? [['#33161F30', 0], ['#1F0D1520', 0.55], ['#2A1A2733', 1]]
-            : [['#4DFFFFFF', 0], ['#1FF5F9FF', 0.55], ['#33F2FBF9', 1]] })
-          .border({ width: 1, color: this.isDark ? '#507F9BBE' : '#E8FFFFFF' })
+            ? [['#14161F30', 0], ['#080D1520', 0.55], ['#0F1A2733', 1]]
+            : [['#1AFFFFFF', 0], ['#08FFFFFF', 0.55], ['#12FFFFFF', 1]] })
+          .border({ width: 1, color: this.isDark ? '#33FFFFFF' : '#4DFFFFFF' })
           .shadow({ radius: this.prominent ? 20 : 12, color: this.isDark ? '#28000000' : '#18364F78', offsetY: 8 })
       }
     }.width('100%').borderRadius(this.radius)
