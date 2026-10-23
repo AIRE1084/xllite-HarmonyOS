@@ -748,5 +748,10 @@ test('failed LiveView stop reports logout failure after privacy and reminder cle
 (async()=>{
  const results=[];for(const {name,run} of cases){try{await run();results.push({name,ok:true});console.log('PASS '+name);}catch(error){results.push({name,ok:false,error:error.message});console.error('FAIL '+name+'\n'+error.stack);}}
  const failed=results.filter(r=>!r.ok);const report={checkedAt:new Date().toISOString(),networkUsed:false,nativeApisMocked:true,checks:results.length,failed:failed.length,results};
- fs.writeFileSync(path.join(root,'.wolf/campus-companion-checks.json'),JSON.stringify(report,null,2)+'\n');console.log(`${results.length} checks, ${failed.length} failed`);if(failed.length)process.exitCode=1;
+ // 快照被跟踪，结论没变就别换时间戳，否则每次跑测试都把工作区弄脏。
+ const snapshotPath=path.join(root,'.wolf/campus-companion-checks.json');
+ const previous=(()=>{try{return JSON.parse(fs.readFileSync(snapshotPath,'utf8'));}catch(_error){return null;}})();
+ const sameResult=previous!==null&&previous.checks===report.checks&&previous.failed===report.failed&&JSON.stringify(previous.results)===JSON.stringify(report.results);
+ if(sameResult)report.checkedAt=previous.checkedAt;
+ fs.writeFileSync(snapshotPath,JSON.stringify(report,null,2)+'\n');console.log(`${results.length} checks, ${failed.length} failed`);if(failed.length)process.exitCode=1;
 })();
