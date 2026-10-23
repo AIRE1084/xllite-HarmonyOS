@@ -490,7 +490,29 @@ test('live view fixed area uses the system timer placeholder so the island ticks
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();
  const core=await readyCourse(f);await core.setCampusOption('live',true);
  const content=f.state.liveStarts[0].liveViewData.primary.content;
- assert.ok(content.some(part=>part.text==='${placeholder.timer}'),'fixed area must carry the timer placeholder');
+ // The placeholder must sit inside a single text string. The system resolves it
+ // per string; a separate array entry has no timer context to resolve against and
+ // renders as unresolved text instead of the remaining time.
+ assert.equal(content.length,1,'the fixed area must carry exactly one text entry');
+ assert.ok(content[0].text.includes('${placeholder.timer}'),'the placeholder must be present');
+ assert.ok(content[0].text.length<128,'the text must stay within the 128 character limit');
+});
+test('the timer placeholder is never a standalone content entry',async()=>{
+ const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();
+ const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const content=f.state.liveStarts[0].liveViewData.primary.content;
+ for(const part of content){
+  assert.ok(!/^\s*\$\{placeholder\.timer\}\s*$/.test(part.text),'the placeholder must not stand alone');
+ }
+});
+test('the countdown reaches a preset ending instead of a raw zero',async()=>{
+ const f=fixture();f.state.sdkApiVersion=26;f.state.now=new Date(2026,9,12,9,51).getTime();
+ const core=await readyCourse(f);await core.setCampusOption('live',true);
+ const timer=f.state.liveStarts[0].timer;
+ assert.ok(timer.countdownPreset,'a preset ending is required from API 20');
+ assert.ok(timer.countdownPreset.presetTitle.length>0);
+ assert.ok(timer.countdownPreset.presetContent.length>0);
+ assert.ok(timer.capsuleCountdownPreset,'the capsule needs its own preset ending');
 });
 test('capsule keeps its island affordances when the course switches to 上课中',async()=>{
  const f=fixture();f.state.sdkApiVersion=20;f.state.now=new Date(2026,9,12,9,51).getTime();

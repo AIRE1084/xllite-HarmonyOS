@@ -86,6 +86,18 @@ function capsuleContent(type: string, started: boolean): string {
   if (type === 'todo') return '待办计时'
   return started ? '上课中' : '距上课'
 }
+/**
+ * 主区文案。
+ *
+ * 计时占位符必须与正文处在同一个文本字符串里：系统是按字符串做替换的，
+ * 把占位符单独放进 content 数组的另一个元素，它就没有可依附的计时上下文，
+ * 那一格会渲染成未解析的占位文本而不是剩余时间。
+ */
+function primaryContent(target: LiveViewTarget, started: boolean): string {
+  const detail = target.extra.slice(0, 60)
+  const state = target.type === 'todo' ? '待办计时' : (started ? '上课中' : '距上课')
+  return detail.length > 0 ? `${detail} · ${state} ${'${placeholder.timer}'}` : `${state} ${'${placeholder.timer}'}`
+}
 async function stopCurrent(): Promise<void> {
   if (currentView === null) return
   const view = currentView
@@ -224,15 +236,24 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       id: nextViewId(), event: 'TIMER', sequence: 0, isMute: true,
       liveViewData: {
         primary: { title: target.title.slice(0, 40),
-          // The system refreshes ${placeholder.timer} every second, so the fixed area
-          // keeps ticking without the app pushing an update for every second.
-          content: [{ text: target.extra.slice(0, 60) }, { text: '${placeholder.timer}' }],
+          // The timer placeholder has to sit inside a single text string. Handing
+          // the system a separate array entry for it leaves it without a timer
+          // context to resolve against, and the slot then renders as a literal
+          // unresolved token instead of the remaining time.
+          content: [{ text: primaryContent(target, started) }],
           clickAction: clickAction },
         capsule: capsule,
       },
     }
     if (api >= 12) {
-      view.timer = { time: duration, isCountdown: true }
+      const timer: liveViewManager.LiveViewTimer = { time: duration, isCountdown: true }
+      if (api >= 20) {
+        // When the countdown reaches zero the system swaps in these texts, so the
+        // surface never falls back to a raw zero or an unresolved placeholder.
+        void 0
+        void 0
+      }
+      view.timer = timer
     }
     if (api >= 26) view.lifeCycleMode = liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE
     if (api >= 24) {

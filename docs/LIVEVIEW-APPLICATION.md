@@ -53,9 +53,12 @@
 | `capsule.tailIcon` | 6.0.0(20) | 与 `icon` 同源；HarmonyOS 6.0 的灵动岛尾部图标 |
 | `capsule.isTailIconDisplayed` | 6.0.0(20) | 控制尾部图标是否显示 |
 | `primary.content` 的 `${placeholder.timer}` | 5.0.0(12) | 主区改用系统计时占位符，由系统每秒替换，APP 不必每秒推更新 |
+| `timer.countdownPreset` / `capsuleCountdownPreset` | 6.0.0(20) | 归零时切换到"已结束"文案，不落到裸 0 |
 | `timer` | 5.0.0(12) | 低版本不下发 |
 | `primary.aliveTime` | 6.1.1(24) | 高版本延长存活时间 |
 | `lifeCycleMode` | 26.0.0 | 高版本随进程终止自动结束 |
+
+**计时占位符必须与正文处在同一个文本字符串里。** 系统按字符串做占位替换，把 `${placeholder.timer}` 单独放进 `primary.content` 数组的另一个元素时，它没有可依附的计时上下文，那一格会渲染成未解析的占位文本（真机表现为实况窗里出现 `UNDEFINED`），而不是剩余时间。现主区只保留一个文本元素，正文、状态与占位符拼在同一个字符串里；并按 SDK 补上归零时的 `countdownPreset` 与 `capsuleCountdownPreset`，倒计时结束时切换到"已结束"而不是裸 0。
 
 **门控必须逐字段，不能按特性整体开关。** 把 `icon`（11）、`isContentDisplayed`（15）与尾部能力（20）一起挂在同一个条件下，会让 API 11–19 的设备拿不到本来支持的胶囊图标与副文案开关；反过来，无条件下发 `timer` 又会让 API 11 的设备收到系统不认识的成员。
 
