@@ -645,6 +645,17 @@ test('a signed-out session never reads rows left by another account', async () =
 });
 
 test('a stored owner with no current account counts as a different owner', async () => {
+test('clearing keeps the disk owner tag instead of blanking it', async () => {
+ // clearSession 先 setTodoOwner('') 再 clearTodos()。若清理时用当前（空）标记
+ // 覆盖磁盘 owner，同一账号下次登录也会被当成异账号而白做一次重置。
+ const f = fixture(); f.todo.setTodoOwner('student-a');
+ await f.todo.addTodo({ title: 'A task', note: '', dueText: '' });
+ const before = f.stores.get('xjit_todos').data.get('owner');
+ f.todo.setTodoOwner('');
+ await f.todo.clearTodos();
+ assert.equal(f.stores.get('xjit_todos').data.get('items'), '[]', 'rows must be cleared');
+ assert.equal(f.stores.get('xjit_todos').data.get('owner'), before, 'the owner tag must survive the clear');
+});
  // 反向确认：清掉 owner 键（模拟旧版本遗留的数据）后，未登录同样读不到。
  const f = fixture(); const disk = f.prefs('xjit_todos');
  disk.put('items', JSON.stringify([{ id: 'old', title: 'Legacy', note: '', dueText: '', done: false, createdAt: 1, updatedAt: 1 }]));

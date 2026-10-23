@@ -149,7 +149,11 @@ function mutate(change: (items: TodoItem[]) => TodoItem[], version: number = ses
       await prefs.put('cleanup_pending', true)
       await prefs.flush()
     }
-    await prefs.put(KEY_OWNER, ownerTag())
+    // 清理时不要用当前（可能已登出的空）标记覆盖磁盘上的归属。clearSession 先
+    // setTodoOwner('') 再 clearTodos()，若这里无条件写 ownerTag() 就会把 owner
+    // 写成空串，于是同一个账号下次登录也要白白走一遍「异账号重置」。
+    const nextOwner = clearing ? String(await prefs.get(KEY_OWNER, '')) : ownerTag()
+    await prefs.put(KEY_OWNER, nextOwner)
     await prefs.put(KEY_ITEMS, snapshot)
     await prefs.flush()
     if (clearing) {
