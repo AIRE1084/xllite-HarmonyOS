@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-23T05:24:31.811Z",
+  "checkedAt": "2026-10-23T05:30:46.651Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 105,
+  "checks": 106,
   "failed": 0,
   "results": [
     {
@@ -35,6 +35,10 @@
     },
     {
       "name": "todo reminder service registers native todo routes and preserves courses",
+      "ok": true
+    },
+    {
+      "name": "a reminder published during logout is withdrawn again",
       "ok": true
     },
     {

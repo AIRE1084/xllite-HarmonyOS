@@ -120,6 +120,20 @@ test('todo reminder service registers native todo routes and preserves courses',
  assert.equal(f.state.requests.at(-1).groupId,'campus_todos');assert.equal(f.state.requests.at(-1).wantAgent.parameters.campusRoute,'todo');assert.equal(f.state.reminders.has(9999),true);
  f.state.publishHook=async()=>{throw new Error('fixture publication failed')};await assert.rejects(service.syncTodoReminders([item],'com.xjit.app.acceptance'),/publication failed/);assert.equal(f.state.reminders.size,1);
 });
+ test('a reminder published during logout is withdrawn again',async()=>{
+  // publishReminder 是异步的：版本检查通过到真正登记完成之间用户可能已登出，
+  // 而登出时的 cancelReminderGroup 早已跑完。不补一次撤销，这条提醒会留在系统里，
+  // 下一个账号登录后照常弹出。
+  const f=fixture(),service=f.get('services/TodoReminderService'),due=f.clock.now()+3600000;
+  const item={id:'task',title:'Study',note:'',dueText:'',dueAt:due,done:false,createdAt:1,updatedAt:1};
+  let logoutStarted=false;
+  // 只触发登出，不 await：clearTodoReminders 的取消任务排在同一个队列后面，
+  // 在 publishHook 里等它完成会互相等待。版本号是同步递增的，足以让本次登记作废。
+  f.state.publishHook=async()=>{ if(!logoutStarted){ logoutStarted=true; service.clearTodoReminders().catch(()=>{}); } };
+  const count=await service.syncTodoReminders([item],'com.xjit.app.acceptance');
+  assert.equal(count,0,'a publication interrupted by logout must not report success');
+  assert.equal(f.state.reminders.size,0,'no reminder may survive the logout');
+ });
 test('todo publication plus rollback failure retains both diagnostic causes',async()=>{
  const f=fixture(),service=f.get('services/TodoReminderService'),due=f.clock.now()+3600000;
  const item=id=>({id,title:id,note:'',dueText:'',dueAt:due,done:false,createdAt:1,updatedAt:1});let calls=0;

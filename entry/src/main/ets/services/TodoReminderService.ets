@@ -50,8 +50,18 @@ async function replaceTodoReminders(items: TodoItem[], bundleName: string, versi
         slotType: notificationManager.SlotType.SERVICE_INFORMATION, tapDismissed: true,
         ringDuration: 0, snoozeTimes: 0,
       }
-      await reminderAgentManager.publishReminder(request)
+      const reminderId: number = await reminderAgentManager.publishReminder(request)
       count++
+      // publishReminder 是异步的：检查通过到真正登记完成之间，用户可能已经登出。
+      // 登出时 cancelReminderGroup 早已跑完，若这里不补一次撤销，这条提醒就留在
+      // 系统里，会在下一个账号登录后照常弹出。按返回的 reminderId 精确撤销。
+      if (version !== reminderVersion) {
+        try { await reminderAgentManager.cancelReminder(reminderId) }
+        catch (_error) {
+          try { await cancelReminderGroup(TODO_REMINDER_GROUP) } catch (_e2) { /* 留给登出重试 */ }
+        }
+        return 0
+      }
     }
   } catch (error) {
     try { await cancelReminderGroup(TODO_REMINDER_GROUP) }
