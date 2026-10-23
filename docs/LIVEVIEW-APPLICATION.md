@@ -44,16 +44,24 @@
 
 ## 灵动岛适配
 
-对照本机 SDK `@hms.core.liveview.liveViewManager.d.ts` 逐字段核对后，此前实现存在三处缺口，已补齐：
+对照本机 SDK `@hms.core.liveview.liveViewManager.d.ts` 逐字段核对后，按每个成员真实引入的 API 版本分别下发：
 
 | 能力 | 起始版本 | 处理 |
 | --- | --- | --- |
-| `capsule.icon` | API 11 | 指向 `rawfile/liveview_capsule.png`（1.5 KB，远低于 API 26 前 30 KB 的上限） |
-| `capsule.tailIcon` | 6.0.0(20) | 同上；HarmonyOS 6.0 起才可用，按 API 等级下发 |
-| `capsule.isContentDisplayed` / `isTailIconDisplayed` | 6.0.0(20) | 同上；控制灵动岛尾部副文案与尾图标是否显示 |
-| `primary.content` 的 `${placeholder.timer}` | API 12 | 主区改用系统计时占位符，由系统每秒替换，APP 不必每秒推更新 |
+| `capsule.icon` | 4.1.0(11) | 指向 `rawfile/liveview_capsule.png`（1.5 KB，远低于 API 26 前 30 KB 的上限） |
+| `capsule.isContentDisplayed` | 5.0.3(15) | 控制胶囊副文案是否显示 |
+| `capsule.tailIcon` | 6.0.0(20) | 与 `icon` 同源；HarmonyOS 6.0 的灵动岛尾部图标 |
+| `capsule.isTailIconDisplayed` | 6.0.0(20) | 控制尾部图标是否显示 |
+| `primary.content` 的 `${placeholder.timer}` | 5.0.0(12) | 主区改用系统计时占位符，由系统每秒替换，APP 不必每秒推更新 |
+| `timer` | 5.0.0(12) | 低版本不下发 |
+| `primary.aliveTime` | 6.1.1(24) | 高版本延长存活时间 |
+| `lifeCycleMode` | 26.0.0 | 高版本随进程终止自动结束 |
 
-另一处实质缺陷：**上课瞬间的状态切换原先是整体替换 `capsule` 对象**，而图标与尾部开关挂在该对象上，替换会把它们一起丢掉，HarmonyOS 6.0 上会退化成没有图标的裸胶囊。现改为就地修改标量字段，并在失败回滚时按字段逐一还原（原先保存的是对象引用，还原会写回已改过的值）。
+**门控必须逐字段，不能按特性整体开关。** 把 `icon`（11）、`isContentDisplayed`（15）与尾部能力（20）一起挂在同一个条件下，会让 API 11–19 的设备拿不到本来支持的胶囊图标与副文案开关；反过来，无条件下发 `timer` 又会让 API 11 的设备收到系统不认识的成员。
+
+**版本号回滚**：系统要求更新与结束时的新版本号必须大于当前版本号。被拒绝的调用不会推进系统侧版本，因此本地计数必须随载荷一起回滚，否则下一次尝试会跳过一个版本，系统返回序列冲突（`1003500011`），实况窗再也更新不了。更新实况窗、结束实况窗与上课瞬间的状态切换三处都做了回滚。
+
+**上课瞬间的状态切换原先是整体替换 `capsule` 对象**，而图标与尾部开关挂在该对象上，替换会把它们一起丢掉，HarmonyOS 6.0 上会退化成没有图标的裸胶囊。现改为就地修改标量字段，回滚时按字段逐一还原（原先保存的是对象引用，还原会写回已改过的值）。
 
 胶囊主色按来源区分：课程 `#FF315FC4`（品牌靛蓝），待办 `#FF7B5CE6`（品牌紫）。
 
