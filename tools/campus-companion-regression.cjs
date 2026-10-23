@@ -475,13 +475,16 @@ test('HarmonyOS 6.0 live view carries the dynamic island tail affordances',async
  assert.equal(capsule.isContentDisplayed,true);
  assert.equal(capsule.isTailIconDisplayed,true);
 });
-test('live view before API 20 omits the dynamic island members that do not exist yet',async()=>{
+test('live view before API 20 omits only the tail members that do not exist yet',async()=>{
+ // The tail affordances (tailIcon, isTailIconDisplayed) are @since 6.0.0(20);
+ // the plain capsule icon is @since 4.1.0(11) and stays available below that.
  const f=fixture();f.state.sdkApiVersion=19;f.state.now=new Date(2026,9,12,9,51).getTime();
  const core=await readyCourse(f);await core.setCampusOption('live',true);
  const capsule=f.state.liveStarts[0].liveViewData.capsule;
- assert.equal(capsule.icon,undefined);
  assert.equal(capsule.tailIcon,undefined);
  assert.equal(capsule.isTailIconDisplayed,undefined);
+ assert.notEqual(capsule.icon,undefined);
+ assert.equal(capsule.isContentDisplayed,true);
 });
 test('live view fixed area uses the system timer placeholder so the island ticks itself',async()=>{
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();
@@ -606,6 +609,71 @@ test('stale live view handles cannot update or finish a newer instance',async()=
 test('queued live view target preserves caller snapshot',async()=>{
  const f=fixture();f.values.set('liveViewEnabled',true);const live=f.get('services/LiveViewService');const target={type:'todo',title:'Original',text:'',extra:'',startTime:f.clock.now(),endTime:f.clock.now()+3600000};
  const pending=live.startLiveView(target);target.endTime=0;const result=await pending;assert.equal(result.ok,true);assert.equal(f.state.liveStarts.length,1);
+});
+test('capsule members are gated by the API level that introduced them',async()=>{
+ // icon is @since 11, isContentDisplayed @since 15, tailIcon / isTailIconDisplayed @since 20.
+ const expected={11:{icon:true,isContentDisplayed:false,tailIcon:false},
+  15:{icon:true,isContentDisplayed:true,tailIcon:false},
+  20:{icon:true,isContentDisplayed:true,tailIcon:true},
+  26:{icon:true,isContentDisplayed:true,tailIcon:true}};
+ for(const [api,want] of Object.entries(expected)){
+  const f=fixture();f.state.sdkApiVersion=Number(api);f.values.set('liveViewEnabled',true);
+  const live=f.get('services/LiveViewService');
+  await live.startLiveView({type:'todo',title:'Study',text:'',extra:'',startTime:f.clock.now(),endTime:f.clock.now()+3600000});
+  const c=f.state.liveStarts[0].liveViewData.capsule;
+  assert.equal(c.icon!==undefined,want.icon,`api ${api} icon`);
+  assert.equal(c.isContentDisplayed!==undefined,want.isContentDisplayed,`api ${api} isContentDisplayed`);
+  assert.equal(c.tailIcon!==undefined,want.tailIcon,`api ${api} tailIcon`);
+  assert.equal(c.isTailIconDisplayed!==undefined,want.tailIcon,`api ${api} isTailIconDisplayed`);
+ }
+});
+test('live view timer is only set on API 12 and above',async()=>{
+ for(const [api,wantTimer] of [[11,false],[12,true],[26,true]]){
+  const f=fixture();f.state.sdkApiVersion=Number(api);f.values.set('liveViewEnabled',true);
+  const live=f.get('services/LiveViewService');
+  await live.startLiveView({type:'todo',title:'Study',text:'',extra:'',startTime:f.clock.now(),endTime:f.clock.now()+3600000});
+  assert.equal(f.state.liveStarts[0].timer!==undefined,wantTimer,`api ${api} timer`);
+ }
+});
+test('a refused live view update rolls the system version back',async()=>{
+ const f=fixture();f.state.sdkApiVersion=26;f.values.set('liveViewEnabled',true);
+ const live=f.get('services/LiveViewService');
+ const started=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);
+ const created=f.state.liveStarts[0].sequence;
+ // The system refuses the update, so its own version stays where it was.
+ f.state.updateCode=1;
+ await assert.rejects(live.updateLiveView(started.handle,course(),f.clock.now()));
+ f.state.updateCode=0;
+ // A later retry must still be accepted, which requires the local counter to be
+ // back in step with the system instead of having skipped a version.
+ await live.updateLiveView(started.handle,course({title:'Retried'}),f.clock.now());
+ assert.equal(f.state.liveUpdates[0].sequence,created+1,'retry must reuse the next version');
+});
+test('a refused live view stop rolls the system version back',async()=>{
+ const f=fixture();f.state.sdkApiVersion=26;f.values.set('liveViewEnabled',true);
+ const live=f.get('services/LiveViewService');
+ const started=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);
+ const created=f.state.liveStarts[0].sequence;
+ f.state.stopFail=true;
+ await assert.rejects(live.finishLiveView(started.handle));
+ f.state.stopFail=false;
+ await live.finishLiveView(started.handle);
+ assert.equal(f.state.liveStops[0].sequence,created+1,'a retried stop must reuse the next version');
+});
+test('the class-start transition rolls the system version back when refused',async()=>{
+ const f=fixture();f.state.sdkApiVersion=26;f.values.set('liveViewEnabled',true);
+ const live=f.get('services/LiveViewService');
+ const start=f.clock.now()+60000;
+ const target={type:'course',title:'算法',text:'1-2节',extra:'B306',startTime:start,endTime:start+3600000};
+ await live.startLiveView(target);
+ const created=f.state.liveStarts[0].sequence;
+ f.state.now=start+1000;
+ f.state.updateCode=1;
+ await live.startLiveView(target);
+ f.state.updateCode=0;
+ f.state.now=start+2000;
+ await live.startLiveView(target);
+ assert.equal(f.state.liveUpdates[1].sequence,created+1,'the retry must not skip a version');
 });
 test('todo live target uses structured deadline rather than fabricated one hour',()=>{
  const f=fixture(),live=f.get('services/LiveViewService'),item={id:'task',title:'Study',note:'',dueText:'',dueAt:f.clock.now()+7200000,done:false,createdAt:1,updatedAt:1};

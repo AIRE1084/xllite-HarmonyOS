@@ -91,6 +91,9 @@ async function stopCurrent(): Promise<void> {
   const view = currentView
   const previousStatus = view.liveViewData.capsule?.status
   const previousKeepTime = view.liveViewData.primary.keepTime
+  // Same reasoning as in updateLiveView: a refused stop leaves the system version
+  // where it was, so the local counter has to follow it back.
+  const previousSequence = view.sequence
   view.sequence = (view.sequence ?? 0) + 1
   if (view.liveViewData.capsule !== undefined) view.liveViewData.capsule.status = -1
   view.liveViewData.primary.keepTime = 0
@@ -102,6 +105,7 @@ async function stopCurrent(): Promise<void> {
     if (code !== 1003500009 && code !== 1003500010) {
       if (view.liveViewData.capsule !== undefined && previousStatus !== undefined) view.liveViewData.capsule.status = previousStatus
       view.liveViewData.primary.keepTime = previousKeepTime
+      view.sequence = previousSequence
       throw error as Error
     }
   }
@@ -125,8 +129,13 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       // the object reference: keeping the reference would restore the mutated values.
       const previousContent = capsule === null ? '' : capsule.content
       const previousTime = capsule === null ? 0 : (capsule.time ?? 0)
+      // A refused update leaves the system version untouched, so the local counter
+      // is rolled back together with the payload.
+      const previousSequence = currentView.sequence
       currentView.sequence = (currentView.sequence ?? 0) + 1
-      currentView.timer = { time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
+      if (apiLevel() >= 12) {
+        currentView.timer = { time: Math.max(0, target.endTime - Date.now()), isCountdown: true }
+      }
       // Mutate the existing capsule instead of replacing it: the dynamic-island icon
       // and tail affordances set at creation time live on this object, and rebuilding
       // it from scratch would drop them and leave a bare capsule on HarmonyOS 6.0.
@@ -139,6 +148,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
         const result = await liveViewManager.updateLiveView(currentView)
         if (result.resultCode !== 0) {
           currentView.timer = previousTimer
+          currentView.sequence = previousSequence
           if (capsule !== null) {
             capsule.content = previousContent
             capsule.time = previousTime
@@ -148,6 +158,7 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
         }
       } catch (error) {
         currentView.timer = previousTimer
+        currentView.sequence = previousSequence
         if (capsule !== null) {
           capsule.content = previousContent
           capsule.time = previousTime
@@ -181,9 +192,16 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
     const clickAction: object = action
     const deadline = target.startTime > Date.now() ? target.startTime : target.endTime
     const duration = Math.max(0, deadline - Date.now())
-    // lifeCycleMode is @since 26 and aliveTime is @since 24. Assigning either below its
-    // level would only hand the system an undefined member, so gate them and let older
-    // releases fall back to their own defaults instead of pretending the hint applied.
+    // Every member below is gated by the API level that actually introduced it.
+    // Passing a member that the running release does not know hands the system an
+    // undefined value, and omitting one that it does know leaves the surface
+    // without that capability, so the gates are per member, not per feature.
+    //   timer                    5.0.0(12)
+    //   capsule.icon             4.1.0(11)
+    //   capsule.isContentDisplayed 5.0.3(15)
+    //   capsule.tailIcon / isTailIconDisplayed 6.0.0(20)
+    //   primary.aliveTime        6.1.1(24)
+    //   lifeCycleMode            26.0.0
     const api = apiLevel()
     const started = target.startTime <= Date.now()
     const capsule: liveViewManager.TimerCapsule = {
@@ -191,18 +209,19 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
       content: capsuleContent(target.type, started), time: duration, isCountdown: true,
       backgroundColor: capsuleColor(target.type),
     }
-    if (api >= 20) {
-      // HarmonyOS 6.0 added the dynamic-island tail affordances. On older releases
-      // these members do not exist, so passing them would hand the system undefined
-      // values; gate them by API level instead of guessing.
+    if (api >= 11) {
       capsule.icon = CAPSULE_ICON
-      capsule.tailIcon = CAPSULE_ICON
+    }
+    if (api >= 15) {
       capsule.isContentDisplayed = true
+    }
+    if (api >= 20) {
+      // HarmonyOS 6.0 added the dynamic-island tail affordances.
+      capsule.tailIcon = CAPSULE_ICON
       capsule.isTailIconDisplayed = true
     }
     const view: liveViewManager.LiveView = {
       id: nextViewId(), event: 'TIMER', sequence: 0, isMute: true,
-      timer: { time: duration, isCountdown: true },
       liveViewData: {
         primary: { title: target.title.slice(0, 40),
           // The system refreshes ${placeholder.timer} every second, so the fixed area
@@ -211,6 +230,9 @@ async function startTarget(target: LiveViewTarget, captured: number): Promise<Li
           clickAction: clickAction },
         capsule: capsule,
       },
+    }
+    if (api >= 12) {
+      view.timer = { time: duration, isCountdown: true }
     }
     if (api >= 26) view.lifeCycleMode = liveViewManager.LifeCycleMode.AUTO_STOP_WHEN_APP_TERMINATE
     if (api >= 24) {
@@ -268,6 +290,11 @@ export async function updateLiveView(handle: LiveViewHandle, course: Course, now
     if (currentView === null || !matchesCurrentHandle(snapshot)) return
     const view = currentView
     const previousTitle = view.liveViewData.primary.title
+    // The system only accepts an update whose version is greater than the one it
+    // currently holds. A rejected update leaves the system version untouched, so
+    // the local counter has to be rolled back with the payload; otherwise the
+    // next attempt skips a version and the system reports a sequence conflict.
+    const previousSequence = view.sequence
     view.sequence = (view.sequence ?? 0) + 1
     view.liveViewData.primary.title = title
     try {
@@ -278,6 +305,7 @@ export async function updateLiveView(handle: LiveViewHandle, course: Course, now
       }
     } catch (error) {
       view.liveViewData.primary.title = previousTitle
+      view.sequence = previousSequence
       if ((error as BusinessError).code !== undefined) setReason(reasonFor(error as BusinessError))
       throw error as Error
     }

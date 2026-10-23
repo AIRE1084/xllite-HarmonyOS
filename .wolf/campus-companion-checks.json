@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-21T10:30:42.238Z",
+  "checkedAt": "2026-10-23T02:35:30.822Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 90,
+  "checks": 99,
   "failed": 0,
   "results": [
     {
@@ -254,6 +254,22 @@
       "ok": true
     },
     {
+      "name": "HarmonyOS 6.0 live view carries the dynamic island tail affordances",
+      "ok": true
+    },
+    {
+      "name": "live view before API 20 omits only the tail members that do not exist yet",
+      "ok": true
+    },
+    {
+      "name": "live view fixed area uses the system timer placeholder so the island ticks itself",
+      "ok": true
+    },
+    {
+      "name": "capsule keeps its island affordances when the course switches to 上课中",
+      "ok": true
+    },
+    {
       "name": "enabled LiveView distinguishes waiting, empty day and active countdown from disabled state",
       "ok": true
     },
@@ -311,6 +327,26 @@
     },
     {
       "name": "queued live view target preserves caller snapshot",
+      "ok": true
+    },
+    {
+      "name": "capsule members are gated by the API level that introduced them",
+      "ok": true
+    },
+    {
+      "name": "live view timer is only set on API 12 and above",
+      "ok": true
+    },
+    {
+      "name": "a refused live view update rolls the system version back",
+      "ok": true
+    },
+    {
+      "name": "a refused live view stop rolls the system version back",
+      "ok": true
+    },
+    {
+      "name": "the class-start transition rolls the system version back when refused",
       "ok": true
     },
     {
