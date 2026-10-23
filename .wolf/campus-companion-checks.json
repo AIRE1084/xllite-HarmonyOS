@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-23T04:07:27.369Z",
+  "checkedAt": "2026-10-23T05:24:31.811Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 104,
+  "checks": 105,
   "failed": 0,
   "results": [
     {
@@ -419,6 +419,10 @@
     },
     {
       "name": "api level normalises the eight-digit encoding instead of trusting it raw",
+      "ok": true
+    },
+    {
+      "name": "reminder group names come from one constant, never a fresh literal",
       "ok": true
     }
   ]

@@ -787,6 +787,17 @@ test('combined logout failures still cancel reminders and recover on retry',asyn
  });
 test('failed LiveView stop reports logout failure after privacy and reminder cleanup',async()=>{
  test('api level normalises the eight-digit encoding instead of trusting it raw',async()=>{
+ test('reminder group names come from one constant, never a fresh literal',()=>{
+  // 注册与取消各写字面量时，拼写差一个字符就一条都取消不掉，系统提醒会在
+  // 退出登录后继续弹给下一个账号。断言两侧都引用同一常量。
+  const groups=fs.readFileSync(path.join(root,'entry/src/main/ets/services/ReminderGroups.ets'),'utf8');
+  assert.match(groups,/export const COURSE_REMINDER_GROUP: string = 'campus_courses'/);
+  assert.match(groups,/export const TODO_REMINDER_GROUP: string = 'campus_todos'/);
+  for(const file of ['TodoReminderService.ets','CampusCompanionService.ets']){
+   const source=fs.readFileSync(path.join(root,'entry/src/main/ets/services/'+file),'utf8');
+   assert.doesNotMatch(source,/'campus_(?:todos|courses)'/,'no reminder literal may survive outside ReminderGroups');
+  }
+ });
   // 6.1.0(23) 的编码形态是 60100023。若门槛写成 1e8，这个值会原样参与比较，
   // 六千万对任何 api >= N 都成立，低版本设备就会拿到高版本字段。
   for (const [raw, expected] of [[60100023, 23], [60260000, 0], [26, 26], [19, 19], [0, 0], [-1, 0]]) {

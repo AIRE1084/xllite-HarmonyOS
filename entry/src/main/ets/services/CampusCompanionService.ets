@@ -1,4 +1,4 @@
-import { cancelReminderGroup } from './ReminderGroups'
+import { cancelReminderGroup, COURSE_REMINDER_GROUP } from './ReminderGroups'
 import common from '@ohos.app.ability.common'
 import preferences from '@ohos.data.preferences'
 import notificationManager from '@ohos.notificationManager'
@@ -130,7 +130,7 @@ async function syncReminders(): Promise<void> {
   lastPlan = ''
   try {
     // Recover orphan course reminders without deleting other feature groups.
-    await cancelReminderGroup('campus_courses')
+    await cancelReminderGroup(COURSE_REMINDER_GROUP)
     if (version !== revision) return
     const ids: number[] = []
     let capacityFull: boolean = false
@@ -148,7 +148,7 @@ async function syncReminders(): Promise<void> {
           content: item.course.location + ' · ' + item.course.sections,
           expiredContent: '课程已开始 · ' + item.course.title,
           wantAgent: { pkgName: applicationBundleName, abilityName: 'EntryAbility', parameters: { campusRoute: 'schedule' } },
-          notificationId: 8400 + ids.length, groupId: 'campus_courses',
+          notificationId: 8400 + ids.length, groupId: COURSE_REMINDER_GROUP,
           slotType: notificationManager.SlotType.SERVICE_INFORMATION, tapDismissed: true,
           ringDuration: 0, snoozeTimes: 0,
         }
@@ -299,7 +299,7 @@ export async function setCampusOption(option: string, enabled: boolean): Promise
     try { await reconcile(option === 'reminders') } catch (error) {
       if (option === 'reminders' && enabled && optionVersion === revision) {
         AppStorage.setOrCreate<boolean>('courseReminderEnabled', false)
-        await cancelReminderGroup('campus_courses')
+        await cancelReminderGroup(COURSE_REMINDER_GROUP)
         lastPlan = ''; await persist()
       }
       throw error as Error
