@@ -559,7 +559,7 @@ test('enabled LiveView distinguishes waiting, empty day and active countdown fro
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('live',true);
  assert.equal(f.state.liveStarts.length,0);assert.equal(f.values.get('liveViewStatus'),'已开启，等待进入课前 10 分钟');
  f.state.now=new Date(2026,9,12,9,51).getTime();await core.activateCampusCompanion('test-student');
- assert.equal(f.state.liveStarts.length,1);assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
+ assert.equal(f.state.liveStarts.length,1);assert.match(String(f.values.get('liveViewStatus')),/^实况窗已显示/);
  f.state.now=new Date(2026,9,12,12,0).getTime();await core.activateCampusCompanion('test-student');
  assert.equal(f.state.liveStops.length,1);assert.equal(f.values.get('liveViewStatus'),'已开启，今天暂无后续课程');
  await core.setCampusOption('live',false);assert.equal(f.values.get('liveViewStatus'),'已关闭课程实况窗');
@@ -773,8 +773,8 @@ test('failed class-start transition remains retryable',async()=>{
 test('course LiveView changes timer at class start and stops on switch off',async()=>{
  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();const core=await readyCourse(f);await core.setCampusOption('live',true);
  f.state.now=new Date(2026,9,12,10,1).getTime();await core.activateCampusCompanion('test-student');assert.equal(f.state.liveUpdates.length,1);
- assert.equal(f.state.liveUpdates[0].liveViewData.capsule.content,'上课中');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
- await core.activateCampusCompanion('test-student');assert.equal(f.values.get('liveViewStatus'),'实况窗已显示');
+ assert.equal(f.state.liveUpdates[0].liveViewData.capsule.content,'上课中');assert.match(String(f.values.get('liveViewStatus')),/^实况窗已显示/);
+ await core.activateCampusCompanion('test-student');assert.match(String(f.values.get('liveViewStatus')),/^实况窗已显示/);
  await core.setCampusOption('live',false);assert.equal(f.state.liveStops.length,1);
 });
 test('logout reminder cancellation failure keeps widget private and allows group-specific retry',async()=>{

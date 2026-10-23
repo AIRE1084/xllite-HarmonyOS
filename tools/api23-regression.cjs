@@ -83,23 +83,35 @@ test('dock scrim fully isolates scrolling glyphs below the fade edge', () => {
  assert.ok(source.includes("['#FF152039', 0.25]")); assert.ok(source.includes("['#FFEAF0FB', 0.25]"));
  assert.ok(source.includes('BlurTabBar({')); assert.ok(source.includes('.hitTestBehavior(HitTestMode.None)'));
 });
-test('flowing dock has one shared noninteractive indicator and vertical labels',()=>{
+test('flowing dock selects by colour only, with vertical icon over label',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- assert.match(source,/Column\(\{ space: 3 \}\)/); assert.match(source,/\.translate\(\{ x: this\.indicatorX/);
- assert.match(source,/\.onAreaChange/); assert.match(source,/\.hitTestBehavior\(HitTestMode.None\)/);
+ // 纵向排布：图标在上、文字在下。
+ assert.match(source,/Column\(\{ space: 4 \}\)/);
+ assert.match(source,/\.width\(ICON_SIZE\)\.height\(ICON_SIZE\)/);
  assert.match(source,/this.reduceMotion \? 0 :/); assert.ok(!source.includes('setTimeout')); assert.ok(!source.includes("'#D9E5EDFF'"));
 });
-test('dock indicator is narrower than one tab so the glass reads as a moving bead',()=>{
+test('dock no longer paints a selected block, so nothing can mismatch the bar height',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- assert.match(source,/const INDICATOR_WIDTH: number = 64/);
- assert.match(source,/this\.currentIndex \* this\.itemWidth \+ \(this\.itemWidth - INDICATOR_WIDTH\) \/ 2/);
- assert.match(source,/\.linearGradient\(\{ angle: 165/);
- // indicatorX 是算出来的 @State，@Prop currentIndex 变了不会自动重算；
- // 少了这个 @Watch，尺寸对得上但指示器永远停在第一格。
- assert.match(source,/@Prop @Watch\('onIndexChange'\) currentIndex/);
- assert.match(source,/onIndexChange\(\): void \{ this\.recalcIndicator\(\) \}/);
- // 与 tab 等宽的实心块会把整格染色，把胶囊切成一格一格，不再允许回退到那种做法。
- assert.ok(!source.includes('this.currentIndex * this.itemWidth })'));
+ // 选中态只靠颜色，不再有需要与容器对齐的第二套几何。
+ // 之前的滑动色块既要有自己的宽高圆角，又要和玻璃容器对齐；两套数字一旦不同步，
+ // 屏幕上就是"胶囊比整条栏矮一截"。去掉色块，这类错位从根上不可能再发生。
+ for (const banned of ['indicatorX','indicatorW','INDICATOR_','recalcIndicator','itemWidth']) {
+  assert.ok(!source.includes(banned),'dock must not reintroduce a measured indicator: '+banned);
+ }
+ // 选中与未选中共用同一套形状，只有颜色不同。
+ assert.match(source,/private tint\(index: number\): ResourceColor/);
+ assert.match(source,/this\.currentIndex === index \? this\.palette\.primary : this\.palette\.onSurfaceVariant/);
+ assert.match(source,/\.fillColor\(this\.tint\(index\)\)/);
+ assert.match(source,/\.fontColor\(this\.tint\(index\)\)/);
+ // 按压反馈只在按住时出现；常态必须透明，否则又变回"有个底色块"。
+ assert.match(source,/backgroundColor\(this\.pressingIdx === index && !this\.reduceMotion/);
+ assert.match(source,/: Color\.Transparent\)/);
+ // 容器本身是胶囊：半径由内容高度推导，不再是一个独立常量。
+ assert.match(source,/radius: \(BAR_HEIGHT \+ 10\) \/ 2/);
+ const bar=Number((source.match(/const BAR_HEIGHT: number = (\d+)/)||[])[1]);
+ const icon=Number((source.match(/const ICON_SIZE: number = (\d+)/)||[])[1]);
+ assert.ok(bar>icon+30,'the bar must leave room for the label under the icon');
+ assert.match(source,/accessibilityDescription\(this\.currentIndex === index \? '已选中' : '切换到'/);
 });
 test('dock signal its pressed slot without waiting for the selection to change',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
@@ -107,9 +119,15 @@ test('dock signal its pressed slot without waiting for the selection to change',
  assert.match(source,/TouchType\.Cancel/);
  assert.match(source,/const PRESS_SCALE: number = 1\.06/);
 });
-test('dock spring is bypassed rather than merely zero-duration under reduced motion',()=>{
+test('dock animation is bypassed rather than merely zero-duration under reduced motion',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- assert.match(source,/this.reduceMotion \? Curve.Linear : curves.springMotion\(0.32, 0.86, 0.12\)/);
+ // 去掉滑动色块后，栏里只剩两处会动的东西：图标缩放和按压底色。
+ // 两者都必须走「减少动效 -> 时长 0」这条路，而不是留着弹簧曲线只把时长设 0
+ // （那样曲线仍会被求值一次，部分机型表现为一帧跳动）。
+ assert.match(source,/\.animation\(\{ duration: this\.reduceMotion \? 0 : Motion\.duration\.fast/);
+ assert.match(source,/\.animation\(\{ duration: this\.reduceMotion \? 0 : Motion\.duration\.instant/);
+ assert.ok(!source.includes('springMotion'),'no spring curve may remain now that the sliding indicator is gone');
+ assert.ok(!source.includes('setTimeout'));
 });
 test('native login uses packaged mountain brand without monochrome tint',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/LoginPage.ets'),'utf8');

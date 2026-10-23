@@ -2,98 +2,74 @@ import { getColors, ColorPalette } from '../theme/Colors'
 import { NativeGlass } from './NativeGlass'
 import { Typography } from '../theme/Typography'
 import { Motion } from '../theme/Motion'
-import curves from '@ohos.curves'
 
 /**
- * 浮动胶囊 Tab 栏。
+ * 浮动玻璃 Tab 栏。
  *
- * 整条栏是一个定宽的圆角胶囊，悬浮在内容之上，底子是 NativeGlass 的玻璃。
- * 选中态不是与 tab 等宽的实心色块，而是一个明显窄于 tab 的高亮胶囊：
- * 四周留白让它看起来像玻璃轨道上滑动的一颗珠子，而不是把整格染成另一种
- * 底色——后者压在深色玻璃上会割出一条生硬的直边，把胶囊切成一格一格的。
+ * 整条栏是一枚悬浮在内容之上的玻璃胶囊（NativeGlass），里面三个格子各放
+ * 一组「图标 + 文字」，纵向排列。
  *
- * 指示器宽度钉死、位置按 itemWidth 重算，所以横竖屏切换或分屏时不会与
- * 底下的 tab 错位。宽度不随选中态变化：一个会伸缩的指示器在连续切换两次
- * 时会出现"刚撑开又缩回"的抖动。
+ * 选中态不用背景色块，只让图标与文字变成品牌色。这是刻意的：
  *
- * 按压反馈分两层：按下的那一格有一层极淡的白色高光，图标同时放大 6%，
- * 抬手即消。只有选中态放大则按在未选中的格子上毫无反馈。
+ * - 一条玻璃轨道上再叠半透明色块，块和轨道是两层不同的半透明，叠出来的
+ *   颜色既不等于品牌色也不等于玻璃色，在白玻璃背景上尤其像贴纸；
+ * - 色块的圆角还要单独去配容器的圆角，配不齐就是"胶囊比整条栏矮一截"
+ *   这种对不上的观感，配齐了也只是把整格染成另一块色，把胶囊切成几段；
+ * - 只用颜色区分，选中态和未选中态共用同一套形状，任何屏宽、任何主题下
+ *   都不会错位，也没有需要跟容器对齐的第二个圆角。
  *
- * 减少动效偏好下所有时长归零，弹簧曲线换成线性。只把时长设 0 而保留弹簧，
- * 曲线仍会被求值一次，在部分机型上表现为一次 1 帧的跳动。
+ * 按压反馈仍然保留：按下的那一格出现一层极淡的底色、图标轻微放大，抬手即消。
+ * 它只在手指按住时存在，不参与常态视觉，所以不会和上面的取舍冲突。
+ *
+ * 减少动效偏好下所有时长归零。
  */
-const INDICATOR_WIDTH: number = 64
-const INDICATOR_HEIGHT: number = 44
-const INDICATOR_RADIUS: number = 22
-const INDICATOR_LIFT: number = 7
+const BAR_HEIGHT: number = 62
+const ICON_SIZE: number = 24
 const PRESS_SCALE: number = 1.06
 const TABS_LABELS: string[] = ['首页', '课表', '我的']
 
 @Component
 export struct BlurTabBar {
-  // 必须挂 @Watch：指示器的位置是由 currentIndex 和 itemWidth 算出来的 @State，
-  // 而 @Prop 变化本身不会重算它。只靠 onAreaChange 算一次的话，尺寸确实对得上，
-  // 但切 tab 时 currentIndex 变了、indicatorX 没变，指示器会一直停在第一格。
-  @Prop @Watch('onIndexChange') currentIndex: number = 0
+  @Prop currentIndex: number = 0
   onTabChange: (index: number) => void = () => {}
   @StorageLink('isDark') @Watch('onThemeChange') isDark: boolean = false
   @State palette: ColorPalette = getColors(false)
-  @State itemWidth: number = 0
-  @State indicatorX: number = 0
   @State pressingIdx: number = -1
   @StorageLink('reduceMotion') reduceMotion: boolean = false
   aboutToAppear(): void { this.onThemeChange() }
   onThemeChange(): void { this.palette = getColors(this.isDark) }
-  onIndexChange(): void { this.recalcIndicator() }
   private icon(index: number): Resource {
     if (index === 0) return $r('app.media.nav_home')
     if (index === 1) return $r('app.media.nav_calendar')
     return $r('app.media.nav_profile')
   }
   private label(index: number): string { return TABS_LABELS[index] }
-
-  private recalcIndicator(): void {
-    if (this.itemWidth <= 0) return
-    this.indicatorX = this.currentIndex * this.itemWidth + (this.itemWidth - INDICATOR_WIDTH) / 2
-  }
-
-  // 指示器玻璃：顶部一层高光收向中段，底部转暗，形成"被光照到"的弧度；
-  // 描边只给顶部一丝边，四圈等宽描边会让胶囊显得像贴纸。
-  //
-  // 亮色主题必须带色，不能是白色。纯白玻璃的背景本来就落在 241-243 的亮度上，
-  // 再叠一个白色指示器等于没有选中态——实测在模拟器上完全找不到那块高亮。
-  // 暗色主题则相反，浅蓝高光压在深底上本来就分得开，加色反而脏。
-  private indicatorColors(): Array<[ResourceColor, number]> {
-    if (this.isDark) return [['#3DA9C4EA', 0], ['#1FA9C4EA', 0.52], ['#0A0B1220', 1]]
-    return [['#52315EDA', 0], ['#33315EDA', 0.52], ['#1A315EDA', 1]]
-  }
-
-  private indicatorBorder(): string { return this.isDark ? '#3DA9C4EA' : '#73315EDA' }
-
-  private indicatorGlow(): ShadowOptions {
-    return { radius: this.isDark ? 12 : 8, color: this.isDark ? '#33000000' : '#1F315EDA', offsetY: 2 }
+  private tint(index: number): ResourceColor {
+    return this.currentIndex === index ? this.palette.primary : this.palette.onSurfaceVariant
   }
 
   @Builder
   TabItem(index: number) {
     Button({ type: ButtonType.Normal }) {
-      Column({ space: 3 }) {
-        Image(this.icon(index)).width(24).height(24)
+      Column({ space: 4 }) {
+        Image(this.icon(index)).width(ICON_SIZE).height(ICON_SIZE)
+          .fillColor(this.tint(index))
           .scale({ x: this.reduceMotion || this.pressingIdx !== index ? 1 : PRESS_SCALE,
             y: this.reduceMotion || this.pressingIdx !== index ? 1 : PRESS_SCALE })
-          .fillColor(this.currentIndex === index ? this.palette.primary : this.palette.onSurfaceVariant)
           .animation({ duration: this.reduceMotion ? 0 : Motion.duration.fast, curve: Motion.curve.standard })
         Text(this.label(index)).fontSize(Typography.caption.fontSize)
           .fontWeight(this.currentIndex === index ? FontWeight.Bold : FontWeight.Medium)
-          .fontColor(this.currentIndex === index ? this.palette.primary : this.palette.onSurfaceVariant)
+          .fontColor(this.tint(index))
           .maxLines(1)
       }
       .width('100%').justifyContent(FlexAlign.Center)
     }
-    .layoutWeight(1).height(58).borderRadius(29)
+    .layoutWeight(1).height(BAR_HEIGHT)
+    // 按压底色只在按住时出现；常态完全透明，选中与否都不靠它表达。
     .backgroundColor(this.pressingIdx === index && !this.reduceMotion
       ? (this.isDark ? '#12FFFFFF' : '#0F315EDA')
       : Color.Transparent)
+    .borderRadius(16)
     .animation({ duration: this.reduceMotion ? 0 : Motion.duration.instant, curve: Motion.curve.standard })
     .onTouch((event: TouchEvent) => {
       if (event.type === TouchType.Down) { this.pressingIdx = index }
@@ -105,29 +81,10 @@ export struct BlurTabBar {
   }
 
   build() {
-    NativeGlass({ contentPadding: 5, radius: 36, interactive: true, prominent: true }) {
-      Stack({ alignContent: Alignment.Start }) {
-        // 指示器比 tab 窄，四边留白；它在 tab 之下、玻璃之上，所以必须让出点击。
-        Column()
-          .width(INDICATOR_WIDTH).height(INDICATOR_HEIGHT)
-          .borderRadius(INDICATOR_RADIUS)
-          .linearGradient({ angle: 165, colors: this.indicatorColors() })
-          .border({ width: 1, color: this.indicatorBorder() })
-          .shadow(this.indicatorGlow())
-          .translate({ x: this.indicatorX, y: INDICATOR_LIFT })
-          .animation({ duration: this.reduceMotion ? 0 : 320,
-            curve: this.reduceMotion ? Curve.Linear : curves.springMotion(0.32, 0.86, 0.12) })
-          .hitTestBehavior(HitTestMode.None).accessibilityLevel('no')
-        Row() { this.TabItem(0); this.TabItem(1); this.TabItem(2) }
-          .width('100%')
-      }.width('100%').height(58)
-        .onAreaChange((_oldArea: Area, area: Area) => {
-          const width = Number(area.width)
-          if (Number.isFinite(width) && width > 0) {
-            this.itemWidth = width / TABS_LABELS.length
-            this.recalcIndicator()
-          }
-        })
+    // 容器本身就是胶囊：半径取内容高度的一半，内容高由 BAR_HEIGHT 与内边距决定。
+    NativeGlass({ contentPadding: 5, radius: (BAR_HEIGHT + 10) / 2, interactive: true, prominent: true }) {
+      Row() { this.TabItem(0); this.TabItem(1); this.TabItem(2) }
+        .width('100%').height(BAR_HEIGHT)
     }
   }
 }

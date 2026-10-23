@@ -203,7 +203,19 @@ async function syncLive(): Promise<void> {
     AppStorage.setOrCreate<string>('liveViewStatus', next === undefined ? '已开启，今天暂无后续课程' : '已开启，等待进入课前 10 分钟')
     return
   }
-  await startCourseLiveView(next.course, next.startTime, next.endTime)
+  // 自动触发也必须把结果落到状态上。此前这里丢弃了返回值：课表页、首页看不到
+  // 任何提示，用户只会觉得"开关开了但胶囊没出现"，而真机上到底是系统开关没开、
+  // 场景权益没批还是载荷被拒，全都没有线索。LiveViewService 已经在 setReason 里
+  // 写入 liveViewStatus，成功时再补一句明确的可见状态。
+  const started = await startCourseLiveView(next.course, next.startTime, next.endTime)
+  if (!started.ok && started.reason !== undefined) {
+    AppStorage.setOrCreate<string>('liveViewStatus', started.reason)
+  } else if (started.ok) {
+    const minutes = Math.max(1, Math.round((next.startTime - Date.now()) / 60000))
+    AppStorage.setOrCreate<string>('liveViewStatus',
+      Date.now() >= next.startTime ? '实况窗已显示：' + next.course.title + ' 进行中'
+        : '实况窗已显示：' + minutes + ' 分钟后 ' + next.course.title)
+  }
 }
 async function reconcile(requireReminderSuccess: boolean = false): Promise<void> {
   publishWeek()

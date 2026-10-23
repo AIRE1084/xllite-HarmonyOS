@@ -42,6 +42,11 @@ function reasonFor(error: BusinessError): string {
   if (error.code === 1003500005) return '应用尚未获批华为实况窗 TIMER 场景权限（1003500005）'
   if (error.code === 1003500004) return '请在系统设置中允许新理工显示实况窗（1003500004）'
   if (error.code === 801 || error.code === 1003500003) return '当前设备不支持或无法连接实况窗服务（801 / 1003500003）'
+  // 下面三条是"重试能好"或"本来就没事"，与设备不支持区分开：
+  // 真机上它们比 1003500003 更常见，混在一起会让人误判设备能力。
+  if (error.code === 1003500008) return '实况窗创建过于频繁，请稍等几秒再试（1003500008）'
+  if (error.code === 1003500011) return '实况窗版本号冲突，请关闭后重新开启（1003500011）'
+  if (error.code === 1003500009) return '实况窗已不存在，无需再关闭（1003500009）'
   return '实况窗暂不可用（' + error.code + '）'
 }
 function setReason(reason: string): void {
