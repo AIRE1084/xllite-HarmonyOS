@@ -264,7 +264,7 @@ export struct HomeTab {
     // 8 项常用服务全部平铺可见，不再折叠：电费查询与一卡通充值排前两位。
     return [featureByName('newcard.electricity.account'), featureByName('newcard.recharge.config'),
       featureByName('jw.schedule'), featureByName('jw.grades'), featureByName('jw.exams'),
-      featureByName('newcard.transactions'), featureByName('local.finance'), featureByName('local.todos')]
+      featureByName('newcard.transactions'), featureByName('local.todos')]
   }
 
   private featureIcon(item: FeatureDef): ResourceStr {

@@ -11,10 +11,8 @@
     "pages/GradesPage",
     "pages/ExamsPage",
     "pages/ProfilePage",
-    "pages/TrainingPage",
-    "pages/TodoPage",
+        "pages/TodoPage",
     "pages/CampusSettingsPage",
-    "pages/SchoolServicePage",
-    "pages/FinancePage"
+    "pages/SchoolServicePage"
   ]
 }

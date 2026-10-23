@@ -285,7 +285,7 @@ test('schedule tab ignores exceptions from a retired account',async()=>{
 });
 const queries = [
   ['TransactionsPage', 'transactions', 'items'], ['GradesTab', 'normalGrades', 'grades'], ['ExamsPage', 'exams', 'exams'],
-  ['BalancePage', 'accounts', 'accounts'], ['TrainingPage', 'training', 'items'], ['SchedulePage', 'courses', 'courses'],
+  ['BalancePage', 'accounts', 'accounts'], ['SchedulePage', 'courses', 'courses'],
   ['ProfilePage', 'name', 'name'],
 ];
 function success(key, marker) { return { ok: true, data: { [key]: key === 'name' ? marker : [{ marker }], summary: { weightedGradePoint: 3.8, totalCredits: 6, failedCourseCount: 0 } } }; }

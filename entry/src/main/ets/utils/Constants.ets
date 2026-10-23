@@ -6,9 +6,6 @@ export const SCHOOL_PERSONAL_API: string = 'https://authx-service.xjit.edu.cn/pe
 export const SCHOOL_PORTAL_API: string = 'https://portal.xjit.edu.cn/portal-api'
 export const SCHOOL_CARD: string = 'https://newcard.xjit.edu.cn'
 export const SCHOOL_CARD_API: string = SCHOOL_CARD + '/server'
-// 财务系统入口。学校财务处的直连地址尚未取得，先指向统一门户的服务页，
-// 用户可从那里进入财务；拿到直连地址后只改这一行。
-export const SCHOOL_FINANCE: string = SCHOOL_SUPERAPP + '/pages/tab/service/index'
 
 export const FEATURES: FeatureDef[] = [
   { name: 'newcard.campus_code.qrcode', title: '校园付款码', system: 'newcard', icon: '付', page: 'QRCodePage' },
@@ -20,7 +17,6 @@ export const FEATURES: FeatureDef[] = [
   { name: 'jw.grades', title: '成绩查询', system: 'jw', icon: '绩', page: 'GradesPage' },
   { name: 'jw.exams', title: '考试安排', system: 'jw', icon: '考', page: 'ExamsPage' },
   { name: 'jw.profile', title: '个人信息', system: 'jw', icon: '人', page: 'ProfilePage' },
-    { name: 'local.finance', title: '财务系统', system: 'local', icon: '财', page: 'FinancePage' },
   { name: 'local.todos', title: '待办任务', system: 'local', icon: '办', page: 'TodoPage' },
 ]
 
