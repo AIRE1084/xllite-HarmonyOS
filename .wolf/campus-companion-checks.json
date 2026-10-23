@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-23T10:05:31.411Z",
+  "checkedAt": "2026-10-23T11:37:09.925Z",
   "networkUsed": false,
   "nativeApisMocked": true,
   "checks": 108,
@@ -282,7 +282,7 @@
       "ok": true
     },
     {
-      "name": "enabled LiveView distinguishes waiting, empty day and active countdown from disabled state",
+      "name": "enabled LiveView registers the next class immediately instead of waiting for a ten-minute gate",
       "ok": true
     },
     {

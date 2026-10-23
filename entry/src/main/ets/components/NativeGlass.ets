@@ -71,9 +71,9 @@ export struct NativeGlass {
           Column() { this.content() }
             .width('100%').padding(this.contentPadding).borderRadius(this.radius)
             .backgroundEffect({
-              radius: this.prominent ? 60 : 48,
+              radius: this.prominent ? 76 : 48,
               saturation: this.prominent
-                ? (this.isDark ? 2.6 : 3.2)
+                ? (this.isDark ? 2.5 : 3.2)
                 : (this.isDark ? 2.2 : 2.8),
               brightness: 1.0,
               color: this.prominent

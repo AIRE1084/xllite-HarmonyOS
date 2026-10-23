@@ -447,7 +447,7 @@ test('system reminder quota preserves already registered courses',async()=>{
  let attempts=0;f.state.publishHook=async()=>{if(++attempts>1)throw {code:1700002};};
  await core.setCampusOption('reminders',true);
  assert.equal(f.state.reminders.size,1);assert.equal(f.values.get('courseReminderEnabled'),true);
- assert.match(f.values.get('courseReminderStatus'),/系统提醒受限（1700002）：SDK定义为提醒数量超限，实际限制来源待核实/);
+   assert.match(f.values.get('courseReminderStatus'),/系统提醒条数已达上限/);
  assert.ok(!f.values.get('courseReminderStatus').includes('检查通知权限'));
 });
 test('quota status uses native reminder count without assuming zero on query failure',async()=>{
@@ -555,9 +555,12 @@ test('capsule keeps its island affordances when the course switches to 上课中
  assert.equal(updated.tailIcon,'liveview_capsule.png');
  assert.equal(updated.isTailIconDisplayed,true);
 });
-test('enabled LiveView distinguishes waiting, empty day and active countdown from disabled state',async()=>{
+test('enabled LiveView registers the next class immediately instead of waiting for a ten-minute gate',async()=>{
  const f=fixture(),core=await readyCourse(f);await core.setCampusOption('live',true);
- assert.equal(f.state.liveStarts.length,0);assert.equal(f.values.get('liveViewStatus'),'已开启，等待进入课前 10 分钟');
+ // 系统触发式实况窗只支持地理围栏、没有时间触发，所以"到点自动弹"在 API 23/24 上
+ // 做不到。改成当天有课就登记，倒计时一路走到上课，用户不必卡着课前十分钟再开 App。
+ assert.equal(f.state.liveStarts.length,1);
+ assert.match(String(f.values.get('liveViewStatus')),/^实况窗已显示/);
  f.state.now=new Date(2026,9,12,9,51).getTime();await core.activateCampusCompanion('test-student');
  assert.equal(f.state.liveStarts.length,1);assert.match(String(f.values.get('liveViewStatus')),/^实况窗已显示/);
  f.state.now=new Date(2026,9,12,12,0).getTime();await core.activateCampusCompanion('test-student');

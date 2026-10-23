@@ -104,14 +104,18 @@ async function syncWidgets(): Promise<void> {
     if (snapshot !== null) snapshot.widgetEnabled = AppStorage.get<boolean>('campusWidgetEnabled') === true
     saveWidgetSnapshot(context, snapshot)
     phase = 'system-update'
-    await updateCampusWidgets(widgetData(snapshot))
+      const updated: number = await updateCampusWidgets(widgetData(snapshot))
     phase = 'view-status'
     AppStorage.setOrCreate<number>('companionVersion', (AppStorage.get<number>('companionVersion') ?? 0) + 1)
-    AppStorage.setOrCreate<string>('campusWidgetStatus', AppStorage.get<boolean>('campusWidgetEnabled') === true ? '已同步课程，添加后显示在桌面' : '已暂停桌面课程显示')
+      // 没有卡片实例不是失败，是用户还没把卡片放到桌面。这两种情况必须分开说，
+      // 否则"没添加"会被读成"功能坏了"，用户只会反复点重试。
+      const widgetEnabled: boolean = AppStorage.get<boolean>('campusWidgetEnabled') === true
+      AppStorage.setOrCreate<string>('campusWidgetStatus', !widgetEnabled ? '已暂停桌面课程显示'
+        : updated === 0 ? '数据已就绪，把卡片添加到桌面后即可显示' : '已同步课程，桌面卡片已更新')
   } catch (error) {
     const failure = error as BusinessError
     console.warn('[CampusCompanion] widget sync failed phase=' + phase + ' code=' + String(failure.code) + ' message=' + failure.message)
-    AppStorage.setOrCreate<string>('campusWidgetStatus', '桌面卡片更新失败，请重试')
+      AppStorage.setOrCreate<string>('campusWidgetStatus', '桌面卡片更新失败（' + phase + '），请重试')
   }
 }
 async function syncReminders(): Promise<void> {
@@ -178,7 +182,7 @@ async function syncReminders(): Promise<void> {
     lastPlan = capacityFull ? '' : plan
     AppStorage.setOrCreate<string>('courseReminderStatus', !enabled ? '已关闭并取消课程提醒' :
       !valid ? '等待课表同步和当前周次校准' : capacityFull ?
-         '系统提醒受限（1700002）：SDK定义为提醒数量超限，实际限制来源待核实；已登记最近 ' + ids.length + ' 条' + capacityDetail + '；其余未登记，请检查系统提醒设置后重试' : upcoming.length > REMINDER_LIMIT ?
+         '系统提醒条数已达上限，已登记最近 ' + ids.length + ' 条' + capacityDetail + '；请到系统设置里清理提醒后重试' : upcoming.length > REMINDER_LIMIT ?
         '未来 7 天共 ' + upcoming.length + ' 条，已登记最近 ' + ids.length + ' 条；打开 APP 自动续订' :
         '已登记未来 7 天 ' + ids.length + ' 条课前提醒')
   } catch (error) {
@@ -198,9 +202,15 @@ async function syncLive(): Promise<void> {
     return
   }
   const next = buildOccurrences(snapshot, new Date(), 1).find((item): boolean => item.endTime > Date.now())
-  if (next === undefined || next.startTime - Date.now() > 600000) {
+  // 只要今天还有没上完的课就登记实况窗，不再卡"课前 10 分钟"这条线。
+  //
+  // 原因：系统触发式实况窗（startLiveViewByTrigger）只支持地理围栏，没有时间触发，
+  // 所以"到点自动弹"在 API 23/24 上做不到。改成当天打开过 App 就把胶囊挂上，
+  // 倒计时一路走到上课——用户不需要在课前特意再打开一次。
+  // 存活时长由 liveViewData.primary.aliveTime（API 24 起）按到下课计算，不会一直赖着。
+  if (next === undefined) {
     if (getCurrentHandle()?.targetType === 'course') await finishAllLiveViews()
-    AppStorage.setOrCreate<string>('liveViewStatus', next === undefined ? '已开启，今天暂无后续课程' : '已开启，等待进入课前 10 分钟')
+    AppStorage.setOrCreate<string>('liveViewStatus', '已开启，今天暂无后续课程')
     return
   }
   // 自动触发也必须把结果落到状态上。此前这里丢弃了返回值：课表页、首页看不到

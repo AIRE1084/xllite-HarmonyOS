@@ -49,7 +49,7 @@ function fixture(name) {
     },
   };
   vm.runInNewContext(ts.transpileModule(source, { fileName: name + '.ts', compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, context);
-  const page = new module.exports[name](); page.getUIContext = () => ({}); if(name==='TodoPage')page.alive=true;
+  const page = new module.exports[name](); page.getUIContext = () => ({}); if(name==='TodoTab')page.alive=true;
   return { page, state };
 }
 test('profile logout cleanup failure is visible and leaves retry enabled',async()=>{
@@ -99,45 +99,45 @@ test('electricity restore errors from a retired account do not alter the page',a
  assert.equal(page.errorMsg,'');assert.equal(state.requests.length,0);
 });
 test('todo explicit time accepts future only and can be cleared',()=>{
- const {page,state}=fixture('TodoPage');const date=new Date(2026,9,18);
+ const {page,state}=fixture('TodoTab');const date=new Date(2026,9,18);
  page.selectDueTime(date,20,0);assert.equal(page.dueAt,new Date(2026,9,18,20,0).getTime());assert.ok(page.dueInput.includes('20:00'));
  const prior=page.dueAt;page.selectDueTime(date,24,0);assert.equal(page.dueAt,prior);
  page.selectDueTime(new Date(1970,0,1),0,0);assert.equal(page.dueAt,prior);
  page.clearDueTime();assert.equal(page.dueAt,undefined);assert.equal(page.dueInput,'');
 });
 test('todo add revalidates time and deduplicates pending submission',async()=>{
- const {page,state}=fixture('TodoPage');page.titleInput='Study';page.dueAt=state.now;await page.handleAdd();assert.equal(state.todoAdds||0,0);
+ const {page,state}=fixture('TodoTab');page.titleInput='Study';page.dueAt=state.now;await page.handleAdd();assert.equal(state.todoAdds||0,0);
  page.dueAt=state.now+60000;let resolve;state.todoPending=new Promise(r=>resolve=r);const first=page.handleAdd();await page.handleAdd();assert.equal(state.todoAdds,1);resolve();await first;assert.equal(page.saving,false);
 });
 test('todo add failure preserves input and unlocks retry',async()=>{
- const {page,state}=fixture('TodoPage');page.titleInput='Study';state.todoPending=Promise.reject(new Error('fixture'));
+ const {page,state}=fixture('TodoTab');page.titleInput='Study';state.todoPending=Promise.reject(new Error('fixture'));
  await page.handleAdd();assert.equal(page.titleInput,'Study');assert.equal(page.saving,false);assert.ok(state.toasts.length>0);
 });
 test('todo toggle and delete errors retain visible rows and report retry',async()=>{
- const {page,state}=fixture('TodoPage');const item={id:'fixture',title:'Study'};page.todos=[item];
+ const {page,state}=fixture('TodoTab');const item={id:'fixture',title:'Study'};page.todos=[item];
  await page.handleToggle(item);assert.equal(page.todos[0],item);assert.equal(state.toasts.length,1);
  await page.handleDelete(item);assert.equal(page.todos[0],item);assert.equal(state.toasts.length,2);
 });
 test('todo explicit reminder action reports actual registration count',async()=>{
- const {page,state}=fixture('TodoPage');await page.handleReminders();assert.equal(state.todoRegisters,1);assert.ok(state.toasts.at(-1).includes('2'));assert.equal(page.reminderBusy,false);
+ const {page,state}=fixture('TodoTab');await page.handleReminders();assert.equal(state.todoRegisters,1);assert.ok(state.toasts.at(-1).includes('2'));assert.equal(page.reminderBusy,false);
 });
 test('todo reminder cancellation reports success and unlocks controls',async()=>{
- const {page,state}=fixture('TodoPage');await page.handleDisableReminders();assert.equal(state.todoDisabled,true);assert.equal(page.reminderBusy,false);assert.ok(state.toasts.at(-1).includes('已取消'));
+ const {page,state}=fixture('TodoTab');await page.handleDisableReminders();assert.equal(state.todoDisabled,true);assert.equal(page.reminderBusy,false);assert.ok(state.toasts.at(-1).includes('已取消'));
 });
 test('todo initial load ignores results after disappearance or account change',async()=>{
  for(const mode of ['disappear','account']){
-  const {page,state}=fixture('TodoPage');let resolve;state.todoLoad=new Promise(r=>resolve=r);const task=page.aboutToAppear();
+  const {page,state}=fixture('TodoTab');let resolve;state.todoLoad=new Promise(r=>resolve=r);const task=page.aboutToAppear();
   if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   resolve([{id:'old',title:'Private'}]);await task;assert.equal(page.todos.length,0);assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);
  }
 });
 test('todo add completion does not clear form after page disappearance',async()=>{
- const {page,state}=fixture('TodoPage');page.alive=true;page.titleInput='Study';let resolve;state.todoPending=new Promise(r=>resolve=r);
+ const {page,state}=fixture('TodoTab');page.alive=true;page.titleInput='Study';let resolve;state.todoPending=new Promise(r=>resolve=r);
  const task=page.handleAdd();page.aboutToDisappear();resolve();await task;assert.equal(page.titleInput,'Study');assert.equal(state.toasts.length,0);
 });
 test('todo toggle delete callbacks ignore retired pages and accounts',async()=>{
  for(const method of ['handleToggle','handleDelete'])for(const mode of ['disappear','account']){
-  const {page,state}=fixture('TodoPage');const old={id:'old',title:'Study'};page.todos=[old];let resolve;
+  const {page,state}=fixture('TodoTab');const old={id:'old',title:'Study'};page.todos=[old];let resolve;
   state.todoActionPending=new Promise(r=>resolve=r);const task=page[method](old);
   if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   resolve([]);await task;assert.equal(page.todos[0],old);assert.equal(state.toasts.length,0);
@@ -145,73 +145,73 @@ test('todo toggle delete callbacks ignore retired pages and accounts',async()=>{
 });
 test('todo reminder permission wait cannot register after page or account retires',async()=>{
  for(const mode of ['disappear','account']){
-  const {page,state}=fixture('TodoPage');let resolve;state.notificationPending=new Promise(r=>resolve=r);
+  const {page,state}=fixture('TodoTab');let resolve;state.notificationPending=new Promise(r=>resolve=r);
   const task=page.handleReminders();if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   resolve(true);await task;assert.equal(state.todoRegisters||0,0);assert.equal(state.toasts.length,0);
  }
 });
 test('todo live view result only reports to the current page and account',async()=>{
  for(const mode of ['active','disappear','account']){
-  const {page,state}=fixture('TodoPage');let resolve;state.livePending=new Promise(r=>resolve=r);const task=page.handleLiveView({id:'task',title:'Study'});
+  const {page,state}=fixture('TodoTab');let resolve;state.livePending=new Promise(r=>resolve=r);const task=page.handleLiveView({id:'task',title:'Study'});
   if(mode==='disappear')page.aboutToDisappear();if(mode==='account'){state.epoch++;state.username='other'}
   resolve({ok:true});await task;assert.equal(state.toasts.length,mode==='active'?1:0);
  }
 });
 test('todo live view thrown errors are contained only for active page',async()=>{
  for(const mode of ['active','disappear']){
-  const {page,state}=fixture('TodoPage');let reject;state.livePending=new Promise((_r,j)=>reject=j);const task=page.handleLiveView({id:'task',title:'Study'});
+  const {page,state}=fixture('TodoTab');let reject;state.livePending=new Promise((_r,j)=>reject=j);const task=page.handleLiveView({id:'task',title:'Study'});
   if(mode==='disappear')page.aboutToDisappear();reject(Error('fixture native failure'));await task;
   assert.equal(state.toasts.length,mode==='active'?1:0);
  }
 });
 test('todo live cleanup retry refreshes visible failure status',async()=>{
- const {page,state}=fixture('TodoPage');state.liveCleanupStatus='未完成';page.liveCleanupStatus='未完成';await page.handleRetryLiveCleanup();assert.equal(page.liveCleanupStatus,'');assert.equal(page.liveCleanupBusy,false);
+ const {page,state}=fixture('TodoTab');state.liveCleanupStatus='未完成';page.liveCleanupStatus='未完成';await page.handleRetryLiveCleanup();assert.equal(page.liveCleanupStatus,'');assert.equal(page.liveCleanupBusy,false);
 });
 test('todo initial read failure is contained and does not refresh empty widget',async()=>{
- const {page,state}=fixture('TodoPage');let reject;state.todoLoad=new Promise((_r,j)=>reject=j);const task=page.aboutToAppear();reject(Error('fixture read failure'));await task;
+ const {page,state}=fixture('TodoTab');let reject;state.todoLoad=new Promise((_r,j)=>reject=j);const task=page.aboutToAppear();reject(Error('fixture read failure'));await task;
  assert.ok(state.toasts.at(-1).includes('读取未完成'));assert.equal(state.todoRefreshes||0,0);assert.ok(page.loadError.includes('读取未完成'));
  state.todoLoad=null;page.titleInput='Keep draft';await page.handleReloadTodos();assert.equal(page.loadError,'');assert.equal(page.titleInput,'Keep draft');assert.equal(page.reloadBusy,false);assert.equal(state.todoRestores,1);assert.equal(state.todoRefreshes,1);
 });
 test('todo reload drops retired results without refreshing companion data',async()=>{
  for(const mode of ['disappear','account']){
-  const {page,state}=fixture('TodoPage');let resolve;state.todoLoad=new Promise(r=>resolve=r);page.loadError='original error';const task=page.handleReloadTodos();
+  const {page,state}=fixture('TodoTab');let resolve;state.todoLoad=new Promise(r=>resolve=r);page.loadError='original error';const task=page.handleReloadTodos();
   if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}resolve([{id:'private'}]);await task;
   assert.equal(page.todos.length,0);assert.equal(page.loadError,'original error');assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);assert.equal(state.toasts.length,0);
  }
 });
 test('todo reload widget failure never relabels successful task read as a failure',async()=>{
- const {page,state}=fixture('TodoPage');state.todoRefreshFailure=true;page.loadError='old failure';await page.handleReloadTodos();
+ const {page,state}=fixture('TodoTab');state.todoRefreshFailure=true;page.loadError='old failure';await page.handleReloadTodos();
  assert.equal(page.loadError,'');assert.equal(page.reloadBusy,false);assert.ok(state.toasts.at(-1).includes('卡片暂未刷新'));
 });
 test('todo direct entry without account never loads private tasks or companion state',async()=>{
- const {page,state}=fixture('TodoPage');state.username='';await page.aboutToAppear();assert.ok(page.loadError.includes('登录'));assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);
+ const {page,state}=fixture('TodoTab');state.username='';await page.aboutToAppear();assert.ok(page.loadError.includes('登录'));assert.equal(state.todoRestores||0,0);assert.equal(state.todoRefreshes||0,0);
  page.titleInput='Private';await page.handleAdd();assert.equal(state.todoAdds||0,0);
  await page.handleReloadTodos();assert.ok(page.loadError.includes('登录'));
 });
 test('todo draft survives same-account reentry but not another session',async()=>{
- const {page,state}=fixture('TodoPage');await page.aboutToAppear();page.titleInput='Private';page.noteInput='Secret';page.dueAt=200000;
+ const {page,state}=fixture('TodoTab');await page.aboutToAppear();page.titleInput='Private';page.noteInput='Secret';page.dueAt=200000;
  page.aboutToDisappear();await page.aboutToAppear();assert.equal(page.titleInput,'Private');
  page.aboutToDisappear();state.username='other';state.epoch++;await page.aboutToAppear();assert.equal(page.titleInput,'');assert.equal(page.noteInput,'');assert.equal(page.dueAt,undefined);
 });
 test('todo stale controls stop after account switch without page reentry',async()=>{
- const {page,state}=fixture('TodoPage');await page.aboutToAppear();page.titleInput='Old private';page.todos=[{id:'old'}];state.username='other';state.epoch++;
+ const {page,state}=fixture('TodoTab');await page.aboutToAppear();page.titleInput='Old private';page.todos=[{id:'old'}];state.username='other';state.epoch++;
  await page.handleReminders();assert.equal(state.todoRegisters||0,0);assert.equal(page.titleInput,'');assert.equal(page.todos.length,0);assert.ok(page.loadError.includes('重新进入'));
 });
 test('signed-out todo page clears private draft and stale companion labels',async()=>{
- const {page,state}=fixture('TodoPage');page.titleInput='Private';page.noteInput='Secret';page.dueInput='Tomorrow';page.dueAt=200000;page.reminderStatus='Old';page.liveCleanupStatus='Old';state.username='';
+ const {page,state}=fixture('TodoTab');page.titleInput='Private';page.noteInput='Secret';page.dueInput='Tomorrow';page.dueAt=200000;page.reminderStatus='Old';page.liveCleanupStatus='Old';state.username='';
  await page.handleReloadTodos();assert.equal(page.titleInput,'');assert.equal(page.noteInput,'');assert.equal(page.dueInput,'');assert.equal(page.dueAt,undefined);assert.equal(page.liveCleanupStatus,'');assert.equal(page.reminderStatus,'登录后查看提醒状态');
 });
 test('signed-out todo controls never invoke reminder or live view services',async()=>{
- const {page,state}=fixture('TodoPage');state.username='';state.liveCleanupStatus='pending';
+ const {page,state}=fixture('TodoTab');state.username='';state.liveCleanupStatus='pending';
  await page.handleReminders();await page.handleDisableReminders();await page.handleRetryLiveCleanup();await page.handleToggle({id:'old'});await page.handleDelete({id:'old'});await page.handleLiveView({id:'old'});
  assert.equal(state.todoRegisters||0,0);assert.equal(state.todoDisabled,undefined);assert.equal(state.liveCleanupStatus,'pending');assert.equal(state.toasts.length,0);assert.ok(page.loadError.includes('登录'));
 });
 test('todo empty state distinguishes read error from filtered and empty lists',()=>{
- const {page}=fixture('TodoPage');assert.equal(page.emptyTitle(),'暂无待办');page.filter=1;assert.equal(page.emptyTitle(),'暂无未完成任务');page.filter=2;assert.equal(page.emptyTitle(),'暂无已完成任务');page.loadError='failed';assert.equal(page.emptyTitle(),'任务读取未完成');
+ const {page}=fixture('TodoTab');assert.equal(page.emptyTitle(),'暂无待办');page.filter=1;assert.equal(page.emptyTitle(),'暂无未完成任务');page.filter=2;assert.equal(page.emptyTitle(),'暂无已完成任务');page.loadError='failed';assert.equal(page.emptyTitle(),'任务读取未完成');
 });
 test('todo reminder service late success and failure never report to retired pages',async()=>{
  for(const method of ['handleReminders','handleDisableReminders'])for(const mode of ['disappear','account'])for(const failure of [false,true]){
-  const {page,state}=fixture('TodoPage'),pending=gate();state.reminderServicePending=pending.promise;page.reminderStatus='original';const task=page[method]();
+  const {page,state}=fixture('TodoTab'),pending=gate();state.reminderServicePending=pending.promise;page.reminderStatus='original';const task=page[method]();
   await until(()=>state.todoDisabled||state.todoRegisters);if(mode==='disappear')page.aboutToDisappear();else{state.epoch++;state.username='other'}
   if(failure)pending.reject(Error('fixture service failure'));else pending.resolve();await task;
   assert.equal(state.toasts.length,0);assert.equal(page.reminderStatus,'original');
@@ -219,13 +219,13 @@ test('todo reminder service late success and failure never report to retired pag
 });
 test('todo picker never opens for signed-out or stale account page',async()=>{
  for(const mode of ['signedout','stale']){
-  const {page,state}=fixture('TodoPage');await page.aboutToAppear();let opens=0;page.getUIContext=()=>({showDatePickerDialog:()=>opens++});
+  const {page,state}=fixture('TodoTab');await page.aboutToAppear();let opens=0;page.getUIContext=()=>({showDatePickerDialog:()=>opens++});
   state.username=mode==='signedout'?'':'other';state.epoch++;page.chooseDueTime();assert.equal(opens,0);assert.ok(page.loadError.length>0);
  }
 });
 test('todo native picker callbacks ignore retired pages and accounts',()=>{
  for(const phase of ['date','time'])for(const mode of ['active','disappear','account']){
-  const {page,state}=fixture('TodoPage');let dateOptions,timeOptions;
+  const {page,state}=fixture('TodoTab');let dateOptions,timeOptions;
   page.getUIContext=()=>({showDatePickerDialog:o=>dateOptions=o,showTimePickerDialog:o=>timeOptions=o});page.chooseDueTime();
   const retire=()=>{if(mode==='disappear')page.aboutToDisappear();if(mode==='account'){state.epoch++;state.username='other'}};
   if(phase==='date')retire();dateOptions.onAccept({year:2090,month:0,day:2});
@@ -284,7 +284,7 @@ test('schedule tab ignores exceptions from a retired account',async()=>{
  assert.equal(f.page.errorMsg,'new account state'); assert.equal(f.state.toasts.length,0); assert.equal(f.page.requestBusy,false);
 });
 const queries = [
-  ['TransactionsPage', 'transactions', 'items'], ['GradesPage', 'normalGrades', 'grades'], ['ExamsPage', 'exams', 'exams'],
+  ['TransactionsPage', 'transactions', 'items'], ['GradesTab', 'normalGrades', 'grades'], ['ExamsPage', 'exams', 'exams'],
   ['BalancePage', 'accounts', 'accounts'], ['TrainingPage', 'training', 'items'], ['SchedulePage', 'courses', 'courses'],
   ['ProfilePage', 'name', 'name'],
 ];
@@ -338,7 +338,7 @@ test('transactions without totalPages continue after full page and stop after sh
   assert.equal(page.items.length,21); assert.ok(page.nextPage>page.totalPages);
 });
 test('grade summary does not present missing or nonfinite values as zero', async () => {
-  const { page, state } = fixture('GradesPage'); page.alive = true; const pending = page.load();
+  const { page, state } = fixture('GradesTab'); page.alive = true; const pending = page.load();
   state.requests[0].resolve({ ok: true, data: { normalGrades: [], summary: { weightedGradePoint: NaN, totalCredits: Infinity } } }); await pending;
   assert.equal(page.gpa, '—'); assert.equal(page.credits, '—'); assert.equal(page.failedCount, '—');
 });

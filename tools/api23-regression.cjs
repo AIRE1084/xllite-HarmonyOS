@@ -104,10 +104,17 @@ test('enabling reduced motion retires a pending theme reveal and clears overlay'
  const page=new module.exports.ThemeWash(); page.getUIContext=()=>({animateTo:(_o,fn)=>fn()}); page.onFlip(); assert.equal(timers.size,1);
  values.set('reduceMotion',true); page.onFlip(); assert.equal(timers.size,0); assert.equal(page.washOpacity,0);
 });
-test('dock scrim fully isolates scrolling glyphs below the fade edge', () => {
+test('dock scrim stays translucent so the glass has something to blur', () => {
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
- assert.ok(source.includes("['#FF152039', 0.25]")); assert.ok(source.includes("['#FFEAF0FB', 0.25]"));
- assert.ok(source.includes('BlurTabBar({')); assert.ok(source.includes('.hitTestBehavior(HitTestMode.None)'));
+ // 衬底的作用是压住滚动文字，但不能压成实色：导航栏的 backdropBlur 需要背后
+ // 有画面可模糊，衬底一旦不透明，玻璃就退化成一块纯色板。
+ // 所以底部只到约 60%，并要求它不是 #FF。
+ assert.ok(!source.includes("['#FF152039', 0.25]"), 'the scrim must not be fully opaque');
+ assert.ok(!source.includes("['#FFEAF0FB', 0.25]"), 'the scrim must not be fully opaque');
+ assert.match(source, /\['#99152039', 1\]/);
+ assert.match(source, /\['#99EAF0FB', 1\]/);
+ assert.ok(source.includes('BlurTabBar({'));
+ assert.ok(source.includes('.hitTestBehavior(HitTestMode.None)'));
 });
 test('flowing dock selects by colour only, with vertical icon over label',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
@@ -116,43 +123,43 @@ test('flowing dock selects by colour only, with vertical icon over label',()=>{
  assert.match(source,/\.width\(ICON_SIZE\)\.height\(ICON_SIZE\)/);
  assert.match(source,/this.reduceMotion \? 0 :/); assert.ok(!source.includes('setTimeout')); assert.ok(!source.includes("'#D9E5EDFF'"));
 });
-test('dock no longer paints a selected block, so nothing can mismatch the bar height',()=>{
+test('dock selects by highlight and idle dimming, never by a painted block',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- // 选中态只靠颜色，不再有需要与容器对齐的第二套几何。
- // 之前的滑动色块既要有自己的宽高圆角，又要和玻璃容器对齐；两套数字一旦不同步，
- // 屏幕上就是"胶囊比整条栏矮一截"。去掉色块，这类错位从根上不可能再发生。
- for (const banned of ['indicatorX','indicatorW','INDICATOR_','recalcIndicator','itemWidth']) {
+ // 选中态只靠颜色 + 未选中整体压透明度，不做任何宽度/位置需要和容器对齐的色块。
+ for (const banned of ['indicatorX','indicatorW','INDICATOR_','recalcIndicator','itemWidth','ICON_PILL']) {
   assert.ok(!source.includes(banned),'dock must not reintroduce a measured indicator: '+banned);
  }
- // 选中与未选中共用同一套形状，只有颜色不同。
+ // 选中：品牌色；未选中：次级色 + IDLE_OPACITY 弱化。
  assert.match(source,/private tint\(index: number\): ResourceColor/);
  assert.match(source,/this\.currentIndex === index \? this\.palette\.primary : this\.palette\.onSurfaceVariant/);
  assert.match(source,/\.fillColor\(this\.tint\(index\)\)/);
  assert.match(source,/\.fontColor\(this\.tint\(index\)\)/);
- // 按压反馈只在按住时出现；常态必须透明，否则又变回"有个底色块"。
- assert.match(source,/backgroundColor\(this\.pressingIdx === index && !this\.reduceMotion/);
- assert.match(source,/: Color\.Transparent\)/);
- // 容器本身是胶囊：半径由内容高度推导，不再是一个独立常量。
- assert.match(source,/radius: \(BAR_HEIGHT \+ 10\) \/ 2/);
- const bar=Number((source.match(/const BAR_HEIGHT: number = (\d+)/)||[])[1]);
- const icon=Number((source.match(/const ICON_SIZE: number = (\d+)/)||[])[1]);
- assert.ok(bar>icon+30,'the bar must leave room for the label under the icon');
+ assert.match(source,/const IDLE_OPACITY: number = ([\d.]+)/);
+ assert.match(source,/\.opacity\(this\.currentIndex === index \? 1 : IDLE_OPACITY\)/);
+ // 按压不改底色，只做缩放；底色块会让选中态和按压态互相干扰。
+ assert.ok(!source.includes('pressingIdx === index\n      ? (this.isDark'),
+   'the pressed state must not paint a background');
  assert.match(source,/accessibilityDescription\(this\.currentIndex === index \? '已选中' : '切换到'/);
+ // 均分：每项 layoutWeight(1)，数量变化不需要改布局。
+ assert.match(source,/ForEach\(TABS_LABELS/);
+ assert.match(source,/\.layoutWeight\(1\)\.height\(BAR_CONTENT_HEIGHT\)/);
 });
 test('dock signal its pressed slot without waiting for the selection to change',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
  assert.match(source,/this\.pressingIdx = index/);
  assert.match(source,/TouchType\.Cancel/);
- assert.match(source,/const PRESS_SCALE: number = 1\.06/);
+ // 按压缩小而不是放大：玻璃按钮被"压进去"更符合玻璃的物理直觉，
+ // 放大反而像浮起来，和"按下去"的手感相反。
+ assert.match(source,/const PRESS_SCALE: number = 0\.92/);
+ assert.match(source,/\.scale\(\{ x: this\.reduceMotion \|\| this\.pressingIdx !== index \? 1 : PRESS_SCALE/);
 });
 test('dock animation is bypassed rather than merely zero-duration under reduced motion',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
- // 去掉滑动色块后，栏里只剩两处会动的东西：图标缩放和按压底色。
- // 两者都必须走「减少动效 -> 时长 0」这条路，而不是留着弹簧曲线只把时长设 0
- // （那样曲线仍会被求值一次，部分机型表现为一帧跳动）。
- assert.match(source,/\.animation\(\{ duration: this\.reduceMotion \? 0 : Motion\.duration\.fast/);
+ // 栏里会动的只剩按压缩放，它必须走「减少动效 -> 时长 0」这条路，
+ // 而不是留着曲线只把时长设 0（曲线仍会被求值一次，部分机型表现为一帧跳动）。
  assert.match(source,/\.animation\(\{ duration: this\.reduceMotion \? 0 : Motion\.duration\.instant/);
- assert.ok(!source.includes('springMotion'),'no spring curve may remain now that the sliding indicator is gone');
+ assert.match(source,/this\.reduceMotion \|\| this\.pressingIdx !== index \? 1 : PRESS_SCALE/);
+ assert.ok(!source.includes('springMotion'));
  assert.ok(!source.includes('setTimeout'));
 });
 test('native login uses packaged mountain brand without monochrome tint',()=>{
@@ -170,8 +177,19 @@ test('tab content switches without crossfading two readable text surfaces',()=>{
  const body=source.slice(source.indexOf('  build()'),source.indexOf('  pageTransition()'));
  assert.equal((body.match(/\.animation\(/g)||[]).length,0);
 });
-test('dock sits lower while bottom inset never becomes negative',()=>{
- const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
- assert.ok(source.includes('bottom: Math.max(0, this.safeAreaBottom - 8)'));
+test('dock clears the gesture bar without letting the inset go negative',()=>{
+ // 底部避让从 MainTabs 挪进了 BlurTabBar 自己：栏贴边通栏后，
+ // 外边距再垫一层会重复避让。断言避让仍然存在且被钳到非负。
+ const bar=fs.readFileSync(path.join(root,'entry/src/main/ets/components/BlurTabBar.ets'),'utf8');
+ assert.match(bar,/@StorageLink\('safeAreaBottom'\) safeAreaBottom: number = 0/);
+ // 玻璃必须铺到屏幕底边：高度含 safeAreaBottom，圆角只给上面两角，
+ // 内容再用 margin 让出手势条。少任何一条，栏底都会露出一条背景色。
+ assert.match(bar,/\.height\(BAR_CONTENT_HEIGHT \+ PAD_Y \* 2 \+ this\.safeAreaBottom\)/);
+ assert.match(bar,/\.borderRadius\(\{ topLeft: TAB_RADIUS, topRight: TAB_RADIUS \}\)/);
+ assert.match(bar,/\.margin\(\{ bottom: PAD_Y \+ this\.safeAreaBottom \}\)/);
+ assert.ok(!bar.includes('.margin({ bottom: this.safeAreaBottom })'), 'the bar must sit on the screen edge');
+ const tabs=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/MainTabs.ets'),'utf8');
+ assert.ok(!tabs.includes('bottom: Math.max(0, this.safeAreaBottom - 8)'),
+   'the inset must not be applied twice');
 });
 (async()=>{for(const {name,run} of tests){count++;try{await run();console.log('PASS '+name)}catch(e){failed++;console.error('FAIL '+name+': '+e.message)}}console.log(`${count} API23 checks, ${failed} failed`);process.exitCode=failed?1:0;})();
