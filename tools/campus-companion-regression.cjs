@@ -41,7 +41,7 @@ function fixture() {
       state.liveStarts.push(JSON.parse(JSON.stringify(view))); if(state.liveError) throw state.liveError;
       return {resultCode:state.liveCode,message:'mock'};
     }, async updateLiveView(view){state.liveUpdates.push(JSON.parse(JSON.stringify(view)));if(state.updateError)throw state.updateError;return {resultCode:state.updateCode||0,message:'mock'};},
-    async stopLiveView(view){state.liveStops.push(JSON.parse(JSON.stringify(view))); if(state.stopHook)await state.stopHook(); if(state.stopFail) throw {code:1003500003}; return {resultCode:0,message:'mock'};}};
+    async stopLiveView(view){state.liveStops.push(JSON.parse(JSON.stringify(view))); if(state.stopHook)await state.stopHook(); if(state.stopFail) throw {code:state.stopFailCode||1003500003}; return {resultCode:0,message:'mock'};}};
   const formKit = {formBindingData:{createFormBindingData:data=>({data})}, formProvider:{async getPublishedRunningFormInfos(){return state.forms;},
     async updateForm(id,data){state.widgetUpdates.push({id,...data});}}};
   const wantAgent = {OperationType:{START_ABILITY:0}, WantAgentFlags:{UPDATE_PRESENT_FLAG:0}, async getWantAgent(options){return {options};}};
@@ -691,6 +691,20 @@ test('a refused live view update rolls the system version back',async()=>{
  await live.updateLiveView(started.handle,course({title:'Retried'}),f.clock.now());
  assert.equal(f.state.liveUpdates[0].sequence,created+1,'retry must reuse the next version');
 });
+ test('a stop that reports already ended is treated as done, not retried forever',async()=>{
+  // 1003500009 表示实况窗不存在、1003500010 表示已结束。这两种情况下系统侧
+  // 本来就没有窗口了，若当成普通失败回滚并抛错，本地会一直卡在一个已经不存在的
+  // 窗口上，每次登出都重试一遍。
+  for(const code of [1003500009,1003500010]){
+     const f=fixture();f.state.sdkApiVersion=26;f.values.set('liveViewEnabled',true);
+     const live=f.get('services/LiveViewService');
+   const started=await live.startCourseLiveView(course(),f.clock.now(),f.clock.now()+3600000);
+   f.state.stopFail=true;f.state.stopFailCode=code;
+   await live.finishLiveView(started.handle);
+   assert.equal(live.getCurrentHandle(),null,'the local handle must be released for '+code);
+   f.state.stopFail=false;f.state.stopFailCode=undefined;
+  }
+ });
 test('a refused live view stop rolls the system version back',async()=>{
  const f=fixture();f.state.sdkApiVersion=26;f.values.set('liveViewEnabled',true);
  const live=f.get('services/LiveViewService');

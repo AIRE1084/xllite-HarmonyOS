@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-23T05:38:13.230Z",
+  "checkedAt": "2026-10-23T05:45:33.840Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 107,
+  "checks": 108,
   "failed": 0,
   "results": [
     {
@@ -351,6 +351,10 @@
     },
     {
       "name": "a refused live view update rolls the system version back",
+      "ok": true
+    },
+    {
+      "name": "a stop that reports already ended is treated as done, not retried forever",
       "ok": true
     },
     {
