@@ -81,6 +81,9 @@
 # ===== 模拟器验收产物（可由构建与验收流程复现） =====
 /docs/simulator-verify-*/
 
+# ===== 本机设备验收记录（过程材料，结论已记入契约文档） =====
+/docs/DEVICE-VERIFICATION.md
+
 # ===== 本地一次性探测脚本（结论已记入文档，不随仓库分发） =====
 /tools/glass-ab-probe.py
 /tools/generate-icon-concepts.py
