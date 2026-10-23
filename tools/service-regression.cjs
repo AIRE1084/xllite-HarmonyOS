@@ -42,7 +42,7 @@ function fixture(sharedStores = new Map()) {
       async get(key, fallback) { store.reads++; const value = store.data.has(key) ? store.data.get(key) : fallback; if (state.hook) await state.hook(name, 'get', key); return value; },
       async put(key, value) { store.writes++; if (state.hook) await state.hook(name, 'put', key); store.data.set(key, value); },
       async delete(key) { if (state.hook) await state.hook(name, 'delete', key); store.data.delete(key); },
-      async clear() { store.data.clear(); },
+      async clear() { if (state.hook) await state.hook(name, 'clear'); store.data.clear(); },
       async flush() { store.flushes++; if (state.hook) await state.hook(name, 'flush'); store.durable = new Map(store.data); },
     };
   }
@@ -646,6 +646,13 @@ test('a signed-out session never reads rows left by another account', async () =
 
 test('a stored owner with no current account counts as a different owner', async () => {
 test('clearing keeps the disk owner tag instead of blanking it', async () => {
+test('a failed cache wipe makes logout fail instead of pretending success', async () => {
+ // 磁盘上留的是课表、成绩、流水这类隐私数据。清盘失败若被吞掉，clearSession
+ // 的 Promise.all 会当作成功，用户看到「已退出登录」而数据还在盘上。
+ const f = fixture(); await f.seedToken();
+ f.state.hook = async (name, op) => { if (name === 'xjit_http_cache' && op === 'clear') throw Error('fixture cache wipe failed'); };
+ await assert.rejects(f.auth.clearSession(), /cache wipe failed/);
+});
  // clearSession 先 setTodoOwner('') 再 clearTodos()。若清理时用当前（空）标记
  // 覆盖磁盘 owner，同一账号下次登录也会被当成异账号而白做一次重置。
  const f = fixture(); f.todo.setTodoOwner('student-a');
