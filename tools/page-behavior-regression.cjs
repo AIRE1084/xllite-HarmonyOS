@@ -74,6 +74,14 @@ test('electricity results offer refresh independently from change room',()=>{
  const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/ElectricityPage.ets'),'utf8');
  assert.match(source,/Button\(this.loading \? '刷新中…' : '刷新电量'\)/);assert.match(source,/Button\('更换宿舍'\)/);
 });
+// 支付提交后的那一屏只是「请求已提交」，不是支付成功。用成功色或粗体渲染会让
+// 用户把这一屏读成结果页，所以从源码层面禁止回退到 success 色。
+test('electricity submission result never renders as success',()=>{
+ const source=fs.readFileSync(path.join(root,'entry/src/main/ets/pages/ElectricityPage.ets'),'utf8');
+ assert.match(source,/支付请求已提交/);
+ assert.match(source,/请到一卡通账户核对到账结果/);
+ assert.doesNotMatch(source,/fontColor\(getColors\(this\.isDark\)\.success\)/);
+});
 test('electricity restore errors from a retired account do not alter the page',async()=>{
  const {page,state}=fixture('ElectricityPage');let reject;
  state.roomLoad=new Promise((_resolve,r)=>{reject=r});const task=page.aboutToAppear();

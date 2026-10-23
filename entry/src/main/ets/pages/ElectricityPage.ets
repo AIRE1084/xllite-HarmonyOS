@@ -314,8 +314,10 @@ struct ElectricityPage {
         .alignItems(HorizontalAlign.Center)
       } else if (this.step === 4) {
         Column() {
+          // 这里只是"请求已提交"，不是支付成功。用强调色或粗体渲染会让用户
+          // 把这一屏读成结果页，所以按正文样式呈现，判断留给一卡通账户。
           Text(this.resultMsg)
-            .fontSize(18).fontWeight(FontWeight.Bold).fontColor(getColors(this.isDark).success)
+            .fontSize(16).fontWeight(FontWeight.Normal).fontColor(getColors(this.isDark).onSurface)
             .margin({ top: 60 })
           Button('回到首页')
             .width('90%').height(48).backgroundColor(getColors(this.isDark).primary).borderRadius(16)
