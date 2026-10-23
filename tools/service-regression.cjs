@@ -647,6 +647,18 @@ test('a signed-out session never reads rows left by another account', async () =
 test('a stored owner with no current account counts as a different owner', async () => {
 test('clearing keeps the disk owner tag instead of blanking it', async () => {
 test('a failed cache wipe makes logout fail instead of pretending success', async () => {
+test('a signed-out read leaves the other account data untouched on disk', async () => {
+ // 未登录时既不能读到别人的待办，也不能把别人的待办抹掉。曾经的归属分支在
+ // owner 为空串时会清空行、把 owner 写成空串——用户只是没登录，数据就没了。
+ const f = fixture(); f.todo.setTodoOwner('student-a');
+ await f.todo.addTodo({ title: 'A private', note: '', dueText: '' });
+ const disk = f.stores.get('xjit_todos').data;
+ const ownerBefore = disk.get('owner'); const itemsBefore = disk.get('items');
+ f.todo.setTodoOwner('');
+ assert.equal((await f.todo.loadTodos()).length, 0, 'signed-out read must stay empty');
+ assert.equal(disk.get('owner'), ownerBefore, 'the owner tag must not be rewritten');
+ assert.equal(disk.get('items'), itemsBefore, 'the rows must survive a signed-out read');
+});
  // 磁盘上留的是课表、成绩、流水这类隐私数据。清盘失败若被吞掉，clearSession
  // 的 Promise.all 会当作成功，用户看到「已退出登录」而数据还在盘上。
  const f = fixture(); await f.seedToken();

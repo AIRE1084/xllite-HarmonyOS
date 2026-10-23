@@ -196,11 +196,17 @@ export async function loadTodos(): Promise<TodoItem[]> {
       const pending = await prefs.get('cleanup_pending', false)
       const storedOwner = await prefs.get(KEY_OWNER, '')
       if (typeof storedOwner !== 'string') throw new Error('待办归属标记异常，原数据已保留')
-      // 两边都是空串时必须算作不匹配。ownerTag() 在无账号时返回空串，而磁盘上
-      // owner 键缺失的默认值也是空串，单看相等性会把「没有账号」认成「同一个
-      // 账号」，于是上一个账号留在盘上的待办被当成当前用户的读出来。
+      // 没有账号时既不读也不写：下面「异账号」分支会清空行并把 owner 写成当前标记，
+      // 而当前标记此时正是空串——等于用户只是没登录，就把盘上那个账号的待办抹掉了。
+      // 读不到数据是安全的，销毁别人的数据不是。
       const owner = ownerTag()
-      const sameOwner = owner.length > 0 && storedOwner === owner
+      if (owner.length === 0) {
+        if (version !== sessionVersion || cleanupPending) throw new Error('待办会话已变化，旧读取已失效')
+        todoStore = []
+        loaded = true
+        return
+      }
+      const sameOwner = storedOwner === owner
       if (!sameOwner) {
         // Rows, and any cleanup marker, left behind by a different sign-in. Reset
         // both: the marker describes the previous owner's interrupted cleanup and
