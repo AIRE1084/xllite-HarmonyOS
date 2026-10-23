@@ -38,6 +38,7 @@ const pathRules = [
   ['计划稿与交接记录', /docs\/(?:\d{4}-\d{2}-\d{2}-(?:NEXT-SESSION-HANDOFF|TODO-BATCH|REVISION-BATCH|ACCEPTANCE-REFRESH|REMAINING-ACCEPTANCE|CONTRACT-RECHECK)|STORE-READINESS|PROJECT-STATUS)\.md$/],
   ['逆向与反编译记录', /(逆向|反编译|反汇编|脱壳|jadx|apktool|smali|dex2jar)/i],
   ['一次性探测脚本', /tools\/(?:probe|scratch|tmp|adhoc)[-_]/i],
+  ['本机验证临时目录', /(^|\/)_?(?:verify|scratch|tmp|temp)[-_]?(?:tmp|dir|out)?\//i],
   ['源码备份与临时副本', /\.(?:bak|orig|rej)(?:-|$)|(^|\/)[^/]*\.bak-$/],
   ['签名与密钥材料', /\.(?:jks|p12|pem|key|cer|csr|p7b)$|xjit-debug-profile\.json$/i],
   ['环境变量文件', /(^|\/)\.env$|(^|\/)\.env\.(?!example$)/],

@@ -768,6 +768,23 @@ test('combined logout failures still cancel reminders and recover on retry',asyn
  f.state.stopFail=true;f.state.writeFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);assert.equal(f.values.get('courseReminderEnabled'),false);assert.equal(f.values.get('liveViewEnabled'),false);
  f.state.stopFail=false;f.state.writeFail=false;await core.clearCampusCompanion();assert.equal(f.disks.get('/data/campus_widget.json'),'null');assert.equal(f.state.liveStops.length,2);
 });
+ test('live view state changes reach the device log',async()=>{
+  // 实况窗成败只能看系统侧反应，真机验收靠这条日志判断走到哪一步，
+  // 所以状态变更必须真的落一条 hilog，而不是只存在内存里。
+  const f=fixture();f.state.now=new Date(2026,9,12,9,51).getTime();
+  const core=await readyCourse(f);await core.setCampusOption('live',true);
+  const entries=f.state.logs.filter(entry=>entry[0]==='info'&&String(entry[2]).includes('LiveView'));
+  assert.ok(entries.length>0,'live view state change must be logged');
+  const payload=entries.map(entry=>String(entry[3])).join(' ');
+  assert.match(payload,/api=|status=/, 'the log must carry the api level and the state text');
+ });
+ test('disabled live view switch never starts a surface',async()=>{
+  const f=fixture();f.state.liveAllowed=false;f.state.now=new Date(2026,9,12,9,51).getTime();
+  const core=await readyCourse(f);await assert.rejects(core.setCampusOption('live',true));
+  assert.equal(f.state.liveStarts.length,0);
+  const logged=f.state.logs.filter(entry=>String(entry[2]).includes('LiveView'));
+  assert.ok(logged.length>0,'the refusal reason must be logged as well');
+ });
 test('failed LiveView stop reports logout failure after privacy and reminder cleanup',async()=>{
  const f=fixture();const core=await readyCourse(f);await core.setCampusOption('reminders',true);f.state.now=new Date(2026,9,12,9,51).getTime();await core.setCampusOption('live',true);assert.equal(f.state.liveStarts.length,1);
  f.state.stopFail=true;await assert.rejects(core.clearCampusCompanion());assert.equal(f.state.reminders.size,0);assert.equal(f.disks.get('/data/campus_widget.json'),'null');

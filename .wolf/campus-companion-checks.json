@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-23T03:40:26.789Z",
+  "checkedAt": "2026-10-23T03:50:22.689Z",
   "networkUsed": false,
   "nativeApisMocked": true,
-  "checks": 101,
+  "checks": 103,
   "failed": 0,
   "results": [
     {
@@ -403,6 +403,14 @@
     },
     {
       "name": "combined logout failures still cancel reminders and recover on retry",
+      "ok": true
+    },
+    {
+      "name": "live view state changes reach the device log",
+      "ok": true
+    },
+    {
+      "name": "disabled live view switch never starts a surface",
       "ok": true
     },
     {
