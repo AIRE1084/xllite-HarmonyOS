@@ -62,6 +62,8 @@
 网关会话（`auth_source=xllite-gateway`）下未实现原生适配的 feature 自动重定向到网关。
 网关当前 TCP 8765 端口不通、80/443 无服务，实际请求需待网关恢复后验证，代码已就绪。）
 
+下表列的是**学校原生直连**还缺什么。"尚未实施"指原生协议未落地，不代表功能不可用——这些业务在网关会话下已能走 `/api/v1/run`，其中两个支付入口（`newcard.recharge.create_order`、`newcard.electricity.recharge.pay`）已在 `RechargePage` / `ElectricityPage` 中实现下单与 WebView 支付跳转，并由 `XlliteGateway` 校验响应必须带回 `payResult` 对象。
+
 | 业务标识 | 已知线索与缺口 |
 | --- | --- |
 | jw.schedule | 学校日历有 getEvents/getSection/getWeekOfTeaching；教务课程另有 courseTable/day、courseList/list 等。需确认认证后的动态服务地址、学期/周次、课程结构，不能把日历事件全部当课程 |
